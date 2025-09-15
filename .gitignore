@@ -1,0 +1,158 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Lock files (keep only pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+
+# Logs
+logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# ESLint cache
+.eslintcache
+
+# Stylelint cache
+.stylelintcache
+
+# Vite build output
+/dist/
+dist/
+
+# Electron build output
+/out/
+/electron-dist/
+
+# Vite cache
+.vite/
+
+# Electron specific
+*.app
+*.dmg
+*.exe
+*.deb
+*.rpm
+*.AppImage
+
+# Build artifacts
+*.tgz
+*.tar.gz
+
+# Test files
+test.md
+
+# Electron release builds and artifacts
+/release/
+release/
+
+# Build configuration files
+builder-debug.yml
+builder-effective-config.yaml
+
+# Electron app bundles
+*.app/
+*.app
+
+# Blockmap files
+*.blockmap
+
+# Update files
+latest*.yml
+app-update.yml
+
+# Electron unpacked directories
+*-unpacked/
+linux-*-unpacked/
+mac-*/
+win-*-unpacked/
+
+# Electron resources
+*.asar
+resources.pak
+snapshot_blob.bin
+v8_context_snapshot.bin
+
+# Electron locales
+locales/
+
+# Electron frameworks and helpers
+Frameworks/
+*Helper*.app/
+
+# Additional macOS files
+*.icns
+PkgInfo
+
+# Additional Windows files
+*.dll
+elevate.exe
+
+# Additional Linux files
+*.so
+vk_swiftshader_icd.json
+
+# Electron specific files
+chrome_*.pak
+icudtl.dat
+LICENSE.electron.txt
+LICENSES.chromium.html
