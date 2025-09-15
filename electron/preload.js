@@ -88,6 +88,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
     window.dispatchEvent(event)
     console.log('Preload: directory-content-loaded event dispatched')
   },
+
+  // 处理多个文件内容缓存（用于增强拖拽）
+  handleMultipleFileContents: (contentData) => {
+    console.log('Preload: handleMultipleFileContents called with:', {
+      totalFiles: contentData.totalFiles,
+      fileNames: Object.keys(contentData.fileContents || {})
+    })
+    
+    if (!contentData || !contentData.fileContents) {
+      console.error('Preload: Invalid content data received:', contentData)
+      return
+    }
+    
+    // First dispatch a test event to verify React is listening
+    const testEvent = new CustomEvent('test-event', { 
+      detail: { message: 'Test event from preload', timestamp: Date.now() }
+    })
+    window.dispatchEvent(testEvent)
+    console.log('Preload: test-event dispatched')
+    
+    // 触发自定义事件通知 React 应用
+    const event = new CustomEvent('multiple-file-contents-loaded', { 
+      detail: contentData
+    })
+    window.dispatchEvent(event)
+    console.log('Preload: multiple-file-contents-loaded event dispatched')
+  },
   
   // 检查是否在 Electron 环境中
   isElectron: true,

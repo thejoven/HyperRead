@@ -109,124 +109,154 @@ function createWindow() {
     }
   })
 
-  // 使用 Electron 原生的文件拖拽处理
-  mainWindow.webContents.on('dom-ready', () => {
-    // 启用 Electron 的文件拖拽
-    mainWindow.webContents.executeJavaScript(`
-      console.log('Setting up drag and drop handlers')
-      
-      // 移除所有现有的监听器，避免冲突
-      const body = document.body || document.documentElement
-      
-      body.addEventListener('dragover', (e) => {
-        console.log('dragover event')
-        e.preventDefault()
-        e.stopPropagation()
-        e.dataTransfer.dropEffect = 'copy'
-      }, true)
-      
-      body.addEventListener('dragenter', (e) => {
-        console.log('dragenter event')
-        e.preventDefault()
-        e.stopPropagation()
-      }, true)
-      
-      body.addEventListener('drop', (e) => {
-        console.log('drop event triggered with', e.dataTransfer.files.length, 'files')
-        e.preventDefault()
-        e.stopPropagation()
-        
-        const files = [...e.dataTransfer.files]
-        console.log('Files:', files.map(f => ({
-          name: f.name, 
-          type: f.type, 
-          size: f.size, 
-          path: f.path,
-          webkitRelativePath: f.webkitRelativePath
-        })))
-        
-        // 在 Electron 中检测文件夹 - 通过主进程处理
-        // 尝试从 webkitRelativePath 或其他属性获取路径
-        const fileData = files.map(file => ({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          path: file.path || '',
-          webkitRelativePath: file.webkitRelativePath || '',
-          // 尝试更多属性
-          fullPath: file.fullPath || '',
-          relativePath: file.relativePath || ''
-        }))
-        
-        console.log('Enhanced file data:', fileData)
-        
-        console.log('Sending files to main process for classification:', fileData)
-        
-        // 发送到主进程进行分类
-        if (window.electronAPI?.classifyFiles) {
-          window.electronAPI.classifyFiles(fileData).then(result => {
-            console.log('File classification result:', result)
-            const { directories, markdownFiles } = result
-            
-            if (directories.length > 0) {
-              // 处理目录拖拽 - 提示用户选择文件夹，因为无法直接获取拖拽文件夹的路径
-              console.log('Directory detected:', directories[0].name)
-              if (window.electronAPI?.handleDirectoryDrop) {
-                console.log('Calling handleDirectoryDrop')
-                window.electronAPI.handleDirectoryDrop(directories[0].name)
-              } else {
-                console.error('electronAPI.handleDirectoryDrop not available')
-                alert('检测到文件夹拖拽。由于安全限制，请点击"打开文件夹"按钮选择要加载的文件夹。')
-              }
-            } else if (markdownFiles.length > 0) {
-              // 处理单个 Markdown 文件
-              const file = files.find(f => markdownFiles.some(mf => mf.name === f.name))
-              console.log('Found markdown file:', file.name)
-              
-              // 使用 FileReader API 读取文件内容
-              const reader = new FileReader()
-              
-              reader.onload = (event) => {
-                const content = event.target.result
-                console.log('File content read successfully, length:', content.length)
-                
-                if (window.electronAPI?.handleFileContent) {
-                  console.log('Calling handleFileContent')
-                  window.electronAPI.handleFileContent({
-                    content: content,
-                    fileName: file.name.replace(/\\.md$/, '').replace(/\\.markdown$/, ''),
-                    originalName: file.name,
-                    isDirectory: false
-                  })
-                } else {
-                  console.error('electronAPI.handleFileContent not available')
-                }
-              }
-              
-              reader.onerror = (error) => {
-                console.error('Error reading file:', error)
-                alert('读取文件失败: ' + error.message)
-              }
-              
-              console.log('Starting to read file as text')
-              reader.readAsText(file)
-            } else {
-              console.log('No markdown files or directories found')
-              alert('请拖拽 Markdown 文件（.md）或包含 Markdown 文件的文件夹')
-            }
-          }).catch(error => {
-            console.error('Failed to classify files:', error)
-            alert('文件分类失败: ' + error.message)
-          })
-        } else {
-          console.error('electronAPI.classifyFiles not available')
-          alert('无法处理拖拽的文件')
-        }
-      }, true)
-      
-      console.log('Drag and drop handlers set up')
-    `)
-  })
+  // 使用改进的文件拖拽处理，支持 webkitGetAsEntry API
+  // DISABLED: Using React-based drag-drop implementation instead of external script
+  // mainWindow.webContents.on('dom-ready', () => {
+  //   // 加载并启用增强的拖拽功能
+  //   // 注入增强的拖拽处理代码
+  //   const fs = require('fs')
+  //   const enhancedDragDropPath = path.join(__dirname, 'enhanced-drag-drop.js')
+  //   
+  //   fs.readFile(enhancedDragDropPath, 'utf8', (err, data) => {
+  //     if (err) {
+  //       console.error('Failed to load enhanced drag drop script:', err)
+  //       return
+  //     }
+  //     
+  //     // 注入增强的拖拽代码并立即执行
+  //     mainWindow.webContents.executeJavaScript(`
+  //       ${data}
+  //       setupEnhancedDragDrop();
+  //     `).catch(error => {
+  //       console.error('Failed to inject enhanced drag drop:', error)
+  //     })
+  //   })
+    
+    // 备用的简单拖拽处理（如果增强版本失败）
+    // DISABLED: Using React-based drag-drop implementation instead of fallback handlers
+    // setTimeout(() => {
+    //   mainWindow.webContents.executeJavaScript(`
+    //     // 检查增强版本是否已加载
+    //     if (typeof window.setupEnhancedDragDrop === 'undefined') {
+    //       console.log('Enhanced drag drop not available, setting up fallback handlers')
+    //       
+    //       const body = document.body || document.documentElement
+    //   
+    //   body.addEventListener('dragover', (e) => {
+    //     console.log('dragover event')
+    //     e.preventDefault()
+    //     e.stopPropagation()
+    //     e.dataTransfer.dropEffect = 'copy'
+    //   }, true)
+    //   
+    //   body.addEventListener('dragenter', (e) => {
+    //     console.log('dragenter event')
+    //     e.preventDefault()
+    //     e.stopPropagation()
+    //   }, true)
+    //   
+    //   body.addEventListener('drop', (e) => {
+    //     console.log('drop event triggered with', e.dataTransfer.files.length, 'files')
+    //     e.preventDefault()
+    //     e.stopPropagation()
+    //     
+    //     const files = [...e.dataTransfer.files]
+    //     console.log('Files:', files.map(f => ({
+    //       name: f.name, 
+    //       type: f.type, 
+    //       size: f.size, 
+    //       path: f.path,
+    //       webkitRelativePath: f.webkitRelativePath
+    //     })))
+    //     
+    //     // 在 Electron 中检测文件夹 - 通过主进程处理
+    //     // 尝试从 webkitRelativePath 或其他属性获取路径
+    //     const fileData = files.map(file => ({
+    //       name: file.name,
+    //       type: file.type,
+    //       size: file.size,
+    //       path: file.path || '',
+    //       webkitRelativePath: file.webkitRelativePath || '',
+    //       // 尝试更多属性
+    //       fullPath: file.fullPath || '',
+    //       relativePath: file.relativePath || ''
+    //     }))
+    //     
+    //     console.log('Enhanced file data:', fileData)
+    //     
+    //     console.log('Sending files to main process for classification:', fileData)
+    //     
+    //     // 发送到主进程进行分类
+    //     if (window.electronAPI?.classifyFiles) {
+    //       window.electronAPI.classifyFiles(fileData).then(result => {
+    //         console.log('File classification result:', result)
+    //         const { directories, markdownFiles } = result
+    //         
+    //         if (directories.length > 0) {
+    //           // 处理目录拖拽 - 提示用户选择文件夹，因为无法直接获取拖拽文件夹的路径
+    //           console.log('Directory detected:', directories[0].name)
+    //           if (window.electronAPI?.handleDirectoryDrop) {
+    //             console.log('Calling handleDirectoryDrop')
+    //             window.electronAPI.handleDirectoryDrop(directories[0].name)
+    //           } else {
+    //             console.error('electronAPI.handleDirectoryDrop not available')
+    //             alert('检测到文件夹拖拽。由于安全限制，请点击"打开文件夹"按钮选择要加载的文件夹。')
+    //           }
+    //         } else if (markdownFiles.length > 0) {
+    //           // 处理单个 Markdown 文件
+    //           const file = files.find(f => markdownFiles.some(mf => mf.name === f.name))
+    //           console.log('Found markdown file:', file.name)
+    //           
+    //           // 使用 FileReader API 读取文件内容
+    //           const reader = new FileReader()
+    //           
+    //           reader.onload = (event) => {
+    //             const content = event.target.result
+    //             console.log('File content read successfully, length:', content.length)
+    //             
+    //             if (window.electronAPI?.handleFileContent) {
+    //               console.log('Calling handleFileContent')
+    //               window.electronAPI.handleFileContent({
+    //                 content: content,
+    //                 fileName: file.name.replace(/\\.md$/, '').replace(/\\.markdown$/, ''),
+    //                 originalName: file.name,
+    //                 isDirectory: false
+    //               })
+    //             } else {
+    //               console.error('electronAPI.handleFileContent not available')
+    //             }
+    //           }
+    //           
+    //           reader.onerror = (error) => {
+    //             console.error('Error reading file:', error)
+    //             alert('读取文件失败: ' + error.message)
+    //           }
+    //           
+    //           console.log('Starting to read file as text')
+    //           reader.readAsText(file)
+    //         } else {
+    //           console.log('No markdown files or directories found')
+    //           alert('请拖拽 Markdown 文件（.md）或包含 Markdown 文件的文件夹')
+    //         }
+    //       }).catch(error => {
+    //         console.error('Failed to classify files:', error)
+    //         alert('文件分类失败: ' + error.message)
+    //       })
+    //     } else {
+    //       console.error('electronAPI.classifyFiles not available')
+    //       alert('无法处理拖拽的文件')
+    //     }
+    //   }, true)
+    //   
+    //       console.log('Fallback drag and drop handlers set up')
+    //     } else {
+    //       console.log('Enhanced drag drop already available, skipping fallback')
+    //     }
+    //   `).catch(error => {
+    //     console.error('Failed to set up fallback drag drop:', error)
+    //   })
+    // }, 1000) // 延迟1秒确保增强版本有时间加载
+    // })
 }
 
 // 递归扫描目录中的 Markdown 文件

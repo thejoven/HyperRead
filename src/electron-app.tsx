@@ -39,6 +39,12 @@ declare global {
       openExternal: (url: string) => Promise<void>
       isElectron: boolean
       platform: string
+      // Enhanced drag-drop functions
+      handleFileContent: (data: { content: string; fileName: string; originalName: string; isDirectory: boolean }) => void
+      handleDirectoryContent: (data: { files: FileInfo[]; rootPath: string }) => void
+      handleDirectoryDrop: (directoryName: string) => void
+      handleMultipleFileContents: (data: { fileContents: Record<string, string>; totalFiles: number }) => void
+      classifyFiles: (fileData: any[]) => Promise<{ directories: any[]; markdownFiles: any[] }>
     }
   }
 }
@@ -52,6 +58,10 @@ export default function ElectronApp() {
   const [showAbout, setShowAbout] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [fontSize, setFontSize] = useState(16)
+  // Cache for enhanced drag-drop file contents
+  const [fileContentCache, setFileContentCache] = useState<Map<string, string>>(new Map())
+  // Track if we're in enhanced drag-drop mode (files pre-loaded in memory)
+  const [isEnhancedDragMode, setIsEnhancedDragMode] = useState(false)
 
   // Load font size from localStorage on mount
   useEffect(() => {
@@ -68,6 +78,12 @@ export default function ElectronApp() {
 
   // 处理文件拖拽事件
   useEffect(() => {
+    // Add a test to check if React is receiving ANY events from preload
+    const testEventHandler = (event: CustomEvent) => {
+      console.log('React: TEST EVENT RECEIVED:', event.type, event.detail)
+    }
+    window.addEventListener('test-event', testEventHandler as EventListener)
+
     const handleFileDrop = async (event: CustomEvent) => {
       console.log('React: file-dropped event received', event.detail)
       const { filePath } = event.detail
@@ -77,22 +93,45 @@ export default function ElectronApp() {
     const handleFileContent = (event: CustomEvent) => {
       console.log('React: file-content-loaded event received', {
         fileName: event.detail.fileName,
-        contentLength: event.detail.content ? event.detail.content.length : 0
+        contentLength: event.detail.content ? event.detail.content.length : 0,
+        isDirectory: event.detail.isDirectory
       })
       
       const fileData = event.detail
-      // 直接设置文件数据，无需通过 IPC
+      
+      // Cache the file content for enhanced drag-drop mode
+      if (fileData.isDirectory) {
+        // For directory mode, cache the content
+        const filePath = fileData.originalName
+        setFileContentCache(prev => {
+          const newCache = new Map(prev)
+          newCache.set(filePath, fileData.content)
+          return newCache
+        })
+      }
+      
+      // Set current file data
       setFileData({
         content: fileData.content,
         fileName: fileData.fileName,
         filePath: fileData.originalName // 使用原始文件名作为显示路径
       })
-      setIsDirectoryMode(false)
+      
+      // Only set directory mode to false for single file drops
+      if (!fileData.isDirectory) {
+        setIsDirectoryMode(false)
+        setIsEnhancedDragMode(false)
+      }
+      
       console.log('React: file data set successfully')
     }
 
     const handleDirectoryDrop = async (event: CustomEvent) => {
-      console.log('React: directory-dropped event received', event.detail)
+      console.log('React: directory-dropped event received (DISABLED - enhanced drag-drop should handle this)', event.detail)
+      // Disable this fallback since enhanced drag-drop should handle everything
+      console.warn('React: Using fallback directory handler - enhanced drag-drop may not be working properly')
+      return // Exit early without showing dialog
+      
       // 目录拖拽时，显示目录选择对话框
       const directoryName = event.detail.directoryName
       const userConfirmed = confirm(`检测到文件夹"${directoryName}"拖拽。\n\n由于安全限制，需要您在对话框中选择要加载的文件夹。\n\n点击确定选择文件夹，或取消。`)
@@ -106,23 +145,51 @@ export default function ElectronApp() {
       console.log('React: directory-content-loaded event received', event.detail)
       const { files, rootPath } = event.detail
       
+      console.log('React: received files:', files?.length || 0, files?.map(f => f.fileName) || [])
+      console.log('React: current directoryData state before update:', directoryData)
+      console.log('React: current isDirectoryMode state before update:', isDirectoryMode)
+      
       if (files && files.length > 0) {
-        setFiles(files)
-        setRootPath(rootPath)
-        setCurrentFile(files[0].fullPath)
+        // Create directory data structure compatible with existing code
+        const directoryData: DirectoryData = {
+          files: files,
+          rootPath: rootPath
+        }
+        console.log('React: setting directory data with', files.length, 'files:', directoryData)
+        setDirectoryData(directoryData)
         setIsDirectoryMode(true)
-        loadFile(files[0].fullPath)
+        setIsEnhancedDragMode(true) // Mark as enhanced drag mode
         console.log('React: directory content loaded successfully')
+        
+        // Force a state check after a brief delay to see if state actually updated
+        setTimeout(() => {
+          console.log('React: directoryData state after update:', directoryData)
+          console.log('React: isDirectoryMode state after update:', isDirectoryMode)
+        }, 100)
       } else {
         console.log('React: no markdown files found in dragged directory')
         alert('该文件夹中没有找到 Markdown 文件')
       }
     }
 
+    const handleMultipleFileContents = (event: CustomEvent) => {
+      console.log('React: multiple-file-contents-loaded event received', {
+        totalFiles: event.detail.totalFiles,
+        fileNames: Object.keys(event.detail.fileContents)
+      })
+      
+      const { fileContents, totalFiles } = event.detail
+      
+      // Update the file content cache with all the file contents
+      setFileContentCache(new Map(Object.entries(fileContents)))
+      console.log(`React: cached ${totalFiles} file contents for enhanced drag mode`)
+    }
+
     window.addEventListener('file-dropped', handleFileDrop as EventListener)
     window.addEventListener('file-content-loaded', handleFileContent as EventListener)
     window.addEventListener('directory-dropped', handleDirectoryDrop as EventListener)
     window.addEventListener('directory-content-loaded', handleDirectoryContent as EventListener)
+    window.addEventListener('multiple-file-contents-loaded', handleMultipleFileContents as EventListener)
     console.log('React: event listeners added')
     
     return () => {
@@ -130,6 +197,7 @@ export default function ElectronApp() {
       window.removeEventListener('file-content-loaded', handleFileContent as EventListener)
       window.removeEventListener('directory-dropped', handleDirectoryDrop as EventListener)
       window.removeEventListener('directory-content-loaded', handleDirectoryContent as EventListener)
+      window.removeEventListener('multiple-file-contents-loaded', handleMultipleFileContents as EventListener)
       console.log('React: event listeners removed')
     }
   }, [])
@@ -137,8 +205,9 @@ export default function ElectronApp() {
   // 处理拖拽样式 - 仅监听样式变化，不处理文件
   useEffect(() => {
     const handleDragEnter = (e: DragEvent) => {
-      console.log('React: dragenter for styling')
+      console.log('React: dragenter for styling', e.dataTransfer?.types)
       if (e.dataTransfer?.types.includes('Files')) {
+        console.log('React: Files detected, setting isDragOver to true')
         setIsDragOver(true)
       }
     }
@@ -151,18 +220,210 @@ export default function ElectronApp() {
       }
     }
 
-    const handleDrop = (e: DragEvent) => {
-      console.log('React: drop for styling cleanup')
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      e.dataTransfer!.dropEffect = 'copy'
+    }
+
+    const handleDrop = async (e: DragEvent) => {
+      console.log('React: drop event triggered - processing with webkitGetAsEntry')
+      e.preventDefault()
+      e.stopPropagation()
       setIsDragOver(false)
+      
+      try {
+        const items = [...(e.dataTransfer?.items || [])]
+        console.log(`React: Processing ${items.length} dropped items`)
+        
+        const allFiles: Array<{file: File, fullPath: string, name: string}> = []
+        const directories: string[] = []
+        
+        // Process each item using webkitGetAsEntry API
+        for (const item of items) {
+          if (item.kind === 'file') {
+            const entry = (item as any).webkitGetAsEntry()
+            
+            if (entry) {
+              if (entry.isDirectory) {
+                console.log('React: Processing directory:', entry.name)
+                directories.push(entry.name)
+                const dirFiles = await processDirectoryEntry(entry)
+                allFiles.push(...dirFiles)
+                console.log(`React: Found ${dirFiles.length} markdown files in directory: ${entry.name}`)
+              } else if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                const file = await new Promise<File>((resolve, reject) => {
+                  entry.file(resolve, reject)
+                })
+                allFiles.push({
+                  file: file,
+                  fullPath: entry.fullPath,
+                  name: entry.name
+                })
+              }
+            }
+          }
+        }
+        
+        console.log(`React: Found ${allFiles.length} markdown files in ${directories.length} directories`)
+        console.log('React: Raw file data:', allFiles.map(f => ({ 
+          name: f.name, 
+          fullPath: f.fullPath,
+          file: f.file ? f.file.name : 'no file'
+        })))
+        
+        if (allFiles.length === 0) {
+          alert('未找到 Markdown 文件。请拖拽 .md 或 .markdown 文件，或包含这些文件的文件夹。')
+          return
+        }
+        
+        // Process the files based on whether it's a single file or directory
+        if (allFiles.length === 1 && directories.length === 0) {
+          // Single file
+          const fileData = allFiles[0]
+          const content = await readFileContent(fileData.file)
+          setFileData({
+            content: content,
+            fileName: fileData.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+            filePath: fileData.name
+          })
+          setIsDirectoryMode(false)
+          setIsEnhancedDragMode(false)
+        } else {
+          // Multiple files or directory mode
+          console.log('React: Setting up directory mode with enhanced caching')
+          
+          // Create file infos
+          const fileInfos = allFiles.map(fileData => {
+            const relativePath = fileData.fullPath.replace(/^\//, '')
+            const directory = relativePath.includes('/') ? 
+              relativePath.substring(0, relativePath.lastIndexOf('/')) : '.'
+              
+            return {
+              name: fileData.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+              fileName: fileData.name,
+              fullPath: fileData.fullPath,
+              relativePath: relativePath,
+              directory: directory
+            }
+          })
+          
+          console.log('React: Processed fileInfos:', fileInfos.map(f => ({
+            name: f.name,
+            fileName: f.fileName,
+            fullPath: f.fullPath,
+            relativePath: f.relativePath,
+            directory: f.directory
+          })))
+          
+          // Cache all file contents
+          const fileContentsCache = new Map<string, string>()
+          for (const fileData of allFiles) {
+            try {
+              const content = await readFileContent(fileData.file)
+              fileContentsCache.set(fileData.name, content)
+              console.log(`React: Cached content for file: ${fileData.name}`)
+            } catch (error) {
+              console.error(`React: Failed to read content for ${fileData.name}:`, error)
+            }
+          }
+          
+          // Set states
+          const rootPath = directories.length > 0 ? 
+            `Dropped ${directories.length} folder(s)` : 
+            'Dropped files'
+          
+          setFileContentCache(fileContentsCache)
+          setDirectoryData({ files: fileInfos, rootPath })
+          setIsDirectoryMode(true)
+          setIsEnhancedDragMode(true)
+          
+          // Load first file content
+          if (allFiles.length > 0) {
+            const firstFile = allFiles[0]
+            const content = fileContentsCache.get(firstFile.name)
+            if (content) {
+              setFileData({
+                content: content,
+                fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+                filePath: firstFile.name
+              })
+            }
+          }
+          
+          console.log('React: Directory mode setup complete')
+        }
+        
+      } catch (error) {
+        console.error('React: Error processing dropped files:', error)
+        alert('处理拖拽文件时出错: ' + (error as Error).message)
+      }
+    }
+    
+    // Helper function to process directory entries recursively
+    const processDirectoryEntry = async (directoryEntry: any): Promise<Array<{file: File, fullPath: string, name: string}>> => {
+      const files: Array<{file: File, fullPath: string, name: string}> = []
+      const reader = directoryEntry.createReader()
+      
+      return new Promise((resolve, reject) => {
+        const readEntries = () => {
+          reader.readEntries(async (entries: any[]) => {
+            if (entries.length === 0) {
+              resolve(files)
+              return
+            }
+            
+            for (const entry of entries) {
+              if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                try {
+                  const file = await new Promise<File>((resolve, reject) => {
+                    entry.file(resolve, reject)
+                  })
+                  files.push({
+                    file: file,
+                    fullPath: entry.fullPath,
+                    name: entry.name
+                  })
+                } catch (error) {
+                  console.warn('React: Failed to read file entry:', entry.fullPath, error)
+                }
+              } else if (entry.isDirectory && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+                try {
+                  const subFiles = await processDirectoryEntry(entry)
+                  files.push(...subFiles)
+                } catch (error) {
+                  console.warn('React: Failed to read directory entry:', entry.fullPath, error)
+                }
+              }
+            }
+            
+            readEntries() // Continue reading remaining entries
+          }, reject)
+        }
+        
+        readEntries()
+      })
+    }
+    
+    // Helper function to read file content
+    const readFileContent = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (event) => resolve(event.target?.result as string)
+        reader.onerror = reject
+        reader.readAsText(file)
+      })
     }
 
     document.addEventListener('dragenter', handleDragEnter)
     document.addEventListener('dragleave', handleDragLeave)
+    document.addEventListener('dragover', handleDragOver)
     document.addEventListener('drop', handleDrop)
 
     return () => {
       document.removeEventListener('dragenter', handleDragEnter)
       document.removeEventListener('dragleave', handleDragLeave)
+      document.removeEventListener('dragover', handleDragOver)
       document.removeEventListener('drop', handleDrop)
     }
   }, [])
@@ -236,8 +497,22 @@ export default function ElectronApp() {
     setLoading(true)
     try {
       console.log('React: loading file from directory:', fileInfo.fullPath)
-      const data = await window.electronAPI.readFile(fileInfo.fullPath)
-      setFileData(data)
+      
+      // Check if we're in enhanced drag mode and have cached content
+      if (isEnhancedDragMode && fileContentCache.has(fileInfo.fileName)) {
+        console.log('React: using cached content for enhanced drag mode:', fileInfo.fileName)
+        const cachedContent = fileContentCache.get(fileInfo.fileName)!
+        setFileData({
+          content: cachedContent,
+          fileName: fileInfo.name,
+          filePath: fileInfo.fileName
+        })
+      } else {
+        // Fallback to IPC file reading
+        console.log('React: reading file via IPC:', fileInfo.fullPath)
+        const data = await window.electronAPI.readFile(fileInfo.fullPath)
+        setFileData(data)
+      }
     } catch (error) {
       console.error('React: Failed to load file from directory:', error)
       alert('文件加载失败: ' + (error as Error).message)
@@ -264,6 +539,50 @@ export default function ElectronApp() {
       </div>
     )
   }
+
+  // Debug render state
+  console.log('React RENDER: isDirectoryMode =', isDirectoryMode)
+  console.log('React RENDER: directoryData =', directoryData)
+  console.log('React RENDER: directoryData?.files?.length =', directoryData?.files?.length)
+
+  // Expose React state update functions to window for direct access by enhanced drag-drop script
+  useEffect(() => {
+    const directAccessHandlers = {
+      handleDirectoryContentDirect: (data: { files: FileInfo[]; rootPath: string }) => {
+        console.log('React: handleDirectoryContentDirect called directly with:', data)
+        if (data.files && data.files.length > 0) {
+          const directoryData: DirectoryData = {
+            files: data.files,
+            rootPath: data.rootPath
+          }
+          console.log('React: setting directory data directly:', directoryData)
+          setDirectoryData(directoryData)
+          setIsDirectoryMode(true)
+          setIsEnhancedDragMode(true)
+        }
+      },
+      handleMultipleFileContentsDirect: (data: { fileContents: Record<string, string>; totalFiles: number }) => {
+        console.log('React: handleMultipleFileContentsDirect called directly with:', data.totalFiles, 'files')
+        setFileContentCache(new Map(Object.entries(data.fileContents)))
+      },
+      handleFileContentDirect: (data: { content: string; fileName: string; originalName: string; isDirectory: boolean }) => {
+        console.log('React: handleFileContentDirect called directly with:', data.fileName)
+        setFileData({
+          content: data.content,
+          fileName: data.fileName,
+          filePath: data.originalName
+        })
+      }
+    }
+
+    // Expose to window for enhanced drag-drop script
+    ;(window as any).reactDirectHandlers = directAccessHandlers
+    console.log('React: Direct access handlers exposed to window')
+
+    return () => {
+      delete (window as any).reactDirectHandlers
+    }
+  }, [])
 
   return (
     <div className="h-screen bg-background overflow-hidden">
