@@ -326,11 +326,24 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                   href={href}
                   className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors"
                   onClick={(e) => {
+                    console.log('External link clicked:', href)
+                    console.log('electronAPI available:', !!window.electronAPI)
+                    console.log('openExternal available:', !!window.electronAPI?.openExternal)
+                    
                     e.preventDefault()
+                    e.stopPropagation()
+                    
                     if (window.electronAPI?.openExternal) {
+                      console.log('Opening external link via Electron:', href)
                       // 在 Electron 中打开外部链接
-                      window.electronAPI.openExternal(href)
+                      try {
+                        window.electronAPI.openExternal(href)
+                        console.log('External link opened successfully')
+                      } catch (error) {
+                        console.error('Failed to open external link:', error)
+                      }
                     } else {
+                      console.log('Opening external link via window.open:', href)
                       // 在浏览器中正常打开
                       window.open(href, '_blank', 'noopener,noreferrer')
                     }

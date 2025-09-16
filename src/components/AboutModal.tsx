@@ -136,7 +136,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">版本</span>
-                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v0.1.0</span>
+                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v1.1.0</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">平台</span>

@@ -1,6 +1,6 @@
 {
   "name": "hyperread",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "HyperRead — Read smarter. Read faster. A beautiful macOS-style Markdown reader built with Electron",
   "author": "thejoven",
   "license": "AGPL-3.0",
@@ -87,7 +87,24 @@
       ]
     },
     "win": {
-      "target": "nsis"
+      "icon": "logo/logo.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "HyperRead"
     },
     "linux": {
       "target": "AppImage"

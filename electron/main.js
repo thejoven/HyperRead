@@ -47,7 +47,36 @@ function createWindow() {
   // 始终加载静态文件，不依赖开发服务器
   const isDev = process.env.NODE_ENV === 'development'
   
-  mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+  // 修复打包后的路径问题
+  let indexPath
+  if (isDev) {
+    // 开发环境：从项目根目录的dist文件夹加载
+    indexPath = path.join(__dirname, '../dist/index.html')
+  } else {
+    // 生产环境：从app.asar包内加载（app.asar被解包到应用目录）
+    // 在ASAR包中，__dirname指向app.asar内的electron目录
+    // 需要查找dist目录
+    indexPath = path.join(__dirname, '../dist/index.html')
+    
+    // 如果文件不存在，尝试其他可能的路径
+    if (!require('fs').existsSync(indexPath)) {
+      // 尝试从resources目录
+      indexPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'dist', 'index.html')
+      
+      if (!require('fs').existsSync(indexPath)) {
+        // 尝试从app目录
+        indexPath = path.join(process.resourcesPath, 'app', 'dist', 'index.html')
+        
+        if (!require('fs').existsSync(indexPath)) {
+          // 最后尝试当前目录
+          indexPath = path.join(__dirname, 'dist', 'index.html')
+        }
+      }
+    }
+  }
+  
+  console.log('Loading index.html from:', indexPath)
+  mainWindow.loadFile(indexPath)
   
   if (isDev) {
     mainWindow.webContents.openDevTools()
@@ -425,6 +454,20 @@ ipcMain.handle('classify-files', async (event, fileData) => {
   } catch (error) {
     console.error('Main: classify-files error:', error)
     throw new Error(`文件分类失败: ${error.message}`)
+  }
+})
+
+// 打开外部链接
+ipcMain.handle('open-external', async (event, url) => {
+  try {
+    console.log('Main: open-external called with URL:', url)
+    const { shell } = require('electron')
+    await shell.openExternal(url)
+    console.log('Main: external URL opened successfully:', url)
+    return true
+  } catch (error) {
+    console.error('Main: open-external error:', error)
+    throw new Error(`打开外部链接失败: ${error.message}`)
   }
 })
 

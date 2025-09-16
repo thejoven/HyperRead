@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import mermaid from 'mermaid'
-import { Maximize2, X } from 'lucide-react'
+import { Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Move, Hand } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface MermaidDiagramProps {
@@ -13,7 +13,15 @@ interface MermaidDiagramProps {
 export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
   const ref = useRef<HTMLDivElement>(null)
   const fullscreenRef = useRef<HTMLDivElement>(null)
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [panX, setPanX] = useState(0)
+  const [panY, setPanY] = useState(0)
+  const [isDragEnabled, setIsDragEnabled] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const chartId = id || `mermaid-${Math.random().toString(36).substr(2, 9)}`
 
   useEffect(() => {
@@ -83,7 +91,98 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
   // Handle fullscreen toggle
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
+    // Reset zoom, pan, and drag state when toggling fullscreen
+    setZoomLevel(1)
+    setPanX(0)
+    setPanY(0)
+    setIsDragEnabled(false)
+    setIsDragging(false)
   }
+
+  // Zoom functions
+  const zoomIn = () => {
+    setZoomLevel(prev => Math.min(prev * 1.2, 5)) // Max zoom 5x
+  }
+
+  const zoomOut = () => {
+    setZoomLevel(prev => Math.max(prev / 1.2, 0.1)) // Min zoom 0.1x
+  }
+
+  const resetZoom = () => {
+    setZoomLevel(1)
+    setPanX(0)
+    setPanY(0)
+  }
+
+  // Toggle drag mode
+  const toggleDragMode = () => {
+    setIsDragEnabled(!isDragEnabled)
+    setIsDragging(false)
+  }
+
+  // Apply zoom and pan to SVG
+  const applyTransform = (immediate = false) => {
+    if (fullscreenRef.current) {
+      const svgElement = fullscreenRef.current.querySelector('svg')
+      if (svgElement) {
+        svgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`
+        svgElement.style.transformOrigin = 'center center'
+        // Remove transition during dragging for smooth experience
+        svgElement.style.transition = immediate || isDragging ? 'none' : 'transform 0.2s ease'
+      }
+    }
+  }
+
+  // Apply transform when zoom or pan changes
+  useEffect(() => {
+    if (isFullscreen) {
+      applyTransform()
+    }
+  }, [zoomLevel, panX, panY, isFullscreen, isDragging])
+
+  // Note: Wheel zoom has been removed - only button zoom is available
+
+  // Handle drag functionality
+  useEffect(() => {
+    if (!isFullscreen || !fullscreenContainerRef.current) return
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (!isDragEnabled) return
+
+      setIsDragging(true)
+      setDragStart({ x: e.clientX, y: e.clientY })
+      setPanStart({ x: panX, y: panY })
+      e.preventDefault()
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !isDragEnabled) return
+
+      // Use requestAnimationFrame for smoother drag performance
+      requestAnimationFrame(() => {
+        const deltaX = e.clientX - dragStart.x
+        const deltaY = e.clientY - dragStart.y
+
+        setPanX(panStart.x + deltaX)
+        setPanY(panStart.y + deltaY)
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    const container = fullscreenContainerRef.current
+    container.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      container.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isFullscreen, isDragEnabled, isDragging, dragStart, panStart, panX, panY])
 
   // Render fullscreen chart when modal opens
   useEffect(() => {
@@ -128,6 +227,11 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
               svgElement.style.maxWidth = 'none'
               svgElement.style.width = 'auto'
               svgElement.style.height = 'auto'
+
+              // Apply current zoom and pan without transition (immediate)
+              svgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`
+              svgElement.style.transformOrigin = 'center center'
+              svgElement.style.transition = 'none'
             }
           } catch (error) {
             console.error('Mermaid fullscreen rendering error:', error)
@@ -219,13 +323,76 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
             </div>
             
             {/* Chart content - pure scroll container */}
-            <div className="flex-1 overflow-auto">
+            <div
+              ref={fullscreenContainerRef}
+              className="flex-1 overflow-auto"
+              style={{
+                cursor: isDragEnabled ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                userSelect: isDragEnabled ? 'none' : 'auto'
+              }}
+            >
               <div className="p-4">
-                <div 
-                  ref={fullscreenRef} 
+                <div
+                  ref={fullscreenRef}
                   className="mermaid-container min-h-0"
                 />
               </div>
+            </div>
+
+            {/* Zoom and Pan controls - fixed position outside scroll container */}
+            <div className="fixed bottom-4 left-4 flex flex-col gap-2 bg-background/90 backdrop-blur-sm border border-border rounded-lg p-2 shadow-lg z-20">
+              {/* Drag toggle button */}
+              <Button
+                variant={isDragEnabled ? "default" : "ghost"}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={toggleDragMode}
+                title={isDragEnabled ? "关闭拖拽模式" : "开启拖拽模式"}
+              >
+                <Hand className={`h-4 w-4 ${isDragEnabled ? 'text-primary-foreground' : ''}`} />
+              </Button>
+
+              {/* Separator */}
+              <div className="h-px bg-border mx-1" />
+
+              {/* Zoom controls */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={zoomIn}
+                title="放大"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={zoomOut}
+                title="缩小"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={resetZoom}
+                title="重置缩放和位置"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+
+              {/* Status display */}
+              <div className="text-xs text-center text-muted-foreground px-1">
+                {Math.round(zoomLevel * 100)}%
+              </div>
+              {isDragEnabled && (
+                <div className="text-xs text-center text-primary px-1">
+                  拖拽
+                </div>
+              )}
             </div>
           </div>
         </div>

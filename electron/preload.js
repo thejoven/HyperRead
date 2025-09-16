@@ -1,5 +1,12 @@
 const { contextBridge, ipcRenderer, shell } = require('electron')
 
+// Debug: Check what's available in the imports
+console.log('Preload: Imports check:')
+console.log('contextBridge:', typeof contextBridge)
+console.log('ipcRenderer:', typeof ipcRenderer)
+console.log('shell:', typeof shell)
+console.log('shell.openExternal:', typeof shell?.openExternal)
+
 contextBridge.exposeInMainWorld('electronAPI', {
   // 读取文件
   readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
@@ -16,8 +23,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 分类拖拽的文件
   classifyFiles: (fileData) => ipcRenderer.invoke('classify-files', fileData),
   
-  // 打开外部链接
-  openExternal: (url) => shell.openExternal(url),
+  // 打开外部链接 - 使用 IPC 调用主进程
+  openExternal: (url) => {
+    console.log('Preload: openExternal called with URL:', url)
+    return ipcRenderer.invoke('open-external', url)
+  },
   
   // 处理文件拖拽（从主进程调用）
   handleFileDrop: (filePath) => {

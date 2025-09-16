@@ -71,6 +71,18 @@ export default function ElectronApp() {
     }
   }, [])
 
+  // Debug: Check electronAPI availability on mount
+  useEffect(() => {
+    console.log('React: Component mounted, checking electronAPI...')
+    console.log('electronAPI available:', !!window.electronAPI)
+    if (window.electronAPI) {
+      console.log('electronAPI methods:', Object.keys(window.electronAPI))
+      console.log('openExternal available:', typeof window.electronAPI.openExternal)
+    } else {
+      console.log('electronAPI not found on window object')
+    }
+  }, [])
+
   // Save font size to localStorage when changed
   useEffect(() => {
     localStorage.setItem('docs-font-size', fontSize.toString())
@@ -739,9 +751,12 @@ export default function ElectronApp() {
                         : '<div class="h-8 w-8 text-2xl">📄</div>'
                     }}
                   />
+                  <h2 className="text-lg font-semibold mb-2 text-foreground">
+                    HyperRead
+                  </h2>
                 </div>
                 <h2 className="text-lg font-semibold mb-2 text-foreground">
-                  {isDragOver ? '释放以打开' : 'HyperRead — Read smarter. Read faster.'}
+                  {isDragOver ? '释放以打开' : 'Read smarter. Read faster.'}
                 </h2>
                 <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                   {isDragOver 
