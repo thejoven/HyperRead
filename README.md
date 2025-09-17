@@ -10,7 +10,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
@@ -220,7 +220,7 @@ npm run dist
 
 ## 📄 许可证
 
-本项目基于 [MIT 许可证](LICENSE) 开源。
+本项目基于 [GNU Affero General Public License v3.0](LICENSE) 开源。
 
 Copyright (c) 2025 thejoven
 
