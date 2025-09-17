@@ -189,18 +189,6 @@ npm run lint              # ESLint 检查
 - **内存优化**: React memo、useMemo、useCallback
 - **懒加载**: 大型组件按需加载
 
-### 网络代理设置
-
-如果构建时网络下载缓慢，可以设置代理：
-
-```bash
-export https_proxy=http://127.0.0.1:7890
-export http_proxy=http://127.0.0.1:7890  
-export all_proxy=socks5://127.0.0.1:7890
-
-npm run dist
-```
-
 ## 📋 系统要求
 
 - **操作系统**: macOS 10.15+ (Catalina 或更高版本)
