@@ -283,8 +283,6 @@ npm run dist
 
 ## 👨‍💻 作者
 
-**thejoven** - [GitHub](https://github.com/thejoven)
-
 如果这个项目对你有帮助，请给它一个 ⭐️
 
 [![Star](https://img.shields.io/github/stars/thejoven/HyperRead?style=social)](https://github.com/thejoven/HyperRead)
