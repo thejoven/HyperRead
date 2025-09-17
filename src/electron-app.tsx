@@ -8,7 +8,7 @@ import FileList from '@/components/FileList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import AboutModal from '@/components/AboutModal'
 import SettingsModal from '@/components/SettingsModal'
-import { FileText, FolderOpen, Folder, Info, Settings } from 'lucide-react'
+import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface FileData {
   content: string
@@ -58,6 +58,7 @@ export default function ElectronApp() {
   const [showAbout, setShowAbout] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [fontSize, setFontSize] = useState(16)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Default to expanded
   // Cache for enhanced drag-drop file contents
   const [fileContentCache, setFileContentCache] = useState<Map<string, string>>(new Map())
   // Track if we're in enhanced drag-drop mode (files pre-loaded in memory)
@@ -68,6 +69,12 @@ export default function ElectronApp() {
     const savedFontSize = localStorage.getItem('docs-font-size')
     if (savedFontSize) {
       setFontSize(parseInt(savedFontSize, 10))
+    }
+
+    // Load sidebar state from localStorage
+    const savedSidebarState = localStorage.getItem('docs-sidebar-collapsed')
+    if (savedSidebarState) {
+      setIsSidebarCollapsed(JSON.parse(savedSidebarState))
     }
   }, [])
 
@@ -87,6 +94,16 @@ export default function ElectronApp() {
   useEffect(() => {
     localStorage.setItem('docs-font-size', fontSize.toString())
   }, [fontSize])
+
+  // Save sidebar state to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('docs-sidebar-collapsed', JSON.stringify(isSidebarCollapsed))
+  }, [isSidebarCollapsed])
+
+  // Toggle sidebar
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed)
+  }
 
   // 处理文件拖拽事件
   useEffect(() => {
@@ -603,6 +620,7 @@ export default function ElectronApp() {
         <div className="flex items-center h-14 relative py-2">
           {/* 左侧为交通灯按钮预留空间 (约78px) */}
           <div className="w-30 flex-shrink-0"></div>
+
           
           {/* 灵活空间 */}
           <div className="flex-1"></div>
@@ -681,14 +699,42 @@ export default function ElectronApp() {
         )}
 
         {isDirectoryMode && directoryData ? (
-          <div className="flex h-[calc(100vh-56px)]">
-            {/* 文件列表侧边栏 */}
-            <FileList
-              files={directoryData.files}
-              rootPath={directoryData.rootPath}
-              currentFile={fileData?.filePath}
-              onFileSelect={loadFileFromDirectory}
-            />
+          <div className="flex h-[calc(100vh-56px)] relative">
+            {/* 文件列表侧边栏 - 带动画的收起/展开 */}
+            <div className={`transition-all duration-300 ease-in-out ${
+              isSidebarCollapsed
+                ? 'w-0 min-w-0 overflow-hidden'
+                : 'w-72 min-w-72'
+            }`}>
+              <FileList
+                files={directoryData.files}
+                rootPath={directoryData.rootPath}
+                currentFile={fileData?.filePath}
+                onFileSelect={loadFileFromDirectory}
+                isCollapsed={isSidebarCollapsed}
+              />
+            </div>
+
+            {/* Vertical Toggle Button - positioned to be always visible */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className={`absolute top-1/2 transform -translate-y-1/2 z-20 h-12 w-5 p-0 bg-background hover:bg-background border border-border transition-all duration-300 ease-in-out opacity-50 hover:opacity-100 ${
+                isSidebarCollapsed ? 'left-2' : 'left-[276px]'
+              }`}
+              style={{ borderRadius: 0, boxShadow: 'none' }}
+              title={isSidebarCollapsed ? "展开侧边栏" : "收起侧边栏"}
+            >
+              <div className="flex flex-col items-center justify-center h-full">
+                {isSidebarCollapsed ? (
+                  <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+                ) : (
+                  <ChevronLeft className="h-2.5 w-2.5 text-muted-foreground" />
+                )}
+              </div>
+            </Button>
+
             {/* 主内容区域 */}
             <div className="flex-1 overflow-hidden bg-background">
               {fileData ? (
@@ -710,7 +756,10 @@ export default function ElectronApp() {
                       <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/60" />
                       <h3 className="text-sm font-medium mb-2 text-foreground">选择文件</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        从左侧文件列表中选择一个 Markdown 文件来开始阅读
+                        {isSidebarCollapsed
+                          ? '点击左侧的按钮展开文件列表，然后选择一个 Markdown 文件来开始阅读'
+                          : '从左侧文件列表中选择一个 Markdown 文件来开始阅读'
+                        }
                       </p>
                     </CardContent>
                   </Card>

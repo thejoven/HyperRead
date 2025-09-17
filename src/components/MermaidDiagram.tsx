@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import mermaid from 'mermaid'
-import { Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Move, Hand } from 'lucide-react'
+import { Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Move, Hand, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface MermaidDiagramProps {
@@ -19,9 +19,11 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
   const [panX, setPanX] = useState(0)
   const [panY, setPanY] = useState(0)
   const [isDragEnabled, setIsDragEnabled] = useState(false)
+
+  // Simple drag state - no complex refs needed
   const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [justFinishedDragging, setJustFinishedDragging] = useState(false)
+
   const chartId = id || `mermaid-${Math.random().toString(36).substr(2, 9)}`
 
   useEffect(() => {
@@ -52,14 +54,14 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
       try {
         // Clear any existing content
         container.innerHTML = ''
-        
+
         // Validate and render the chart
         await mermaid.parse(chart)
         const renderChartId = `${chartId}-${fullscreen ? 'fullscreen' : 'normal'}`
         const { svg } = await mermaid.render(renderChartId, chart)
-        
+
         container.innerHTML = svg
-        
+
         // Add some styling to the SVG
         const svgElement = container.querySelector('svg')
         if (svgElement) {
@@ -114,65 +116,138 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     setPanY(0)
   }
 
+  // Reset to original position (center)
+  const resetPosition = () => {
+    setPanX(0)
+    setPanY(0)
+  }
+
   // Toggle drag mode
   const toggleDragMode = () => {
     setIsDragEnabled(!isDragEnabled)
     setIsDragging(false)
   }
 
-  // Apply zoom and pan to SVG
-  const applyTransform = (immediate = false) => {
+  // Safe transform application with bounds checking
+  const applyTransform = (x: number, y: number, zoom: number) => {
     if (fullscreenRef.current) {
       const svgElement = fullscreenRef.current.querySelector('svg')
       if (svgElement) {
-        svgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`
+        // Ensure zoom is within reasonable bounds
+        const safeZoom = Math.max(0.1, Math.min(5, zoom))
+
+        svgElement.style.transform = `translate(${x}px, ${y}px) scale(${safeZoom})`
         svgElement.style.transformOrigin = 'center center'
-        // Remove transition during dragging for smooth experience
-        svgElement.style.transition = immediate || isDragging ? 'none' : 'transform 0.2s ease'
+        svgElement.style.transition = isDragging ? 'none' : 'transform 0.2s ease'
+
+        // Ensure the element remains visible
+        svgElement.style.visibility = 'visible'
+        svgElement.style.opacity = '1'
       }
     }
   }
 
-  // Apply transform when zoom or pan changes
+  // Apply transform when zoom or pan changes (but not during or right after dragging)
   useEffect(() => {
-    if (isFullscreen) {
-      applyTransform()
+    if (isFullscreen && !isDragging && !justFinishedDragging) {
+      if (fullscreenRef.current) {
+        const svgElement = fullscreenRef.current.querySelector('svg')
+        if (svgElement) {
+          const safeZoom = Math.max(0.1, Math.min(5, zoomLevel))
+          svgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${safeZoom})`
+          svgElement.style.transformOrigin = 'center center'
+          svgElement.style.transition = 'transform 0.2s ease'
+          svgElement.style.visibility = 'visible'
+          svgElement.style.opacity = '1'
+        }
+      }
     }
-  }, [zoomLevel, panX, panY, isFullscreen, isDragging])
+  }, [zoomLevel, panX, panY, isFullscreen, isDragging, justFinishedDragging])
 
-  // Note: Wheel zoom has been removed - only button zoom is available
-
-  // Handle drag functionality
+  // Stable drag handler with proper state management
   useEffect(() => {
-    if (!isFullscreen || !fullscreenContainerRef.current) return
+    if (!isFullscreen || !fullscreenContainerRef.current || !isDragEnabled) return
+
+    const container = fullscreenContainerRef.current
+    let dragState = {
+      isActive: false,
+      startX: 0,
+      startY: 0,
+      startPanX: 0,
+      startPanY: 0
+    }
 
     const handleMouseDown = (e: MouseEvent) => {
-      if (!isDragEnabled) return
+      dragState.isActive = true
+      dragState.startX = e.clientX
+      dragState.startY = e.clientY
+      dragState.startPanX = panX
+      dragState.startPanY = panY
 
       setIsDragging(true)
-      setDragStart({ x: e.clientX, y: e.clientY })
-      setPanStart({ x: panX, y: panY })
       e.preventDefault()
     }
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !isDragEnabled) return
+      if (!dragState.isActive) return
 
-      // Use requestAnimationFrame for smoother drag performance
-      requestAnimationFrame(() => {
-        const deltaX = e.clientX - dragStart.x
-        const deltaY = e.clientY - dragStart.y
+      const deltaX = e.clientX - dragState.startX
+      const deltaY = e.clientY - dragState.startY
 
-        setPanX(panStart.x + deltaX)
-        setPanY(panStart.y + deltaY)
-      })
+      const newPanX = dragState.startPanX + deltaX
+      const newPanY = dragState.startPanY + deltaY
+
+      // Apply transform directly during drag for smoothness
+      if (fullscreenRef.current) {
+        const svgElement = fullscreenRef.current.querySelector('svg')
+        if (svgElement) {
+          const safeZoom = Math.max(0.1, Math.min(5, zoomLevel))
+          svgElement.style.transform = `translate(${newPanX}px, ${newPanY}px) scale(${safeZoom})`
+          svgElement.style.transformOrigin = 'center center'
+          svgElement.style.transition = 'none'
+          svgElement.style.visibility = 'visible'
+          svgElement.style.opacity = '1'
+        }
+      }
     }
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!dragState.isActive) return
+
+      const deltaX = e.clientX - dragState.startX
+      const deltaY = e.clientY - dragState.startY
+      const finalPanX = dragState.startPanX + deltaX
+      const finalPanY = dragState.startPanY + deltaY
+
+      // Apply final transform without transition to avoid flash
+      if (fullscreenRef.current) {
+        const svgElement = fullscreenRef.current.querySelector('svg')
+        if (svgElement) {
+          const safeZoom = Math.max(0.1, Math.min(5, zoomLevel))
+          svgElement.style.transform = `translate(${finalPanX}px, ${finalPanY}px) scale(${safeZoom})`
+          svgElement.style.transformOrigin = 'center center'
+          svgElement.style.transition = 'none' // Keep no transition to prevent flash
+          svgElement.style.visibility = 'visible'
+          svgElement.style.opacity = '1'
+        }
+      }
+
+      // Mark as just finished dragging to prevent immediate re-render
+      setJustFinishedDragging(true)
+
+      // Update React state silently (this won't cause re-render of transform)
+      setPanX(finalPanX)
+      setPanY(finalPanY)
+
+      dragState.isActive = false
       setIsDragging(false)
+
+      // Clear the "just finished" flag after a brief moment
+      setTimeout(() => {
+        setJustFinishedDragging(false)
+      }, 100)
     }
 
-    const container = fullscreenContainerRef.current
     container.addEventListener('mousedown', handleMouseDown)
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
@@ -182,7 +257,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isFullscreen, isDragEnabled, isDragging, dragStart, panStart, panX, panY])
+  }, [isFullscreen, isDragEnabled, panX, panY, zoomLevel])
 
   // Render fullscreen chart when modal opens
   useEffect(() => {
@@ -192,7 +267,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
           try {
             // Clear any existing content
             fullscreenRef.current.innerHTML = ''
-            
+
             // Re-initialize mermaid without width constraints for fullscreen
             mermaid.initialize({
               startOnLoad: false,
@@ -210,28 +285,28 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
                 useMaxWidth: false
               }
             })
-            
+
             // Validate and render the chart
             await mermaid.parse(chart)
             const renderChartId = `${chartId}-fullscreen-${Date.now()}`
             const { svg } = await mermaid.render(renderChartId, chart)
-            
+
             fullscreenRef.current.innerHTML = svg
-            
+
             // Add minimal styling to the SVG for fullscreen - allow natural size
             const svgElement = fullscreenRef.current.querySelector('svg')
             if (svgElement) {
               svgElement.style.display = 'block'
-              svgElement.style.margin = '0 auto'
-              // Remove size constraints to allow full diagram display
+              svgElement.style.margin = '0'
               svgElement.style.maxWidth = 'none'
               svgElement.style.width = 'auto'
               svgElement.style.height = 'auto'
+              svgElement.style.position = 'relative'
 
-              // Apply current zoom and pan without transition (immediate)
+              // Apply initial transform
               svgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`
               svgElement.style.transformOrigin = 'center center'
-              svgElement.style.transition = 'none'
+              svgElement.style.transition = 'transform 0.2s ease'
             }
           } catch (error) {
             console.error('Mermaid fullscreen rendering error:', error)
@@ -251,7 +326,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
       const timer = setTimeout(renderFullscreenChart, 200)
       return () => clearTimeout(timer)
     }
-  }, [isFullscreen, chart, chartId])
+  }, [isFullscreen, chart, chartId, panX, panY, zoomLevel])
 
   // Re-initialize mermaid when exiting fullscreen
   useEffect(() => {
@@ -321,20 +396,24 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            
-            {/* Chart content - pure scroll container */}
+
+            {/* Chart content - centered container */}
             <div
               ref={fullscreenContainerRef}
-              className="flex-1 overflow-auto"
+              className="flex-1 overflow-hidden flex items-center justify-center"
               style={{
                 cursor: isDragEnabled ? (isDragging ? 'grabbing' : 'grab') : 'default',
                 userSelect: isDragEnabled ? 'none' : 'auto'
               }}
             >
-              <div className="p-4">
+              <div className="relative">
                 <div
                   ref={fullscreenRef}
-                  className="mermaid-container min-h-0"
+                  className="mermaid-container"
+                  style={{
+                    minWidth: 'max-content',
+                    minHeight: 'max-content'
+                  }}
                 />
               </div>
             </div>
@@ -350,6 +429,17 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
                 title={isDragEnabled ? "关闭拖拽模式" : "开启拖拽模式"}
               >
                 <Hand className={`h-4 w-4 ${isDragEnabled ? 'text-primary-foreground' : ''}`} />
+              </Button>
+
+              {/* Reset position button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={resetPosition}
+                title="回到原点"
+              >
+                <Home className="h-4 w-4" />
               </Button>
 
               {/* Separator */}
@@ -394,6 +484,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
                 </div>
               )}
             </div>
+
           </div>
         </div>
       )}

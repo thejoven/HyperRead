@@ -19,6 +19,7 @@ interface FileListProps {
   rootPath?: string
   currentFile?: string
   onFileSelect: (file: FileInfo) => void
+  isCollapsed?: boolean
 }
 
 interface TreeNode {
@@ -220,14 +221,14 @@ const TreeNodeComponent = memo(({
   return null
 })
 
-export default function FileList({ files, rootPath, currentFile, onFileSelect }: FileListProps) {
+export default function FileList({ files, rootPath, currentFile, onFileSelect, isCollapsed = false }: FileListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const tree = useMemo(() => buildTree(files), [files])
   const filteredTree = useMemo(() => filterTree(tree, searchTerm), [tree, searchTerm])
 
   if (files.length === 0) {
     return (
-      <div className="w-72 min-w-72 h-full macos-sidebar border-r border-border">
+      <div className="relative w-72 min-w-72 h-full macos-sidebar border-r border-border">
         <div className="px-2 py-2 border-b border-border/50 bg-background/80">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
@@ -244,12 +245,13 @@ export default function FileList({ files, rootPath, currentFile, onFileSelect }:
             没有找到 Markdown 文件
           </p>
         </div>
+
       </div>
     )
   }
 
   return (
-    <div className="w-72 min-w-72 h-full macos-sidebar flex flex-col">
+    <div className="relative w-72 min-w-72 h-full macos-sidebar flex flex-col border-r border-border">
       <div className="px-2 py-2 border-b border-border/50 flex-shrink-0 bg-background/80">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
@@ -288,6 +290,7 @@ export default function FileList({ files, rootPath, currentFile, onFileSelect }:
           )}
         </div>
       </div>
+
     </div>
   )
 }
