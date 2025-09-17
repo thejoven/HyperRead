@@ -222,8 +222,6 @@ npm run dist
 
 本项目基于 [GNU Affero General Public License v3.0](LICENSE) 开源。
 
-Copyright (c) 2025 thejoven
-
 ## 🔗 相关链接
 
 <div align="center">
