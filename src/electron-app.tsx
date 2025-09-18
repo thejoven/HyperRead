@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import AboutModal from '@/components/AboutModal'
 import SettingsModal from '@/components/SettingsModal'
 import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 interface FileData {
   content: string
@@ -50,6 +51,7 @@ declare global {
 }
 
 export default function ElectronApp() {
+  const t = useT()
   const [fileData, setFileData] = useState<FileData | null>(null)
   const [directoryData, setDirectoryData] = useState<DirectoryData | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -649,7 +651,7 @@ export default function ElectronApp() {
               onClick={handleOpenFile}
               disabled={loading}
               className="h-7 px-2 macos-button"
-              title="打开文件"
+              title={t('ui.buttons.openFile')}
             >
               <FileText className="h-3.5 w-3.5" />
             </Button>
@@ -659,7 +661,7 @@ export default function ElectronApp() {
               onClick={handleOpenDirectory}
               disabled={loading}
               className="h-7 px-2 macos-button"
-              title="打开文件夹"
+              title={t('ui.buttons.openFolder')}
             >
               <Folder className="h-3.5 w-3.5" />
             </Button>
@@ -669,7 +671,7 @@ export default function ElectronApp() {
               size="sm"
               onClick={() => setShowSettings(true)}
               className="h-7 w-7 p-0 macos-button"
-              title="设置"
+              title={t('ui.buttons.settings')}
             >
               <Settings className="h-3.5 w-3.5" />
             </Button>
@@ -678,7 +680,7 @@ export default function ElectronApp() {
               size="sm"
               onClick={() => setShowAbout(true)}
               className="h-7 w-7 p-0 macos-button"
-              title="关于"
+              title={t('ui.buttons.about')}
             >
               <Info className="h-3.5 w-3.5" />
             </Button>
@@ -693,7 +695,7 @@ export default function ElectronApp() {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-              <p>正在加载文件...</p>
+              <p>{t('file.operations.loading')}</p>
             </div>
           </div>
         )}
@@ -724,7 +726,7 @@ export default function ElectronApp() {
                 isSidebarCollapsed ? 'left-2' : 'left-[276px]'
               }`}
               style={{ borderRadius: 0, boxShadow: 'none' }}
-              title={isSidebarCollapsed ? "展开侧边栏" : "收起侧边栏"}
+              title={isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
             >
               <div className="flex flex-col items-center justify-center h-full">
                 {isSidebarCollapsed ? (
@@ -754,11 +756,11 @@ export default function ElectronApp() {
                   <Card className="max-w-md border-dashed">
                     <CardContent className="p-6 text-center">
                       <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/60" />
-                      <h3 className="text-sm font-medium mb-2 text-foreground">选择文件</h3>
+                      <h3 className="text-sm font-medium mb-2 text-foreground">{t('ui.messages.selectFile')}</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {isSidebarCollapsed
-                          ? '点击左侧的按钮展开文件列表，然后选择一个 Markdown 文件来开始阅读'
-                          : '从左侧文件列表中选择一个 Markdown 文件来开始阅读'
+                          ? t('ui.messages.selectFromListCollapsed')
+                          : t('ui.messages.selectFromList')
                         }
                       </p>
                     </CardContent>
@@ -805,12 +807,12 @@ export default function ElectronApp() {
                   </h2>
                 </div>
                 <h2 className="text-lg font-semibold mb-2 text-foreground">
-                  {isDragOver ? '释放以打开' : 'Read smarter. Read faster.'}
+                  {isDragOver ? t('ui.messages.releaseToOpen') : t('ui.messages.readSmarter')}
                 </h2>
                 <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  {isDragOver 
-                    ? '释放文件或文件夹以开始阅读' 
-                    : '支持 .md 和 .markdown 文件，以及包含 Markdown 文件的文件夹'
+                  {isDragOver
+                    ? t('ui.messages.releaseToOpen')
+                    : t('ui.messages.dragDropSupport')
                   }
                 </p>
                 {!isDragOver && (
@@ -818,20 +820,20 @@ export default function ElectronApp() {
                     <div className="flex gap-2 justify-center">
                       <Button onClick={handleOpenFile}  className="min-w-24 macos-button">
                         <FileText className="h-4 w-4 mr-2" />
-                        <span className="macos-text">选择文件</span>
+                        <span className="macos-text">{t('ui.buttons.openFile')}</span>
                       </Button>
                       <Button onClick={handleOpenDirectory} variant="outline" className="min-w-24 macos-button">
                         <Folder className="h-4 w-4 mr-2" />
-                        <span className="macos-text">选择文件夹</span>
+                        <span className="macos-text">{t('ui.buttons.openFolder')}</span>
                       </Button>
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <div className="flex-1 h-px bg-border"></div>
-                      <span className="text-xs px-2">或</span>
+                      <span className="text-xs px-2">or</span>
                       <div className="flex-1 h-px bg-border"></div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      直接拖拽文件或文件夹到此窗口
+                      {t('ui.messages.dragDropHint')}
                     </p>
                   </div>
                 )}
