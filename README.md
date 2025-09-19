@@ -224,19 +224,6 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 
 </div>
 
-## 📋 TODO
-
-- [x] Multi-language support
-- [ ] Update loading
-- [ ] History
-- [ ] Multiple folder loading
-- [ ] AI assistance
-- [ ] Account system
-- [ ] Web publishing
-- [ ] Cloud sync
-- [ ] Keyboard shortcuts
-- [ ] Other reading support
-
 ## 📝 What's New
 
 **Latest: v1.2.0** - Multi-language support, smart refresh system, and comprehensive documentation
