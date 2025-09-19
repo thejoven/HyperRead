@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Github, ExternalLink, Copy, Check } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 interface AboutModalProps {
   isOpen: boolean
@@ -11,6 +12,7 @@ interface AboutModalProps {
 }
 
 export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
+  const t = useT()
   // 复制状态
   const [copiedGithub, setCopiedGithub] = useState(false)
   const [copiedX, setCopiedX] = useState(false)
@@ -65,7 +67,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
   }
 
   const handleXClick = async () => {
-    const url = 'https://x.com/thejoven'
+    const url = 'https://x.com/thejoven_com'
     
     try {
       await navigator.clipboard.writeText(url)
@@ -97,7 +99,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
             size="sm"
             onClick={onClose}
             className="absolute top-4 right-4 h-7 w-7 p-0 hover:bg-muted/60 rounded-full transition-colors"
-            title="关闭"
+            title={t('ui.buttons.close')}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -125,21 +127,21 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 <div>
                   <h2 className="text-2xl font-bold macos-text-title">HyperRead</h2>
                   <p className="text-sm text-muted-foreground macos-text mt-1">
-                    Read smarter. Read faster.
+                    {t('app.subtitle')}
                   </p>
                 </div>
               </div>
 
               {/* 版本信息 */}
               <div className="bg-muted/20 rounded-xl p-4 space-y-3">
-                <h3 className="text-sm font-semibold macos-text-title text-foreground">应用信息</h3>
+                <h3 className="text-sm font-semibold macos-text-title text-foreground">{t('about.appInfo')}</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">版本</span>
-                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v1.1.0</span>
+                    <span className="text-sm text-muted-foreground">{t('about.version')}</span>
+                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v1.2.0</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">平台</span>
+                    <span className="text-sm text-muted-foreground">{t('about.platform')}</span>
                     <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">
                       {window.electronAPI?.platform === 'darwin' ? 'macOS' : window.electronAPI?.platform || 'Web'}
                     </span>
@@ -151,14 +153,15 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
             {/* 右侧：功能特性 */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold macos-text-title text-foreground mb-3">主要特性</h3>
+                <h3 className="text-sm font-semibold macos-text-title text-foreground mb-3">{t('about.features')}</h3>
                 <div className="space-y-2">
                   {[
-                    '🎯 拖拽加载 Markdown 文件',
-                    '📁 完整目录浏览和文件树',
-                    '🎨 Mermaid 图表和代码高亮',
-                    '🌙 浅色/深色主题切换',
-                    '💎 macOS 原生界面风格'
+                    t('about.featureList.dragDrop'),
+                    t('about.featureList.fileTree'),
+                    t('about.featureList.charts'),
+                    t('about.featureList.themes'),
+                    t('about.featureList.multiLang'),
+                    t('about.featureList.macOS')
                   ].map((feature, index) => (
                     <div key={index} className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
@@ -198,7 +201,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                   >
                     <div className="flex items-center">
                       <X className="w-4 h-4 mr-2" />
-                      <span className="macos-text font-medium text-sm">x.com/thejoven</span>
+                      <span className="macos-text font-medium text-sm">x.com/thejoven_com</span>
                     </div>
                     {copiedX ? (
                       <Check className="w-3.5 h-3.5 text-green-500" />
