@@ -4,7 +4,8 @@ import { useState, useMemo, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search } from 'lucide-react'
+import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 interface FileInfo {
   name: string
@@ -20,6 +21,8 @@ interface FileListProps {
   currentFile?: string
   onFileSelect: (file: FileInfo) => void
   isCollapsed?: boolean
+  onRefresh?: () => void
+  isRefreshing?: boolean
 }
 
 interface TreeNode {
@@ -221,28 +224,53 @@ const TreeNodeComponent = memo(({
   return null
 })
 
-export default function FileList({ files, rootPath, currentFile, onFileSelect, isCollapsed = false }: FileListProps) {
+export default function FileList({
+  files,
+  rootPath,
+  currentFile,
+  onFileSelect,
+  isCollapsed = false,
+  onRefresh,
+  isRefreshing = false
+}: FileListProps) {
+  const t = useT()
   const [searchTerm, setSearchTerm] = useState('')
   const tree = useMemo(() => buildTree(files), [files])
   const filteredTree = useMemo(() => filterTree(tree, searchTerm), [tree, searchTerm])
+
+
 
   if (files.length === 0) {
     return (
       <div className="relative w-72 min-w-72 h-full macos-sidebar border-r border-border">
         <div className="px-2 py-2 border-b border-border/50 bg-background/80">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-            <Input
-              placeholder="搜索文件名..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 h-6 text-xs bg-background/50 border-border/30 focus:border-border/60"
-            />
+          <div className="flex items-center gap-1">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                placeholder={t('ui.placeholders.searchFiles')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-7 h-6 text-xs bg-background/50 border-border/30 focus:border-border/60"
+              />
+            </div>
+            {onRefresh && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="h-6 w-6 p-0 macos-button flex-shrink-0"
+                title={t('ui.buttons.refreshFiles')}
+              >
+                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            )}
           </div>
         </div>
         <div className="p-3">
           <p className="text-xs text-muted-foreground text-center py-6 macos-text">
-            没有找到 Markdown 文件
+            {t('ui.messages.noMarkdownFiles')}
           </p>
         </div>
 
@@ -253,14 +281,28 @@ export default function FileList({ files, rootPath, currentFile, onFileSelect, i
   return (
     <div className="relative w-72 min-w-72 h-full macos-sidebar flex flex-col border-r border-border">
       <div className="px-2 py-2 border-b border-border/50 flex-shrink-0 bg-background/80">
-        <div className="relative">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-          <Input
-            placeholder="搜索文件名..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-7 h-6 text-xs bg-background/50 border-border/30 focus:border-border/60"
-          />
+        <div className="flex items-center gap-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Input
+              placeholder={t('ui.placeholders.searchFiles')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-7 h-6 text-xs bg-background/50 border-border/30 focus:border-border/60"
+            />
+          </div>
+          {onRefresh && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="h-6 w-6 p-0 macos-button flex-shrink-0"
+              title={t('ui.buttons.refreshFiles')}
+            >
+              <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto sidebar-scroll">
@@ -276,7 +318,7 @@ export default function FileList({ files, rootPath, currentFile, onFileSelect, i
             ))
           ) : searchTerm ? (
             <div className="text-xs text-muted-foreground text-center py-6 macos-text">
-              未找到匹配的文件
+              {t('ui.messages.noMatchingFiles')}
             </div>
           ) : (
             tree.map((node) => (

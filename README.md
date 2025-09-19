@@ -6,272 +6,255 @@
 
 **Read smarter. Read faster.**
 
-一个美观的 macOS 风格 Markdown 阅读器，基于 Electron 构建。
+A beautiful macOS-style Markdown reader built with Electron.
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Twitter](https://img.shields.io/badge/Twitter-@thejoven_com-1DA1F2.svg?logo=twitter)](https://x.com/thejoven_com)
+
+English | [简体中文](./README-zh.md)
 
 </div>
 
-## ✨ 特性
+## ✨ Features
 
 <table>
 <tr>
 <td width="50%">
 
-- 🎨 **macOS 原生界面** - 完美符合 macOS 设计风格，支持毛玻璃效果
-- 📁 **拖拽支持** - 支持拖拽单个 Markdown 文件或整个文件夹
-- 🌳 **文件树浏览** - 递归扫描并展示目录结构中的所有 Markdown 文件
-- 🎯 **高性能渲染** - 支持 Mermaid 图表、代码高亮、数学公式 (KaTeX)
+- 🎨 **Native macOS Interface** - Perfect macOS design with blur effects
+- 📁 **Drag & Drop Support** - Support dragging single Markdown files or entire folders with live refresh detection
+- 🌳 **File Tree Explorer** - Recursively scan and display all Markdown files in directory structure
+- 🎯 **High Performance Rendering** - Support for Mermaid charts, code highlighting, math formulas (KaTeX)
 
 </td>
 <td width="50%">
 
-- ⚙️ **设置中心** - 集中管理字体大小等阅读偏好设置
-- 🌓 **主题切换** - 支持明暗主题自动切换
-- ℹ️ **关于页面** - 集成版本信息和 GitHub 链接
-- ⚡ **纯本地运行** - 不依赖开发服务器，启动更快
+- ⚙️ **Settings Center** - Centralized management of font size, multi-language, and reading preferences
+- 🌓 **Theme Toggle** - Support for automatic light/dark theme switching
+- 🌍 **Multi-language Support** - Support Chinese/English interface switching, English by default
+- ⚡ **Pure Local Runtime** - No dependency on development server, faster startup
 
 </td>
 </tr>
 </table>
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 方式一：下载预编译版本（推荐）
+### Option 1: Download Pre-compiled Version (Recommended)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%201.1.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%201.2.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-1.1.0-arm64.dmg` 安装包
-2. 双击 DMG 文件
-3. 将 HyperRead 拖拽到 Applications 文件夹
-4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
+1. Download `HyperRead-1.2.0-arm64.dmg` installer
+2. Double-click the DMG file
+3. Drag HyperRead to Applications folder
+4. First run may require permission in "System Preferences > Security & Privacy"
 
-### 方式二：从源码构建
+### Option 2: Build from Source
 
 ```bash
-# 克隆仓库
+# Clone repository
 git clone https://github.com/thejoven/HyperRead.git
 cd HyperRead
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 开发模式运行（推荐）
-npm run start-dev    # 带开发者工具
-npm run start        # 生产模式
+# Run in development mode (recommended)
+npm run start-dev    # With developer tools
+npm run start        # Production mode
 ```
 
-## 📖 使用方法
+## 📖 Usage
 
-### 打开文件
+### Opening Files
 
 <table>
 <tr>
 <td width="33%">
 
-**🖱️ 拖拽方式**
-直接将 `.md` 文件或包含 Markdown 文件的文件夹拖拽到应用窗口
+**🖱️ Drag & Drop**
+Directly drag `.md` files or folders containing Markdown files to the application window
 
 </td>
 <td width="33%">
 
-**📂 菜单方式**
-点击顶部的"打开文件"或"打开文件夹"按钮
+**📂 Menu Method**
+Click "Open File" or "Open Folder" buttons at the top
 
 </td>
 <td width="33%">
 
-**⌨️ 快捷键**
-支持常用的文件操作快捷键
+**⌨️ Keyboard Shortcuts**
+Support for common file operation shortcuts
 
 </td>
 </tr>
 </table>
 
-### 支持的功能
+### Supported Features
 
 <table>
 <tr>
 <td width="50%">
 
-- ✅ **标准 Markdown** - 支持所有标准 Markdown 语法
-- ✅ **代码高亮** - 基于 highlight.js，支持多种编程语言
-- ✅ **数学公式** - 支持 LaTeX 格式的数学公式渲染
+- ✅ **Standard Markdown** - Support for all standard Markdown syntax
+- ✅ **Code Highlighting** - Based on highlight.js, supporting multiple programming languages
+- ✅ **Math Formulas** - Support for LaTeX format math formula rendering
 
 </td>
 <td width="50%">
 
-- ✅ **Mermaid 图表** - 支持流程图、时序图、甘特图等，带全屏缩放和拖拽功能
-- ✅ **表格和列表** - 完整支持 GFM (GitHub Flavored Markdown)
-- ✅ **图片显示** - 支持本地和远程图片
+- ✅ **Mermaid Charts** - Support for flowcharts, sequence diagrams, Gantt charts, etc., with fullscreen zoom and drag functionality
+- ✅ **Tables and Lists** - Full support for GFM (GitHub Flavored Markdown)
+- ✅ **Image Display** - Support for local and remote images
 
 </td>
 </tr>
 </table>
 
-## 🛠️ 开发
+## 🛠️ Development
 
-### 技术栈
+### Tech Stack
 
 <table>
 <tr>
 <td width="50%">
 
-**🎨 前端技术**
+**🎨 Frontend Technologies**
 - React 19 + TypeScript
-- Vite 7 (构建工具)
-- Tailwind CSS 4 (样式)
+- Vite 7 (Build tool)
+- Tailwind CSS 4 (Styling)
 
-**📱 桌面框架**
+**📱 Desktop Framework**
 - Electron 38
 
 </td>
 <td width="50%">
 
-**📝 内容渲染**
+**📝 Content Rendering**
 - react-markdown + remark/rehype
-- Mermaid (图表)
-- KaTeX (数学公式)
-- highlight.js (代码高亮)
+- Mermaid (Charts)
+- KaTeX (Math formulas)
+- highlight.js (Code highlighting)
 
 </td>
 </tr>
 </table>
 
-### 项目结构
+### Project Structure
 
 ```
-├── src/                    # 前端源码
-│   ├── components/         # React 组件
-│   ├── styles/            # 样式文件
-│   └── electron-app.tsx   # 主应用入口
-├── electron/              # Electron 主进程
-│   ├── main.js           # 主进程入口
-│   └── preload.js        # 预加载脚本
-├── dist/                  # 构建输出
-├── release/               # 打包输出
-└── package.json          # 项目配置
+├── src/                    # Frontend source code
+│   ├── components/         # React components
+│   ├── styles/            # Style files
+│   └── electron-app.tsx   # Main application entry
+├── electron/              # Electron main process
+│   ├── main.js           # Main process entry
+│   └── preload.js        # Preload script
+├── dist/                  # Build output
+├── release/               # Package output
+└── package.json          # Project configuration
 ```
 
-### 开发命令
+### Development Commands
 
 ```bash
-# 开发
-npm run dev                # Vite 开发服务器
-npm run start-dev         # 构建 + Electron 开发模式
-npm run start             # 构建 + Electron 生产模式
+# Development
+npm run dev                # Vite development server
+npm run start-dev         # Build + Electron development mode
+npm run start             # Build + Electron production mode
 
-# 构建
-npm run build             # 构建前端资源
+# Build
+npm run build             # Build frontend resources
 
-# 打包
-npm run dist              # 打包 macOS 应用
-npm run dist-all          # 打包全平台（macOS + Windows + Linux）
+# Package
+npm run dist              # Package macOS app
+npm run dist-all          # Package all platforms (macOS + Windows + Linux)
 
-# 代码检查
-npm run lint              # ESLint 检查
+# Code check
+npm run lint              # ESLint check
 ```
 
-### 性能优化
+### Performance Optimization
 
-项目采用了多项性能优化措施：
+The project employs multiple performance optimization measures:
 
-- **代码分割**: 按需加载 Mermaid、KaTeX 等大型库
-- **Tree Shaking**: 移除未使用的代码
-- **Bundle 分析**: 优化后总体积减少 81%
-- **内存优化**: React memo、useMemo、useCallback
-- **懒加载**: 大型组件按需加载
+- **Code Splitting**: On-demand loading of large libraries like Mermaid, KaTeX
+- **Tree Shaking**: Removal of unused code
+- **Bundle Analysis**: 81% total size reduction after optimization
+- **Memory Optimization**: React memo, useMemo, useCallback
+- **Lazy Loading**: On-demand loading of large components
 
-## 📋 系统要求
+## 📋 System Requirements
 
-- **操作系统**: macOS 10.15+ (Catalina 或更高版本)
-- **架构**: Apple Silicon (M1/M2) 或 Intel x64
-- **内存**: 建议 4GB 以上
-- **存储**: 约 150MB 安装空间
+- **Operating System**: macOS 10.15+ (Catalina or higher)
+- **Architecture**: Apple Silicon (M1/M2) or Intel x64
+- **Memory**: 4GB+ recommended
+- **Storage**: ~150MB installation space
 
-## 🤝 贡献
+## 🤝 Contributing
 
-我们欢迎任何形式的贡献！请遵循以下步骤：
+We welcome contributions of any kind! Please follow these steps:
 
-1. 🍴 Fork 本仓库
-2. 🌿 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 💾 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 📤 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 🔄 创建 Pull Request
+1. 🍴 Fork this repository
+2. 🌿 Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. 💾 Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. 📤 Push to the branch (`git push origin feature/AmazingFeature`)
+5. 🔄 Create a Pull Request
 
-## 📄 许可证
+## 📄 License
 
-本项目基于 [GNU Affero General Public License v3.0](LICENSE) 开源。
+This project is open source under the [GNU Affero General Public License v3.0](LICENSE).
 
-## 🔗 相关链接
+## 🔗 Related Links
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/badge/GitHub-仓库-black?style=for-the-badge&logo=github)](https://github.com/thejoven/HyperRead)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github)](https://github.com/thejoven/HyperRead)
 [![Twitter](https://img.shields.io/badge/Twitter-@thejoven_com-1DA1F2?style=for-the-badge&logo=twitter)](https://x.com/thejoven_com)
-[![Issues](https://img.shields.io/badge/Issues-问题反馈-red?style=for-the-badge&logo=github)](https://github.com/thejoven/HyperRead/issues)
-[![Releases](https://img.shields.io/badge/Releases-版本发布-blue?style=for-the-badge&logo=github)](https://github.com/thejoven/HyperRead/releases)
+[![Issues](https://img.shields.io/badge/Issues-Bug_Reports-red?style=for-the-badge&logo=github)](https://github.com/thejoven/HyperRead/issues)
+[![Releases](https://img.shields.io/badge/Releases-Latest-blue?style=for-the-badge&logo=github)](https://github.com/thejoven/HyperRead/releases)
 
 </div>
+
 ## 📋 TODO
 
-[] 多语言支持
-[] 自动更新加载
-[] 历史记录
-[] 多个文件夹同时加载
-[] AI辅助
-[] 账户系统
-[] 网页发布
-[] 云同步
-[] 快捷键
-[] 其他阅读支持
+- [x] Multi-language support
+- [ ] Update loading
+- [ ] History
+- [ ] Multiple folder loading
+- [ ] AI assistance
+- [ ] Account system
+- [ ] Web publishing
+- [ ] Cloud sync
+- [ ] Keyboard shortcuts
+- [ ] Other reading support
 
-## 📝 更新日志
+## 📝 What's New
 
-### v1.1.0 (2025-09-16)
+**Latest: v1.2.0** - Multi-language support, smart refresh system, and comprehensive documentation
 
-#### 🎯 Mermaid 图表增强
-- ✨ **全屏查看模式** - 点击图表右上角按钮进入全屏模式
-- 🔍 **缩放控制系统** - 支持按钮放大/缩小，范围 0.1x - 5.0x
-- 🖱️ **拖拽手势控制** - 开启拖拽模式后可拖动图表查看不同区域
-- 🎮 **智能光标变化** - 拖拽模式下光标自动变为手型/抓取状态
-- 📍 **固定控制面板** - 左下角控制台固定位置，滚动时不移动
-- ⚡ **性能优化** - 使用 requestAnimationFrame 优化拖拽性能
-- 🔄 **一键重置** - 重置按钮可同时重置缩放和位置
+- 🌍 **Multi-language Support** - Complete i18n system with English/Chinese switching
+- 🔄 **Smart Refresh System** - Fixed critical drag-drop file refresh issues
+- 📚 **Example Documentation** - Complete Markdown tutorials and best practices
+- 🛠️ **Technical Optimization** - Enhanced TypeScript safety and performance
 
-#### 🔗 外部链接支持
-- ✨ **系统浏览器打开** - Markdown 中的外部链接自动在系统默认浏览器中打开
-- 🛠️ **IPC 通信优化** - 使用 Electron IPC 确保链接功能稳定性
-
-#### 🐛 Bug 修复
-- 🔧 **拖拽文件夹优化** - 修复只显示第一个文件的问题，现在正确显示所有 Markdown 文件
-- 💻 **Windows 安装包** - 修复 Windows 版本路径解析问题
-- 🎨 **用户体验** - 消除拖拽时的图表闪烁，提供更流畅的交互体验
-
-### v1.0.0 (2025-09-15)
-
-- ✨ 初始版本发布
-- 🎨 macOS 原生界面设计
-- 📁 支持文件和文件夹拖拽
-- 🌳 文件树浏览功能
-- ⚡ 纯本地运行，无需开发服务器
-- 🎯 完整的 Markdown 渲染支持
-- 🛠️ 大幅性能优化
+👀 **[View Full Changelog](./CHANGELOG.md)** - Detailed release notes and version history
 
 ---
 
 <div align="center">
 
-## 👨‍💻 作者
+## 👨‍💻 Author
 
-如果这个项目对你有帮助，请给它一个 ⭐️
+If this project helps you, please give it a ⭐️
 
 [![Star](https://img.shields.io/github/stars/thejoven/HyperRead?style=social)](https://github.com/thejoven/HyperRead)
 

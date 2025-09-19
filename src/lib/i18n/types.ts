@@ -28,6 +28,7 @@ export interface Translations {
       expandSidebar: string
       collapseSidebar: string
       toggleTheme: string
+      refreshFiles: string
     }
     messages: {
       selectFile: string
@@ -40,7 +41,9 @@ export interface Translations {
       fileLoadFailed: string
       directoryLoadFailed: string
       noMarkdownFiles: string
+      noMatchingFiles: string
       processing: string
+      cannotRefreshDragMode: string
     }
     placeholders: {
       searchFiles: string

@@ -54,6 +54,11 @@ export default function ElectronApp() {
   const t = useT()
   const [fileData, setFileData] = useState<FileData | null>(null)
   const [directoryData, setDirectoryData] = useState<DirectoryData | null>(null)
+  const [actualRootPath, setActualRootPath] = useState<string | null>(null)
+  const [draggedDirectoryEntries, setDraggedDirectoryEntries] = useState<FileSystemDirectoryEntry[]>([])
+  const [lastDraggedFiles, setLastDraggedFiles] = useState<Array<{file: File, fullPath: string, name: string}>>([]) // 备份最后拖拽的文件
+  const [draggedDirectoryNames, setDraggedDirectoryNames] = useState<string[]>([]) // 保存拖拽的目录名称
+  const [showRefreshHint, setShowRefreshHint] = useState(false) // 显示重新拖拽提示
   const [isDragOver, setIsDragOver] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isDirectoryMode, setIsDirectoryMode] = useState(false)
@@ -61,6 +66,7 @@ export default function ElectronApp() {
   const [showSettings, setShowSettings] = useState(false)
   const [fontSize, setFontSize] = useState(16)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Default to expanded
+  const [isRefreshing, setIsRefreshing] = useState(false) // Track refresh state
   // Cache for enhanced drag-drop file contents
   const [fileContentCache, setFileContentCache] = useState<Map<string, string>>(new Map())
   // Track if we're in enhanced drag-drop mode (files pre-loaded in memory)
@@ -269,6 +275,7 @@ export default function ElectronApp() {
         
         const allFiles: Array<{file: File, fullPath: string, name: string}> = []
         const directories: string[] = []
+        const directoryEntries: FileSystemDirectoryEntry[] = []
         
         // Process each item using webkitGetAsEntry API
         for (const item of items) {
@@ -279,7 +286,8 @@ export default function ElectronApp() {
               if (entry.isDirectory) {
                 console.log('React: Processing directory:', entry.name)
                 directories.push(entry.name)
-                const dirFiles = await processDirectoryEntry(entry)
+                directoryEntries.push(entry) // 保存目录条目以支持刷新
+                const dirFiles = await processDirectoryEntry(entry, 0, false) // 初始拖拽，不强制刷新
                 allFiles.push(...dirFiles)
                 console.log(`React: Found ${dirFiles.length} markdown files in directory: ${entry.name}`)
               } else if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
@@ -366,6 +374,11 @@ export default function ElectronApp() {
           
           setFileContentCache(fileContentsCache)
           setDirectoryData({ files: fileInfos, rootPath })
+          setActualRootPath(null) // No actual path for drag-drop mode
+          setDraggedDirectoryEntries(directoryEntries) // 保存目录条目以支持刷新
+          setDraggedDirectoryNames(directories) // 保存目录名称
+          setLastDraggedFiles(allFiles) // 保存文件备份
+          setShowRefreshHint(false) // 关闭重新拖拽提示
           setIsDirectoryMode(true)
           setIsEnhancedDragMode(true)
           
@@ -391,48 +404,76 @@ export default function ElectronApp() {
       }
     }
     
-    // Helper function to process directory entries recursively
-    const processDirectoryEntry = async (directoryEntry: any): Promise<Array<{file: File, fullPath: string, name: string}>> => {
+    // Helper function to process directory entries recursively - 自动选择版本
+    const processDirectoryEntry = async (directoryEntry: any, depth = 0, forceRefresh = false): Promise<Array<{file: File, fullPath: string, name: string}>> => {
+      // 如果启用强制刷新，使用增强版本
+      if (forceRefresh) {
+        return processDirectoryEntryWithForceRefresh(directoryEntry, depth, forceRefresh)
+      }
+
+      // 否则使用原始版本
+      const indent = '  '.repeat(depth)
+      console.log(`${indent}🔄 React: Processing directory "${directoryEntry.name}" at depth ${depth}`)
+
       const files: Array<{file: File, fullPath: string, name: string}> = []
-      const reader = directoryEntry.createReader()
-      
+      let reader = directoryEntry.createReader()
+
       return new Promise((resolve, reject) => {
-        const readEntries = () => {
+        let allEntries: any[] = []
+
+        const readAllEntries = () => {
           reader.readEntries(async (entries: any[]) => {
             if (entries.length === 0) {
-              resolve(files)
+              console.log(`${indent}📂 React: Total entries found in "${directoryEntry.name}": ${allEntries.length}`)
+
+              try {
+                for (const entry of allEntries) {
+                  if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                    try {
+                      console.log(`${indent}📄 React: Reading file: ${entry.name}`)
+                      const file = await new Promise<File>((resolve, reject) => {
+                        entry.file((f: File) => {
+                          console.log(`${indent}✅ React: File object created for ${entry.name}, lastModified: ${new Date(f.lastModified).toLocaleString()}`)
+                          resolve(f)
+                        }, reject)
+                      })
+
+                      files.push({ file: file, fullPath: entry.fullPath, name: entry.name })
+                    } catch (error) {
+                      console.warn(`${indent}❌ React: Failed to read file:`, entry.name, error)
+                    }
+                  } else if (entry.isDirectory && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+                    try {
+                      const subFiles = await processDirectoryEntry(entry, depth + 1, forceRefresh)
+                      files.push(...subFiles)
+                      console.log(`${indent}📋 React: Got ${subFiles.length} files from subdirectory "${entry.name}"`)
+                    } catch (error) {
+                      console.warn(`${indent}❌ React: Failed to read subdirectory:`, entry.name, error)
+                    }
+                  }
+                }
+
+                console.log(`${indent}🎯 React: Finished processing directory "${directoryEntry.name}", found ${files.length} markdown files`)
+                resolve(files)
+              } catch (error) {
+                reject(error)
+              }
               return
             }
-            
-            for (const entry of entries) {
-              if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
-                try {
-                  const file = await new Promise<File>((resolve, reject) => {
-                    entry.file(resolve, reject)
-                  })
-                  files.push({
-                    file: file,
-                    fullPath: entry.fullPath,
-                    name: entry.name
-                  })
-                } catch (error) {
-                  console.warn('React: Failed to read file entry:', entry.fullPath, error)
-                }
-              } else if (entry.isDirectory && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-                try {
-                  const subFiles = await processDirectoryEntry(entry)
-                  files.push(...subFiles)
-                } catch (error) {
-                  console.warn('React: Failed to read directory entry:', entry.fullPath, error)
-                }
-              }
-            }
-            
-            readEntries() // Continue reading remaining entries
-          }, reject)
+
+            // 累积所有entries
+            allEntries.push(...entries)
+            console.log(`${indent}🔍 React: Reading entries batch: ${entries.length}, total so far: ${allEntries.length}`)
+
+            // 继续读取下一批
+            readAllEntries()
+          }, (error: any) => {
+            console.error(`${indent}❌ React: Error reading entries:`, error)
+            reject(error)
+          })
         }
-        
-        readEntries()
+
+        readAllEntries()
       })
     }
     
@@ -507,6 +548,12 @@ export default function ElectronApp() {
       const data = await window.electronAPI.openDirectoryDialog()
       if (data && data.files.length > 0) {
         setDirectoryData(data)
+        setActualRootPath(data.rootPath) // Store actual path for refresh
+        setDraggedDirectoryEntries([]) // Clear dragged directories
+        setDraggedDirectoryNames([]) // Clear directory names
+        setLastDraggedFiles([]) // Clear backup files
+        setShowRefreshHint(false) // Close refresh hint
+        setIsEnhancedDragMode(false) // Exit enhanced drag mode
         setIsDirectoryMode(true)
         // 自动选择第一个文件
         const firstFile = data.files[0]
@@ -528,7 +575,7 @@ export default function ElectronApp() {
     setLoading(true)
     try {
       console.log('React: loading file from directory:', fileInfo.fullPath)
-      
+
       // Check if we're in enhanced drag mode and have cached content
       if (isEnhancedDragMode && fileContentCache.has(fileInfo.fileName)) {
         console.log('React: using cached content for enhanced drag mode:', fileInfo.fileName)
@@ -546,9 +593,339 @@ export default function ElectronApp() {
       }
     } catch (error) {
       console.error('React: Failed to load file from directory:', error)
-      alert('文件加载失败: ' + (error as Error).message)
+      alert(t('ui.messages.fileLoadFailed') + ': ' + (error as Error).message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 验证目录条目是否仍然有效
+  const validateDirectoryEntry = async (entry: FileSystemDirectoryEntry): Promise<boolean> => {
+    try {
+      const reader = entry.createReader()
+      await new Promise<void>((resolve, reject) => {
+        reader.readEntries((entries) => {
+          console.log(`🔍 React: Directory entry "${entry.name}" is valid, found ${entries.length} entries`)
+          resolve()
+        }, reject)
+      })
+      return true
+    } catch (error) {
+      console.warn(`❌ React: Directory entry "${entry.name}" is invalid:`, error)
+      return false
+    }
+  }
+
+  // 创建全新的File对象以避免缓存问题
+  const createFreshFileObject = async (entry: FileSystemFileEntry): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      entry.file((file) => {
+        // 创建新的File对象，强制重新读取
+        const freshFile = new File([file], file.name, {
+          type: file.type,
+          lastModified: Date.now() // 使用当前时间戳强制刷新
+        })
+        console.log(`✨ React: Created fresh file object for "${file.name}" with timestamp ${freshFile.lastModified}`)
+        resolve(freshFile)
+      }, reject)
+    })
+  }
+
+  // 增强的目录处理函数，支持多重验证和强制刷新
+  const processDirectoryEntryWithForceRefresh = async (
+    directoryEntry: FileSystemDirectoryEntry,
+    depth = 0,
+    forceRefresh = false,
+    maxRetries = 3
+  ): Promise<Array<{file: File, fullPath: string, name: string}>> => {
+    const indent = '  '.repeat(depth)
+    console.log(`${indent}🔄 React: ${forceRefresh ? 'FORCE REFRESHING' : 'Processing'} directory "${directoryEntry.name}" at depth ${depth}`)
+
+    if (forceRefresh) {
+      const isValid = await validateDirectoryEntry(directoryEntry)
+      if (!isValid) {
+        throw new Error(`Directory entry "${directoryEntry.name}" is no longer valid`)
+      }
+    }
+
+    const files: Array<{file: File, fullPath: string, name: string}> = []
+    let retryCount = 0
+
+    while (retryCount <= maxRetries) {
+      try {
+        // 每次重试都创建新的reader
+        const reader = directoryEntry.createReader()
+        const allEntries: any[] = []
+
+        await new Promise<void>((resolve, reject) => {
+          const readAllEntries = () => {
+            reader.readEntries(async (entries: any[]) => {
+              if (entries.length === 0) {
+                console.log(`${indent}📂 React: Total entries found in "${directoryEntry.name}": ${allEntries.length} (attempt ${retryCount + 1})`)
+
+                // 处理所有entries
+                for (const entry of allEntries) {
+                  if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                    try {
+                      console.log(`${indent}📄 React: Processing file: ${entry.name} (${forceRefresh ? 'FORCE REFRESH' : 'normal'}, attempt ${retryCount + 1})`)
+
+                      // 根据模式选择文件处理方式
+                      const file = forceRefresh ?
+                        await createFreshFileObject(entry) :
+                        await new Promise<File>((resolve, reject) => {
+                          entry.file(resolve, reject)
+                        })
+
+                      // 验证文件是否可读
+                      const testRead = await file.text()
+                      console.log(`${indent}✅ React: File "${entry.name}" is readable, size: ${testRead.length} chars, lastModified: ${new Date(file.lastModified).toLocaleString()}`)
+
+                      files.push({ file, fullPath: entry.fullPath, name: entry.name })
+                    } catch (error) {
+                      console.warn(`${indent}❌ React: Failed to process file:`, entry.name, error)
+                    }
+                  } else if (entry.isDirectory && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+                    try {
+                      const subFiles = await processDirectoryEntryWithForceRefresh(entry, depth + 1, forceRefresh, maxRetries)
+                      files.push(...subFiles)
+                      console.log(`${indent}📋 React: Got ${subFiles.length} files from subdirectory "${entry.name}"`)
+                    } catch (error) {
+                      console.warn(`${indent}❌ React: Failed to process subdirectory:`, entry.name, error)
+                    }
+                  }
+                }
+
+                console.log(`${indent}🎯 React: Finished processing directory "${directoryEntry.name}", found ${files.length} markdown files (attempt ${retryCount + 1})`)
+                resolve()
+                return
+              }
+
+              allEntries.push(...entries)
+              console.log(`${indent}🔍 React: Reading entries batch: ${entries.length}, total so far: ${allEntries.length} (attempt ${retryCount + 1})`)
+              readAllEntries()
+            }, reject)
+          }
+          readAllEntries()
+        })
+
+        // 成功读取，退出重试循环
+        break
+
+      } catch (error) {
+        retryCount++
+        console.error(`${indent}❌ React: Error reading directory (attempt ${retryCount}/${maxRetries + 1}):`, error)
+
+        if (retryCount > maxRetries) {
+          throw error
+        }
+
+        // 等待一小段时间后重试
+        await new Promise(resolve => setTimeout(resolve, 100 * retryCount))
+        console.log(`${indent}🔄 React: Retrying directory read for "${directoryEntry.name}"...`)
+      }
+    }
+
+    return files
+  }
+
+  // 重新扫描拖拽的目录 - 增强版本
+  const refreshDraggedDirectories = async (): Promise<void> => {
+    if (draggedDirectoryEntries.length === 0 && lastDraggedFiles.length === 0) {
+      console.log('React: No dragged directories or files to refresh')
+      return
+    }
+
+    console.log('🔄 React: Starting ENHANCED FORCE REFRESH of directory tree...')
+    console.log('🔄 React: Refreshing dragged directories:', draggedDirectoryEntries.length)
+    console.log('🔄 React: Using multi-strategy approach with validation and retries')
+    console.log('🔄 React: Will attempt to detect all file system changes')
+
+    const allFiles: Array<{file: File, fullPath: string, name: string}> = []
+    const fileContentsCache = new Map<string, string>()
+    let refreshSuccess = false
+    const failedEntries: string[] = []
+
+    // 策略1: 验证并强制刷新所有目录条目
+    if (draggedDirectoryEntries.length > 0) {
+      console.log('🔄 React: Strategy 1 - Validating and force refreshing directory entries')
+
+      for (const entry of draggedDirectoryEntries) {
+        try {
+          console.log('React: Attempting enhanced refresh for directory:', entry.name)
+          console.log('React: Directory entry details:', {
+            name: entry.name,
+            fullPath: entry.fullPath,
+            isDirectory: entry.isDirectory
+          })
+
+          // 使用增强的处理函数
+          const dirFiles = await processDirectoryEntryWithForceRefresh(entry, 0, true, 3)
+          console.log(`✅ React: Successfully refreshed directory "${entry.name}", found ${dirFiles.length} files`)
+
+          allFiles.push(...dirFiles)
+          refreshSuccess = true
+
+          // 重新读取文件内容
+          for (const fileItem of dirFiles) {
+            try {
+              console.log('React: Reading fresh content for file:', fileItem.name)
+              const content = await fileItem.file.text()
+              fileContentsCache.set(fileItem.name, content)
+              console.log(`✅ React: Successfully cached fresh content for ${fileItem.name}, length: ${content.length}`)
+            } catch (error) {
+              console.warn('React: Failed to read file content during refresh:', fileItem.name, error)
+            }
+          }
+        } catch (error) {
+          console.error('❌ React: Enhanced refresh failed for directory:', entry.name, error)
+          failedEntries.push(entry.name)
+        }
+      }
+    }
+
+    // 策略2: 如果主要策略失败，尝试备份文件验证
+    if (!refreshSuccess && lastDraggedFiles.length > 0) {
+      console.log('🔄 React: Strategy 2 - Validating backup files')
+      console.log('React: Primary refresh failed, attempting backup file validation')
+
+      const validBackupFiles: Array<{file: File, fullPath: string, name: string}> = []
+
+      for (const fileItem of lastDraggedFiles) {
+        try {
+          // 尝试重新读取文件内容以验证有效性
+          const content = await fileItem.file.text()
+          fileContentsCache.set(fileItem.name, content)
+          validBackupFiles.push(fileItem)
+          console.log(`✅ React: Backup file "${fileItem.name}" is still valid, length: ${content.length}`)
+        } catch (error) {
+          console.warn('❌ React: Backup file is no longer valid:', fileItem.name, error)
+        }
+      }
+
+      if (validBackupFiles.length > 0) {
+        allFiles.push(...validBackupFiles)
+        console.log(`⚠️ React: Using ${validBackupFiles.length} valid backup files (may not reflect recent changes)`)
+      }
+    }
+
+    // 如果所有策略都失败，抛出详细错误
+    if (allFiles.length === 0) {
+      const errorMessage = failedEntries.length > 0 ?
+        `无法刷新拖拽的文件夹。失败的目录: ${failedEntries.join(', ')}。文件系统可能已发生重大变化。` :
+        '无法访问任何拖拽的文件，请重新拖拽文件夹。'
+
+      console.error('❌ React: All refresh strategies failed')
+      throw new Error(errorMessage)
+    }
+
+    // 构建文件信息
+    const fileInfos: FileInfo[] = allFiles.map(({ file, fullPath, name }) => {
+      const relativePath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
+      const directory = relativePath.includes('/') ?
+        relativePath.substring(0, relativePath.lastIndexOf('/')) : '.'
+
+      return {
+        name: name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+        fileName: name,
+        fullPath: name,
+        relativePath: relativePath,
+        directory: directory
+      }
+    })
+
+    console.log(`🎯 React: Enhanced refresh complete! Found ${fileInfos.length} markdown files total`)
+    console.log('🎯 React: Refreshed files:', fileInfos.map(f => ({ name: f.name, fileName: f.fileName, relativePath: f.relativePath })))
+    console.log(`🎯 React: Success rate: ${refreshSuccess ? '100%' : 'Partial (using backup)'}`)
+
+    // 更新状态
+    const rootPath = draggedDirectoryEntries.length > 0 ?
+      `Dropped ${draggedDirectoryEntries.length} folder(s)` :
+      'Dropped files'
+
+    console.log('React: Setting directory data with rootPath:', rootPath)
+
+    // 更新backup文件列表为最新的
+    if (refreshSuccess) {
+      setLastDraggedFiles(allFiles)
+      console.log('✅ React: Updated backup files list with latest successful scan')
+    }
+
+    setFileContentCache(fileContentsCache)
+    setDirectoryData({ files: fileInfos, rootPath })
+
+    // 检查当前选中的文件是否还存在
+    let currentFileExists = false
+    if (fileData && fileData.filePath) {
+      currentFileExists = fileInfos.some(f => f.fileName === fileData.filePath)
+      console.log('React: Current file exists after refresh:', currentFileExists, 'Current file:', fileData.filePath)
+    }
+
+    // 如果当前文件不存在或没有选中文件，加载第一个文件
+    if ((!currentFileExists || !fileData) && allFiles.length > 0) {
+      const firstFile = allFiles[0]
+      const content = fileContentsCache.get(firstFile.name)
+      if (content) {
+        console.log('React: Loading first file after refresh:', firstFile.name)
+        setFileData({
+          content: content,
+          fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+          filePath: firstFile.name
+        })
+      }
+    }
+  }
+
+  const handleRefresh = async () => {
+    if (!window.electronAPI || isRefreshing) return
+
+    // In enhanced drag mode, attempt to refresh but warn user about limitations
+    if (isEnhancedDragMode) {
+      setIsRefreshing(true)
+      try {
+        await refreshDraggedDirectories()
+        console.log('React: Dragged directories refreshed successfully')
+      } catch (error) {
+        console.error('React: Failed to refresh dragged directories:', error)
+
+        // 如果强制刷新仍然失败，说明Entry确实失效了
+        console.error('React: Force refresh failed, FileSystemDirectoryEntry may be completely invalid')
+        setShowRefreshHint(true)
+      } finally {
+        setIsRefreshing(false)
+      }
+      return
+    }
+
+    // Check if we have an actual path to refresh
+    const pathToRefresh = actualRootPath || directoryData?.rootPath
+    if (!pathToRefresh) {
+      console.log('React: No path available for refresh')
+      return
+    }
+
+    setIsRefreshing(true)
+    try {
+      console.log('React: refreshing directory:', pathToRefresh)
+      const data = await window.electronAPI.scanDirectory(pathToRefresh)
+      if (data && data.files.length > 0) {
+        setDirectoryData(data)
+        // Update actual root path if we got new data
+        setActualRootPath(data.rootPath)
+        // Clear enhanced drag mode cache as directory has been rescanned
+        if (isEnhancedDragMode) {
+          setFileContentCache(new Map())
+          setIsEnhancedDragMode(false)
+          console.log('React: cleared enhanced drag mode cache after refresh')
+        }
+        console.log('React: directory refreshed successfully with', data.files.length, 'files')
+      } else {
+        console.log('React: no files found after refresh')
+      }
+    } catch (error) {
+      console.error('React: Failed to refresh directory:', error)
+      alert(t('ui.messages.directoryLoadFailed') + ': ' + (error as Error).message)
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -575,6 +952,8 @@ export default function ElectronApp() {
   console.log('React RENDER: isDirectoryMode =', isDirectoryMode)
   console.log('React RENDER: directoryData =', directoryData)
   console.log('React RENDER: directoryData?.files?.length =', directoryData?.files?.length)
+  console.log('React RENDER: actualRootPath =', actualRootPath)
+  console.log('React RENDER: will show refresh button =', !!actualRootPath)
 
   // Expose React state update functions to window for direct access by enhanced drag-drop script
   useEffect(() => {
@@ -714,6 +1093,8 @@ export default function ElectronApp() {
                 currentFile={fileData?.filePath}
                 onFileSelect={loadFileFromDirectory}
                 isCollapsed={isSidebarCollapsed}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
               />
             </div>
 
@@ -856,6 +1237,55 @@ export default function ElectronApp() {
 
       {/* About Modal */}
       <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+
+      {/* 重新拖拽提示覆盖层 */}
+      {showRefreshHint && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg p-6 m-4 max-w-md w-full glass-effect">
+            <h3 className="text-lg font-semibold mb-4 text-center">
+              需要重新加载文件
+            </h3>
+
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                文件系统发生了变化，需要重新拖拽文件夹来获取最新的文件列表。
+              </p>
+
+              {draggedDirectoryNames.length > 0 && (
+                <div className="bg-muted p-3 rounded text-center">
+                  <p className="text-xs text-muted-foreground mb-2">原拖拽的文件夹：</p>
+                  <p className="font-mono text-sm">{draggedDirectoryNames.join(', ')}</p>
+                </div>
+              )}
+
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-background/50">
+                <div className="text-2xl mb-2">📁</div>
+                <p className="text-sm font-medium mb-1">重新拖拽文件夹到此处</p>
+                <p className="text-xs text-muted-foreground">或使用"打开文件夹"按钮</p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRefreshHint(false)}
+                  className="flex-1"
+                >
+                  稍后处理
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={openDirectoryDialog}
+                  className="flex-1"
+                >
+                  打开文件夹
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Settings Modal */}
       <SettingsModal 
