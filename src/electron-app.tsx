@@ -38,6 +38,14 @@ declare global {
       openDirectoryDialog: () => Promise<DirectoryData | null>
       scanDirectory: (dirPath: string) => Promise<DirectoryData>
       openExternal: (url: string) => Promise<void>
+      readImage: (imagePath: string, markdownFilePath?: string) => Promise<{
+        success: boolean
+        dataUrl?: string
+        mimeType?: string
+        size?: number
+        path?: string
+        error?: string
+      }>
       isElectron: boolean
       platform: string
       // Enhanced drag-drop functions
@@ -69,6 +77,106 @@ export default function ElectronApp() {
   const [isRefreshing, setIsRefreshing] = useState(false) // Track refresh state
   // Cache for enhanced drag-drop file contents
   const [fileContentCache, setFileContentCache] = useState<Map<string, string>>(new Map())
+
+  // 路径解析函数 - 将相对路径转换为绝对路径
+  const resolvePath = (targetPath: string, currentPath?: string): string => {
+    if (!currentPath) return targetPath
+
+    // 如果已经是绝对路径，直接返回
+    if (targetPath.startsWith('/') || targetPath.includes(':\\')) {
+      return targetPath
+    }
+
+    // 检查 currentPath 是否为绝对路径
+    const isCurrentPathAbsolute = currentPath.startsWith('/') || currentPath.includes(':\\')
+
+    if (!isCurrentPathAbsolute) {
+      // 如果当前路径不是绝对路径（比如只是文件名），无法进行相对路径解析
+      // 在这种情况下，返回目标路径本身，让调用者处理
+      console.warn('Cannot resolve relative path: currentPath is not absolute:', {
+        currentPath,
+        targetPath
+      })
+      return targetPath
+    }
+
+    // 获取当前文件的目录
+    const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/'))
+
+    // 处理相对路径
+    if (targetPath.startsWith('./')) {
+      // 移除 ./ 前缀并拼接到当前目录
+      const relativePath = targetPath.substring(2)
+      return `${currentDir}/${relativePath}`
+    } else if (targetPath.startsWith('../')) {
+      // 处理 ../ 路径
+      const parts = currentDir.split('/')
+      let target = targetPath
+
+      // 处理多级 ../
+      while (target.startsWith('../')) {
+        target = target.substring(3)
+        if (parts.length > 0) {
+          parts.pop()
+        }
+      }
+
+      // 如果还有剩余路径，拼接到处理后的目录
+      if (target) {
+        return `${parts.join('/')}/${target}`
+      } else {
+        return parts.join('/')
+      }
+    } else {
+      // 同目录文件
+      return `${currentDir}/${targetPath}`
+    }
+  }
+
+  // 文件跳转处理函数
+  const handleFileNavigation = async (targetPath: string, currentPath?: string) => {
+    try {
+      setLoading(true)
+
+      // 解析目标文件路径
+      const resolvedPath = resolvePath(targetPath, currentPath)
+
+      console.log('File navigation details:', {
+        targetPath,
+        currentPath,
+        resolvedPath,
+        currentDir: currentPath ? currentPath.substring(0, currentPath.lastIndexOf('/')) : 'undefined'
+      })
+
+      // 读取目标文件
+      if (window.electronAPI?.readFile) {
+        const newFileData = await window.electronAPI.readFile(resolvedPath)
+
+        if (newFileData) {
+          setFileData(newFileData)
+          console.log('Successfully navigated to:', resolvedPath)
+        } else {
+          console.error('Failed to read file:', resolvedPath)
+
+          // 检查是否是路径解析问题
+          const isCurrentPathAbsolute = currentPath && (currentPath.startsWith('/') || currentPath.includes(':\\'))
+          if (!isCurrentPathAbsolute) {
+            alert(`无法跳转到文件: ${targetPath}\n\n原因: 当前文件路径不是绝对路径，无法进行相对路径解析。\n\n请通过文件对话框重新打开此文件以启用内部链接功能。`)
+          } else {
+            alert(`无法打开文件: ${resolvedPath}`)
+          }
+        }
+      } else {
+        console.error('electronAPI.readFile not available')
+        alert('文件读取功能不可用')
+      }
+    } catch (error) {
+      console.error('File navigation error:', error)
+      alert(`文件跳转失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      setLoading(false)
+    }
+  }
   // Track if we're in enhanced drag-drop mode (files pre-loaded in memory)
   const [isEnhancedDragMode, setIsEnhancedDragMode] = useState(false)
 
@@ -1128,6 +1236,8 @@ export default function ElectronApp() {
                         content={fileData.content}
                         className="px-4 py-6"
                         fontSize={fontSize}
+                        filePath={fileData.filePath}
+                        onFileNavigation={handleFileNavigation}
                       />
                     </div>
                   </div>
@@ -1156,6 +1266,8 @@ export default function ElectronApp() {
               content={fileData.content}
               className="container mx-auto px-4 py-8 max-w-4xl"
               fontSize={fontSize}
+              filePath={fileData.filePath}
+              onFileNavigation={handleFileNavigation}
             />
           </div>
         ) : (
@@ -1166,7 +1278,7 @@ export default function ElectronApp() {
                 : 'border-dashed border-2 border-muted-foreground/30 hover:border-muted-foreground/50 hover:shadow-md'
             }`}>
               <CardContent className="p-8 text-center">
-                <div className={`inline-flex items-center justify-center w-30 h-30 rounded-xl mb-4 transition-all duration-300 ${
+                <div className={`inline-flex items-center justify-center w-30 h-30 rounded-xl transition-all duration-300 ${
                   isDragOver 
                     ? 'bg-primary/20 text-primary' 
                     : 'bg-muted/30 text-muted-foreground'
@@ -1183,13 +1295,13 @@ export default function ElectronApp() {
                         : '<div class="h-8 w-8 text-2xl">📄</div>'
                     }}
                   />
-                  <h2 className="text-lg font-semibold mb-2 text-foreground">
-                    HyperRead
-                  </h2>
                 </div>
-                <h2 className="text-lg font-semibold mb-2 text-foreground">
+                <div className="text-4xl font-bold mb-3 text-foreground">
+                  HyperRead
+                </div>
+                <div className="text-xl font-semibold mb-2 text-foreground/80">
                   {isDragOver ? t('ui.messages.releaseToOpen') : t('ui.messages.readSmarter')}
-                </h2>
+                </div>
                 <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                   {isDragOver
                     ? t('ui.messages.releaseToOpen')

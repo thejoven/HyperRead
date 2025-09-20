@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格 Markdown 阅读器，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -28,6 +28,7 @@
 - 📁 **拖拽支持** - 支持拖拽单个 Markdown 文件或整个文件夹，支持实时刷新检测文件变化
 - 🌳 **文件树浏览** - 递归扫描并展示目录结构中的所有 Markdown 文件
 - 🎯 **高性能渲染** - 支持 Mermaid 图表、代码高亮、数学公式 (KaTeX)
+- 🖼️ **图片预览缩放** - 点击图片可放大预览，支持平移和拖拽控制
 
 </td>
 <td width="50%">
@@ -36,6 +37,7 @@
 - 🌓 **主题切换** - 支持明暗主题自动切换
 - 🌍 **多语言支持** - 支持中文/英文界面切换，默认英文
 - ⚡ **纯本地运行** - 不依赖开发服务器，启动更快
+- 🔗 **内链跳转** - 支持本地 Markdown 文件链接，自动解析相对路径
 
 </td>
 </tr>
@@ -47,11 +49,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%201.2.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%201.5.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-1.2.0-arm64.dmg` 安装包
+1. 下载 `HyperRead-1.5.0-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许

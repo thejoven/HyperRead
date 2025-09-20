@@ -6,16 +6,20 @@ import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeRaw from 'rehype-raw'
 import MermaidDiagram from './MermaidDiagram'
+import LocalImage from './LocalImage'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { LinkProvider, useLinkContext } from './LinkContext'
 
 interface MarkdownContentProps {
   content: string
   fontSize?: number
   className?: string
+  filePath?: string
+  onFileNavigation?: (targetPath: string, currentPath?: string) => void
 }
 
-export default function MarkdownContent({ content, fontSize = 16, className = '' }: MarkdownContentProps) {
+export default function MarkdownContent({ content, fontSize = 16, className = '', filePath, onFileNavigation }: MarkdownContentProps) {
   const articleRef = useRef<HTMLElement>(null)
   
   // Calculate relative sizes based on the base fontSize
@@ -315,42 +319,44 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
           ),
           a: ({ href, children }) => {
             if (!href) return <span>{children}</span>
-            
+
             const isExternal = href.startsWith('http') || href.startsWith('https') || href.startsWith('//')
             const isAnchor = href.startsWith('#')
-            
+
             // External links - open in external browser
             if (isExternal) {
               return (
-                <a 
-                  href={href}
-                  className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors"
-                  onClick={(e) => {
-                    console.log('External link clicked:', href)
-                    console.log('electronAPI available:', !!window.electronAPI)
-                    console.log('openExternal available:', !!window.electronAPI?.openExternal)
-                    
-                    e.preventDefault()
-                    e.stopPropagation()
-                    
-                    if (window.electronAPI?.openExternal) {
-                      console.log('Opening external link via Electron:', href)
-                      // 在 Electron 中打开外部链接
-                      try {
-                        window.electronAPI.openExternal(href)
-                        console.log('External link opened successfully')
-                      } catch (error) {
-                        console.error('Failed to open external link:', error)
+                <LinkProvider value={true}>
+                  <a
+                    href={href}
+                    className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors"
+                    onClick={(e) => {
+                      console.log('External link clicked:', href)
+                      console.log('electronAPI available:', !!window.electronAPI)
+                      console.log('openExternal available:', !!window.electronAPI?.openExternal)
+
+                      e.preventDefault()
+                      e.stopPropagation()
+
+                      if (window.electronAPI?.openExternal) {
+                        console.log('Opening external link via Electron:', href)
+                        // 在 Electron 中打开外部链接
+                        try {
+                          window.electronAPI.openExternal(href)
+                          console.log('External link opened successfully')
+                        } catch (error) {
+                          console.error('Failed to open external link:', error)
+                        }
+                      } else {
+                        console.log('Opening external link via window.open:', href)
+                        // 在浏览器中正常打开
+                        window.open(href, '_blank', 'noopener,noreferrer')
                       }
-                    } else {
-                      console.log('Opening external link via window.open:', href)
-                      // 在浏览器中正常打开
-                      window.open(href, '_blank', 'noopener,noreferrer')
-                    }
-                  }}
-                >
-                  {children}
-                </a>
+                    }}
+                  >
+                    {children}
+                  </a>
+                </LinkProvider>
               )
             }
             
@@ -392,7 +398,57 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 </a>
               )
             }
-            
+
+            // Local file links - navigate to other markdown files
+            const isLocalFile = !isExternal && !isAnchor && (
+              href.endsWith('.md') ||
+              href.endsWith('.markdown') ||
+              href.endsWith('.txt') ||
+              href.includes('.md#') ||
+              href.includes('.markdown#')
+            )
+
+            if (isLocalFile && onFileNavigation) {
+              return (
+                <a
+                  href={href}
+                  className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+
+                    // Extract file path and optional anchor
+                    const [targetPath, anchor] = href.split('#')
+
+                    console.log('Local file link clicked:', {
+                      href,
+                      targetPath,
+                      anchor,
+                      currentPath: filePath,
+                      filePathType: typeof filePath,
+                      filePathLength: filePath ? filePath.length : 0
+                    })
+
+                    // Call the navigation callback
+                    onFileNavigation(targetPath, filePath)
+
+                    // If there's an anchor, scroll to it after navigation
+                    if (anchor) {
+                      setTimeout(() => {
+                        const element = document.getElementById(anchor)
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' })
+                        }
+                      }, 100)
+                    }
+                  }}
+                  title={`打开文件: ${href}`}
+                >
+                  {children}
+                </a>
+              )
+            }
+
             // Other links - treat as disabled in single-file mode
             return (
               <span className="text-muted-foreground underline cursor-not-allowed" title="此链接在单文件模式下不可用">
@@ -412,7 +468,21 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
           ),
           hr: () => (
             <hr className="my-8 border-t border-border" />
-          )
+          ),
+          img: ({ src, alt, title, ...props }) => {
+            if (!src) return null
+
+            // Use LocalImage component to handle both local and remote images
+            return (
+              <LocalImage
+                src={src}
+                alt={alt}
+                title={title}
+                markdownFilePath={filePath}
+                {...props}
+              />
+            )
+          }
         }}
       >
         {content}

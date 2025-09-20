@@ -5,6 +5,11 @@ All notable changes to HyperRead will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-09-19
+
+### 🐛 Bug Fixes
+- **Windows 兼容性修复** - 修复 Windows 环境下启动时的路径解析错误，解决 "ERR_INVALID_ARG_TYPE" 异常
+
 ## [1.2.0] - 2025-09-19
 
 ### 🌍 Multi-language Support System

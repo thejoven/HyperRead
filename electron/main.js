@@ -471,6 +471,90 @@ ipcMain.handle('open-external', async (event, url) => {
   }
 })
 
+// 读取图片文件并返回base64数据
+ipcMain.handle('read-image', async (event, imagePath, markdownFilePath) => {
+  try {
+    console.log('Main: read-image called with:', { imagePath, markdownFilePath })
+
+    let resolvedPath = imagePath
+
+    // 如果是相对路径，需要基于当前Markdown文件的路径来解析
+    if (!path.isAbsolute(imagePath)) {
+      if (markdownFilePath) {
+        const markdownDir = path.dirname(markdownFilePath)
+        resolvedPath = path.resolve(markdownDir, imagePath)
+      } else {
+        // 如果没有提供markdown文件路径，尝试使用当前工作目录
+        resolvedPath = path.resolve(process.cwd(), imagePath)
+      }
+    }
+
+    console.log('Main: resolved image path:', resolvedPath)
+
+    // 检查文件是否存在
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(`图片文件不存在: ${resolvedPath}`)
+    }
+
+    // 检查是否为图片文件
+    const ext = path.extname(resolvedPath).toLowerCase()
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg']
+    if (!imageExtensions.includes(ext)) {
+      throw new Error(`不支持的图片格式: ${ext}`)
+    }
+
+    // 读取图片文件
+    const imageData = fs.readFileSync(resolvedPath)
+    const base64Data = imageData.toString('base64')
+
+    // 确定MIME类型
+    let mimeType = 'image/png' // 默认
+    switch (ext) {
+      case '.jpg':
+      case '.jpeg':
+        mimeType = 'image/jpeg'
+        break
+      case '.gif':
+        mimeType = 'image/gif'
+        break
+      case '.bmp':
+        mimeType = 'image/bmp'
+        break
+      case '.webp':
+        mimeType = 'image/webp'
+        break
+      case '.svg':
+        mimeType = 'image/svg+xml'
+        break
+      case '.png':
+      default:
+        mimeType = 'image/png'
+        break
+    }
+
+    console.log('Main: image loaded successfully:', {
+      path: resolvedPath,
+      size: imageData.length,
+      mimeType
+    })
+
+    return {
+      success: true,
+      dataUrl: `data:${mimeType};base64,${base64Data}`,
+      mimeType,
+      size: imageData.length,
+      path: resolvedPath
+    }
+  } catch (error) {
+    console.error('Main: read-image error:', error)
+    return {
+      success: false,
+      error: error.message,
+      path: imagePath
+    }
+  }
+})
+
 app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
@@ -487,7 +571,14 @@ app.on('activate', () => {
 
 // 处理协议 (可选，用于打开 .md 文件)
 if (process.platform === 'win32') {
-  app.setAsDefaultProtocolClient('hyperread', process.execPath, [path.resolve(process.argv[1])])
+  // 在打包环境中，process.argv[1] 可能为 undefined，需要处理这种情况
+  const appPath = process.argv[1] || process.execPath
+  if (appPath) {
+    app.setAsDefaultProtocolClient('hyperread', process.execPath, [path.resolve(appPath)])
+  } else {
+    // 如果无法获取路径，则不设置协议客户端
+    console.warn('Could not determine app path for protocol registration')
+  }
 } else {
   app.setAsDefaultProtocolClient('hyperread')
 }

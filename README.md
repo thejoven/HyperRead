@@ -8,7 +8,7 @@
 
 A beautiful macOS-style Markdown reader built with Electron.
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -28,6 +28,7 @@ English | [简体中文](./README-zh.md)
 - 📁 **Drag & Drop Support** - Support dragging single Markdown files or entire folders with live refresh detection
 - 🌳 **File Tree Explorer** - Recursively scan and display all Markdown files in directory structure
 - 🎯 **High Performance Rendering** - Support for Mermaid charts, code highlighting, math formulas (KaTeX)
+- 🖼️ **Image Preview & Zoom** - Click to zoom images with pan and drag controls
 
 </td>
 <td width="50%">
@@ -36,6 +37,7 @@ English | [简体中文](./README-zh.md)
 - 🌓 **Theme Toggle** - Support for automatic light/dark theme switching
 - 🌍 **Multi-language Support** - Support Chinese/English interface switching, English by default
 - ⚡ **Pure Local Runtime** - No dependency on development server, faster startup
+- 🔗 **Internal Link Navigation** - Support local markdown file links with relative path resolution
 
 </td>
 </tr>
@@ -47,11 +49,11 @@ English | [简体中文](./README-zh.md)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%201.2.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%201.5.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. Download `HyperRead-1.2.0-arm64.dmg` installer
+1. Download `HyperRead-1.5.0-arm64.dmg` installer
 2. Double-click the DMG file
 3. Drag HyperRead to Applications folder
 4. First run may require permission in "System Preferences > Security & Privacy"

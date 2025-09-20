@@ -22,7 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // 分类拖拽的文件
   classifyFiles: (fileData) => ipcRenderer.invoke('classify-files', fileData),
-  
+
+  // 读取图片文件
+  readImage: (imagePath, markdownFilePath) => ipcRenderer.invoke('read-image', imagePath, markdownFilePath),
+
   // 打开外部链接 - 使用 IPC 调用主进程
   openExternal: (url) => {
     console.log('Preload: openExternal called with URL:', url)
