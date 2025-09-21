@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Github, ExternalLink, Copy, Check } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import packageJson from '../../package.json'
 
 interface AboutModalProps {
   isOpen: boolean
@@ -138,7 +139,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">{t('about.version')}</span>
-                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v1.2.0</span>
+                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v{packageJson.version}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">{t('about.platform')}</span>

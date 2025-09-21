@@ -7,6 +7,7 @@ import rehypeHighlight from 'rehype-highlight'
 import rehypeRaw from 'rehype-raw'
 import MermaidDiagram from './MermaidDiagram'
 import LocalImage from './LocalImage'
+import TableOfContents from './TableOfContents'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { LinkProvider, useLinkContext } from './LinkContext'
@@ -133,11 +134,13 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
   }, [content])
   
   return (
-    <article 
-      ref={articleRef}
-      className={cn("prose prose-lg max-w-none", className)}
-      style={{ fontSize: `${fontSize}px` }}
-    >
+    <div className="relative">
+      <TableOfContents content={content} />
+      <article
+        ref={articleRef}
+        className={cn("prose prose-lg max-w-none", className)}
+        style={{ fontSize: `${fontSize}px` }}
+      >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeRaw]}
@@ -487,6 +490,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
       >
         {content}
       </ReactMarkdown>
-    </article>
+      </article>
+    </div>
   )
 }
