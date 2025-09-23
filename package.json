@@ -48,6 +48,26 @@
       "output": "release",
       "buildResources": "build"
     },
+    "fileAssociations": [
+      {
+        "ext": "md",
+        "name": "Markdown Document",
+        "description": "Markdown文档",
+        "icon": "logo/logo.png"
+      },
+      {
+        "ext": "markdown",
+        "name": "Markdown Document",
+        "description": "Markdown文档",
+        "icon": "logo/logo.png"
+      },
+      {
+        "ext": "txt",
+        "name": "Text Document",
+        "description": "文本文档",
+        "icon": "logo/logo.png"
+      }
+    ],
     "files": [
       "dist/**/*",
       "electron/**/*",
@@ -68,7 +88,25 @@
       ],
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "notarize": false
+      "notarize": false,
+      "extendInfo": {
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "Markdown Document",
+            "CFBundleTypeExtensions": ["md", "markdown"],
+            "CFBundleTypeRole": "Editor",
+            "CFBundleTypeIconFile": "logo.png",
+            "LSHandlerRank": "Alternative"
+          },
+          {
+            "CFBundleTypeName": "Text Document",
+            "CFBundleTypeExtensions": ["txt"],
+            "CFBundleTypeRole": "Editor",
+            "CFBundleTypeIconFile": "logo.png",
+            "LSHandlerRank": "Alternative"
+          }
+        ]
+      }
     },
     "dmg": {
       "title": "HyperRead",
@@ -107,7 +145,15 @@
       "shortcutName": "HyperRead"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "desktop": {
+        "Name": "HyperRead",
+        "Comment": "现代化的Markdown文档阅读器",
+        "GenericName": "Markdown Reader",
+        "Keywords": "markdown;reader;document;text;",
+        "StartupWMClass": "HyperRead",
+        "MimeType": "text/markdown;text/x-markdown;text/plain;"
+      }
     }
   },
   "devDependencies": {

@@ -322,12 +322,34 @@ export default function ElectronApp() {
         totalFiles: event.detail.totalFiles,
         fileNames: Object.keys(event.detail.fileContents)
       })
-      
+
       const { fileContents, totalFiles } = event.detail
-      
+
       // Update the file content cache with all the file contents
       setFileContentCache(new Map(Object.entries(fileContents)))
       console.log(`React: cached ${totalFiles} file contents for enhanced drag mode`)
+    }
+
+    // 处理文件关联打开
+    const handleFileAssociationOpened = (event: CustomEvent) => {
+      console.log('React: file-association-opened event received', {
+        fileName: event.detail.fileName,
+        originalName: event.detail.originalName,
+        contentLength: event.detail.content ? event.detail.content.length : 0
+      })
+
+      const fileData = event.detail
+
+      // 设置文件数据，退出目录模式
+      setFileData({
+        content: fileData.content,
+        fileName: fileData.fileName,
+        filePath: fileData.originalName
+      })
+      setIsDirectoryMode(false)
+      setIsEnhancedDragMode(false)
+
+      console.log('React: file opened via file association')
     }
 
     window.addEventListener('file-dropped', handleFileDrop as EventListener)
@@ -335,6 +357,7 @@ export default function ElectronApp() {
     window.addEventListener('directory-dropped', handleDirectoryDrop as EventListener)
     window.addEventListener('directory-content-loaded', handleDirectoryContent as EventListener)
     window.addEventListener('multiple-file-contents-loaded', handleMultipleFileContents as EventListener)
+    window.addEventListener('file-association-opened', handleFileAssociationOpened as EventListener)
     console.log('React: event listeners added')
     
     return () => {
@@ -343,6 +366,7 @@ export default function ElectronApp() {
       window.removeEventListener('directory-dropped', handleDirectoryDrop as EventListener)
       window.removeEventListener('directory-content-loaded', handleDirectoryContent as EventListener)
       window.removeEventListener('multiple-file-contents-loaded', handleMultipleFileContents as EventListener)
+      window.removeEventListener('file-association-opened', handleFileAssociationOpened as EventListener)
       console.log('React: event listeners removed')
     }
   }, [])
@@ -432,7 +456,7 @@ export default function ElectronApp() {
           setFileData({
             content: content,
             fileName: fileData.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
-            filePath: fileData.name
+            filePath: fileData.fullPath
           })
           setIsDirectoryMode(false)
           setIsEnhancedDragMode(false)
@@ -468,7 +492,7 @@ export default function ElectronApp() {
           for (const fileData of allFiles) {
             try {
               const content = await readFileContent(fileData.file)
-              fileContentsCache.set(fileData.name, content)
+              fileContentsCache.set(fileData.fullPath, content)
               console.log(`React: Cached content for file: ${fileData.name}`)
             } catch (error) {
               console.error(`React: Failed to read content for ${fileData.name}:`, error)
@@ -493,12 +517,12 @@ export default function ElectronApp() {
           // Load first file content
           if (allFiles.length > 0) {
             const firstFile = allFiles[0]
-            const content = fileContentsCache.get(firstFile.name)
+            const content = fileContentsCache.get(firstFile.fullPath)
             if (content) {
               setFileData({
                 content: content,
                 fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
-                filePath: firstFile.name
+                filePath: firstFile.fullPath
               })
             }
           }
@@ -685,19 +709,23 @@ export default function ElectronApp() {
       console.log('React: loading file from directory:', fileInfo.fullPath)
 
       // Check if we're in enhanced drag mode and have cached content
-      if (isEnhancedDragMode && fileContentCache.has(fileInfo.fileName)) {
-        console.log('React: using cached content for enhanced drag mode:', fileInfo.fileName)
-        const cachedContent = fileContentCache.get(fileInfo.fileName)!
+      if (isEnhancedDragMode && fileContentCache.has(fileInfo.fullPath)) {
+        console.log('React: using cached content for enhanced drag mode:', fileInfo.fullPath)
+        const cachedContent = fileContentCache.get(fileInfo.fullPath)!
         setFileData({
           content: cachedContent,
           fileName: fileInfo.name,
-          filePath: fileInfo.fileName
+          filePath: fileInfo.fullPath
         })
       } else {
         // Fallback to IPC file reading
         console.log('React: reading file via IPC:', fileInfo.fullPath)
         const data = await window.electronAPI.readFile(fileInfo.fullPath)
-        setFileData(data)
+        // Ensure filePath is set to the full path to avoid same-name file conflicts
+        setFileData({
+          ...data,
+          filePath: fileInfo.fullPath
+        })
       }
     } catch (error) {
       console.error('React: Failed to load file from directory:', error)
@@ -878,7 +906,7 @@ export default function ElectronApp() {
             try {
               console.log('React: Reading fresh content for file:', fileItem.name)
               const content = await fileItem.file.text()
-              fileContentsCache.set(fileItem.name, content)
+              fileContentsCache.set(fileItem.fullPath, content)
               console.log(`✅ React: Successfully cached fresh content for ${fileItem.name}, length: ${content.length}`)
             } catch (error) {
               console.warn('React: Failed to read file content during refresh:', fileItem.name, error)
@@ -902,7 +930,7 @@ export default function ElectronApp() {
         try {
           // 尝试重新读取文件内容以验证有效性
           const content = await fileItem.file.text()
-          fileContentsCache.set(fileItem.name, content)
+          fileContentsCache.set(fileItem.fullPath, content)
           validBackupFiles.push(fileItem)
           console.log(`✅ React: Backup file "${fileItem.name}" is still valid, length: ${content.length}`)
         } catch (error) {
@@ -935,7 +963,7 @@ export default function ElectronApp() {
       return {
         name: name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
         fileName: name,
-        fullPath: name,
+        fullPath: fullPath,
         relativePath: relativePath,
         directory: directory
       }
@@ -971,13 +999,13 @@ export default function ElectronApp() {
     // 如果当前文件不存在或没有选中文件，加载第一个文件
     if ((!currentFileExists || !fileData) && allFiles.length > 0) {
       const firstFile = allFiles[0]
-      const content = fileContentsCache.get(firstFile.name)
+      const content = fileContentsCache.get(firstFile.fullPath)
       if (content) {
         console.log('React: Loading first file after refresh:', firstFile.name)
         setFileData({
           content: content,
           fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
-          filePath: firstFile.name
+          filePath: firstFile.fullPath
         })
       }
     }

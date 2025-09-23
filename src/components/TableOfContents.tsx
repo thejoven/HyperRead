@@ -30,15 +30,25 @@ const generateHeadingId = (text: string): string => {
 const extractHeadings = (content: string): Heading[] => {
   const headingRegex = /^(#{1,6})\s+(.+)$/gm
   const headings: Heading[] = []
+  const usedIds = new Set<string>()
   let match
 
   while ((match = headingRegex.exec(content)) !== null) {
     const level = match[1].length
     const text = match[2].trim()
-    const id = generateHeadingId(text)
+    let id = generateHeadingId(text)
+
+    // 确保ID唯一性，避免同名标题冲突
+    let counter = 1
+    let uniqueId = id
+    while (usedIds.has(uniqueId)) {
+      uniqueId = `${id}-${counter}`
+      counter++
+    }
+    usedIds.add(uniqueId)
 
     headings.push({
-      id,
+      id: uniqueId,
       text,
       level
     })
@@ -286,24 +296,23 @@ export default function TableOfContents({ content, className }: TableOfContentsP
         const indentLevel = Math.max(0, heading.level - 1) * 10
 
         return (
-          <button
-            key={`${heading.id}-${index}`}
-            onClick={() => scrollToHeading(heading.id)}
-            className={cn(
-              "w-full text-left text-xs transition-all duration-200 rounded-md mx-1 mb-0.5",
-              "flex items-center gap-2 hover:bg-muted/70 active:scale-[0.98]",
-              "border border-transparent hover:border-border/30",
-              isActive && "bg-primary/15 text-primary font-medium border-primary/30 shadow-sm",
-              !isActive && "text-foreground/90 hover:text-foreground"
-            )}
-            style={{
-              paddingLeft: `${8 + indentLevel}px`,
-              paddingRight: '8px',
-              paddingTop: '6px',
-              paddingBottom: '6px'
-            }}
-            title={`跳转到: ${heading.text}`}
+          <div
+            className="w-full flex"
+            style={{ paddingLeft: `${8 + indentLevel}px` }}
           >
+            <button
+              key={`${heading.id}-${index}`}
+              onClick={() => scrollToHeading(heading.id)}
+              className={cn(
+                "inline-flex items-center gap-2 text-left text-xs transition-all duration-200 rounded-md mb-0.5",
+                "hover:bg-muted/70 active:scale-[0.98]",
+                "border border-transparent hover:border-border/30",
+                "min-w-0 overflow-hidden px-2 py-1.5", // 内联宽度 + 内边距
+                isActive && "bg-primary/10 text-primary font-medium border-primary/20 shadow-sm ring-1 ring-primary/10",
+                !isActive && "text-foreground/90 hover:text-foreground"
+              )}
+              title={`跳转到: ${heading.text}`}
+            >
             <ChevronRight
               className={cn(
                 "h-3 w-3 transition-all duration-200 flex-shrink-0",
@@ -311,7 +320,8 @@ export default function TableOfContents({ content, className }: TableOfContentsP
               )}
             />
             <span className={cn(
-              "truncate transition-colors leading-relaxed",
+              "truncate transition-colors leading-relaxed min-w-0 flex-1",
+              "break-all overflow-hidden", // 强制截断超长文本
               heading.level === 1 && "font-semibold text-xs",
               heading.level === 2 && "font-medium text-xs",
               heading.level === 3 && "text-xs",
@@ -320,7 +330,8 @@ export default function TableOfContents({ content, className }: TableOfContentsP
             )}>
               {heading.text}
             </span>
-          </button>
+            </button>
+          </div>
         )
       })}
 

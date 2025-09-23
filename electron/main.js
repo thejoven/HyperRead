@@ -555,13 +555,103 @@ ipcMain.handle('read-image', async (event, imagePath, markdownFilePath) => {
   }
 })
 
-app.whenReady().then(createWindow)
+// 存储启动时的文件参数
+let startupFile = null
+
+// 检查命令行参数中的文件
+function getFileFromArgs(argv) {
+  // 过滤掉electron本身的参数，查找文件路径
+  const args = argv.slice(1) // 跳过第一个参数（electron可执行文件路径）
+  for (const arg of args) {
+    if (arg && !arg.startsWith('-') && (arg.endsWith('.md') || arg.endsWith('.markdown') || arg.endsWith('.txt'))) {
+      if (fs.existsSync(arg)) {
+        return arg
+      }
+    }
+  }
+  return null
+}
+
+// 发送文件到渲染进程
+function openFileInRenderer(filePath) {
+  if (mainWindow && filePath) {
+    console.log('Opening file via association:', filePath)
+    try {
+      const content = fs.readFileSync(filePath, 'utf8')
+      const fileName = path.basename(filePath, path.extname(filePath))
+      const originalName = path.basename(filePath)
+
+      mainWindow.webContents.executeJavaScript(`
+        if (window.electronAPI?.setFileData) {
+          window.electronAPI.setFileData({
+            content: ${JSON.stringify(content)},
+            fileName: ${JSON.stringify(fileName)},
+            originalName: ${JSON.stringify(originalName)}
+          })
+        }
+      `)
+    } catch (error) {
+      console.error('Failed to read file:', error)
+    }
+  }
+}
+
+// 检查启动参数
+startupFile = getFileFromArgs(process.argv)
+
+app.whenReady().then(() => {
+  createWindow()
+
+  // 如果启动时有文件参数，等待窗口加载完成后打开
+  if (startupFile) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      setTimeout(() => {
+        openFileInRenderer(startupFile)
+      }, 500) // 给渲染进程一些时间来初始化
+    })
+  }
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
+
+// macOS: 处理文件关联打开
+app.on('open-file', (event, filePath) => {
+  event.preventDefault()
+  console.log('macOS open-file event:', filePath)
+
+  if (mainWindow) {
+    // 窗口已存在，直接打开文件
+    openFileInRenderer(filePath)
+  } else {
+    // 窗口还未创建，保存文件路径等待创建完成
+    startupFile = filePath
+  }
+})
+
+// Windows/Linux: 处理second-instance（防止多实例，并处理文件打开）
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // 当用户尝试运行第二个实例时，聚焦现有窗口并处理新的文件参数
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+
+      // 检查新实例的命令行参数
+      const newFile = getFileFromArgs(commandLine)
+      if (newFile) {
+        openFileInRenderer(newFile)
+      }
+    }
+  })
+}
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {

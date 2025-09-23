@@ -129,9 +129,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
     console.log('Preload: multiple-file-contents-loaded event dispatched')
   },
   
+  // 处理文件关联打开（从main进程调用）
+  setFileData: (fileData) => {
+    console.log('Preload: setFileData called with:', {
+      fileName: fileData.fileName,
+      originalName: fileData.originalName,
+      contentLength: fileData.content ? fileData.content.length : 0
+    })
+
+    if (!fileData || !fileData.content) {
+      console.error('Preload: Invalid file data received:', fileData)
+      return
+    }
+
+    // 触发自定义事件通知 React 应用
+    const event = new CustomEvent('file-association-opened', {
+      detail: fileData
+    })
+    window.dispatchEvent(event)
+    console.log('Preload: file-association-opened event dispatched')
+  },
+
   // 检查是否在 Electron 环境中
   isElectron: true,
-  
+
   // 获取平台信息
   platform: process.platform
 })

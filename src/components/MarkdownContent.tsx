@@ -28,15 +28,33 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
   const getFontSize = (baseSize: number) => Math.round(baseSize * scale)
   
   // Generate heading ID from text - same logic as before for consistency
+  const usedHeadingIds = useRef(new Set<string>())
+
   const generateHeadingId = (text: string): string => {
     if (typeof text !== 'string') return ''
-    return text
+    let id = text
       .toLowerCase()
       .replace(/[^\w\s\u4e00-\u9fff-]/g, '') // Support Chinese characters
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '')
+
+    // 确保ID唯一性，避免同名标题冲突
+    let counter = 1
+    let uniqueId = id
+    while (usedHeadingIds.current.has(uniqueId)) {
+      uniqueId = `${id}-${counter}`
+      counter++
+    }
+    usedHeadingIds.current.add(uniqueId)
+
+    return uniqueId
   }
+
+  // Reset used IDs when content changes
+  useEffect(() => {
+    usedHeadingIds.current.clear()
+  }, [content])
   
   // Global click handler for all anchor links within the article
   useEffect(() => {
@@ -138,7 +156,12 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
       <TableOfContents content={content} />
       <article
         ref={articleRef}
-        className={cn("prose prose-lg max-w-none", className)}
+        className={cn(
+          "prose prose-lg max-w-none",
+          "break-words overflow-wrap-anywhere",
+          "min-w-0 w-full overflow-x-hidden",
+          className
+        )}
         style={{ fontSize: `${fontSize}px` }}
       >
       <ReactMarkdown
@@ -149,9 +172,9 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             const textContent = Array.isArray(children) ? children.join('') : String(children || '')
             const id = generateHeadingId(textContent)
             return (
-              <h1 
+              <h1
                 id={id}
-                className="font-bold text-foreground mb-8 pb-4 border-b-2 border-border scroll-mt-20"
+                className="font-bold text-foreground mb-8 pb-4 border-b-2 border-border scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(36)}px` }}
               >
                 {children}
@@ -162,9 +185,9 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             const textContent = Array.isArray(children) ? children.join('') : String(children || '')
             const id = generateHeadingId(textContent)
             return (
-              <h2 
+              <h2
                 id={id}
-                className="font-semibold text-foreground mt-10 mb-6 pb-3 border-b border-border scroll-mt-20"
+                className="font-semibold text-foreground mt-10 mb-6 pb-3 border-b border-border scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(28)}px` }}
               >
                 {children}
@@ -175,9 +198,9 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             const textContent = Array.isArray(children) ? children.join('') : String(children || '')
             const id = generateHeadingId(textContent)
             return (
-              <h3 
+              <h3
                 id={id}
-                className="font-semibold text-foreground mt-8 mb-4 scroll-mt-20"
+                className="font-semibold text-foreground mt-8 mb-4 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(24)}px` }}
               >
                 {children}
@@ -188,9 +211,9 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             const textContent = Array.isArray(children) ? children.join('') : String(children || '')
             const id = generateHeadingId(textContent)
             return (
-              <h4 
+              <h4
                 id={id}
-                className="font-semibold text-foreground mt-6 mb-3 scroll-mt-20"
+                className="font-semibold text-foreground mt-6 mb-3 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(20)}px` }}
               >
                 {children}
@@ -201,9 +224,9 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             const textContent = Array.isArray(children) ? children.join('') : String(children || '')
             const id = generateHeadingId(textContent)
             return (
-              <h5 
+              <h5
                 id={id}
-                className="font-semibold text-foreground mt-5 mb-2 scroll-mt-20"
+                className="font-semibold text-foreground mt-5 mb-2 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(18)}px` }}
               >
                 {children}
@@ -214,9 +237,9 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             const textContent = Array.isArray(children) ? children.join('') : String(children || '')
             const id = generateHeadingId(textContent)
             return (
-              <h6 
+              <h6
                 id={id}
-                className="font-semibold text-foreground mt-4 mb-2 scroll-mt-20"
+                className="font-semibold text-foreground mt-4 mb-2 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(16)}px` }}
               >
                 {children}
@@ -224,7 +247,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             )
           },
           p: ({ children }) => (
-            <p className="text-muted-foreground leading-7 mb-6 text-base">
+            <p className="text-muted-foreground leading-7 mb-6 text-base break-words overflow-wrap-anywhere">
               {children}
             </p>
           ),
@@ -239,14 +262,14 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             </ol>
           ),
           li: ({ children }) => (
-            <li className="text-muted-foreground leading-6">
+            <li className="text-muted-foreground leading-6 break-words">
               {children}
             </li>
           ),
           blockquote: ({ children }) => (
             <Card className="my-6 border-l-4 border-l-primary border-t-0 border-r-0 border-b-0 rounded-l-none bg-muted/20">
               <CardContent className="p-6 py-4">
-                <div className="text-muted-foreground italic">
+                <div className="text-muted-foreground italic break-words overflow-wrap-anywhere">
                   {children}
                 </div>
               </CardContent>
@@ -271,15 +294,15 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                       {language}
                     </span>
                   </div>
-                  <pre className="bg-card text-card-foreground p-6 overflow-x-auto text-sm">
-                    <code className={className} {...props}>
+                  <pre className="bg-card text-card-foreground p-6 overflow-x-auto text-sm whitespace-pre-wrap break-all">
+                    <code className={cn(className, "break-all whitespace-pre-wrap")} {...props}>
                       {children}
                     </code>
                   </pre>
                 </CardContent>
               </Card>
             ) : (
-              <code className="bg-muted text-muted-foreground px-2 py-1 rounded text-sm font-mono" {...props}>
+              <code className="bg-muted text-muted-foreground px-2 py-1 rounded text-sm font-mono break-all whitespace-pre-wrap" {...props}>
                 {children}
               </code>
             )
@@ -311,12 +334,12 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             </tr>
           ),
           th: ({ children }) => (
-            <th className="px-6 py-4 text-left text-sm font-semibold text-foreground bg-muted">
+            <th className="px-6 py-4 text-left text-sm font-semibold text-foreground bg-muted break-words min-w-0">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-6 py-4 text-sm text-muted-foreground">
+            <td className="px-6 py-4 text-sm text-muted-foreground break-words min-w-0">
               {children}
             </td>
           ),
@@ -332,7 +355,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 <LinkProvider value={true}>
                   <a
                     href={href}
-                    className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors"
+                    className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors break-all"
                     onClick={(e) => {
                       console.log('External link clicked:', href)
                       console.log('electronAPI available:', !!window.electronAPI)
@@ -366,9 +389,9 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             // Anchor links - scroll to section
             if (isAnchor) {
               return (
-                <a 
+                <a
                   href={href}
-                  className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors"
+                  className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors break-all"
                   onClick={(e) => {
                     e.preventDefault()
                     try {
@@ -415,7 +438,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
               return (
                 <a
                   href={href}
-                  className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors cursor-pointer"
+                  className="text-primary hover:text-foreground underline font-medium hover:no-underline transition-colors cursor-pointer break-all"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
