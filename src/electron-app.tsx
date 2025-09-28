@@ -8,7 +8,8 @@ import FileList from '@/components/FileList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import AboutModal from '@/components/AboutModal'
 import SettingsModal from '@/components/SettingsModal'
-import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import ConsistentAiSidebar from '@/components/ConsistentAiSidebar'
+import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 
 interface FileData {
@@ -72,6 +73,7 @@ export default function ElectronApp() {
   const [isDirectoryMode, setIsDirectoryMode] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showAiAssistant, setShowAiAssistant] = useState(false)
   const [fontSize, setFontSize] = useState(16)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Default to expanded
   const [isRefreshing, setIsRefreshing] = useState(false) // Track refresh state
@@ -1184,6 +1186,15 @@ export default function ElectronApp() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setShowAiAssistant(!showAiAssistant)}
+              className={`h-7 w-7 p-0 macos-button ${showAiAssistant ? 'bg-primary/10 text-primary' : ''}`}
+              title="AI 助手"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowSettings(true)}
               className="h-7 w-7 p-0 macos-button"
               title={t('ui.buttons.settings')}
@@ -1205,7 +1216,7 @@ export default function ElectronApp() {
       </header>
 
       {/* 主内容区域 */}
-      <main className="relative">
+      <main className={`relative transition-all duration-300 ease-in-out ${showAiAssistant ? 'mr-72' : ''}`}>
         {loading && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="text-center">
@@ -1428,11 +1439,22 @@ export default function ElectronApp() {
       )}
       
       {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={showSettings} 
+      <SettingsModal
+        isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
+      />
+
+      {/* AI Assistant Sidebar */}
+      <ConsistentAiSidebar
+        isOpen={showAiAssistant}
+        onClose={() => setShowAiAssistant(false)}
+        currentDocument={fileData ? {
+          fileName: fileData.fileName,
+          content: fileData.content,
+          filePath: fileData.filePath
+        } : undefined}
       />
     </div>
   )

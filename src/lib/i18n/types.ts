@@ -66,6 +66,7 @@ export interface Translations {
     categories: {
       reading: string
       language: string
+      ai: string
     }
     reading: {
       fontSize: string
@@ -78,6 +79,31 @@ export interface Translations {
       title: string
       description: string
       current: string
+    }
+    ai: {
+      title: string
+      description: string
+      provider: string
+      apiKey: string
+      apiKeyPlaceholder: string
+      apiUrl: string
+      apiUrlPlaceholder: string
+      model: string
+      modelPlaceholder: string
+      testConnection: string
+      saveConfig: string
+      providerOptions: {
+        openai: string
+        anthropic: string
+        custom: string
+      }
+      status: {
+        notConfigured: string
+        configured: string
+        testing: string
+        success: string
+        failed: string
+      }
     }
   }
   about: {
