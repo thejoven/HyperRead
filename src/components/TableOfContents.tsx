@@ -60,7 +60,7 @@ const extractHeadings = (content: string): Heading[] => {
 export default function TableOfContents({ content, className }: TableOfContentsProps) {
   // 状态管理
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isPanelExpanded, setIsPanelExpanded] = useState(true)
+  const [isPanelExpanded, setIsPanelExpanded] = useState(false)
   const [activeHeading, setActiveHeading] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
@@ -94,11 +94,9 @@ export default function TableOfContents({ content, className }: TableOfContentsP
       const height = window.innerHeight
       setViewportSize({ width, height })
 
-      // 自动调整面板状态
+      // 自动调整面板状态 - 只在小屏时收起，不自动展开
       if (width < 1200 || height < 700) {
         setIsPanelExpanded(false)
-      } else if (width >= 1400 && height >= 800) {
-        setIsPanelExpanded(true)
       }
     }
 

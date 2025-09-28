@@ -228,13 +228,6 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 
 ## 📝 What's New
 
-**Latest: v1.2.0** - Multi-language support, smart refresh system, and comprehensive documentation
-
-- 🌍 **Multi-language Support** - Complete i18n system with English/Chinese switching
-- 🔄 **Smart Refresh System** - Fixed critical drag-drop file refresh issues
-- 📚 **Example Documentation** - Complete Markdown tutorials and best practices
-- 🛠️ **Technical Optimization** - Enhanced TypeScript safety and performance
-
 👀 **[View Full Changelog](./CHANGELOG.md)** - Detailed release notes and version history
 
 ---

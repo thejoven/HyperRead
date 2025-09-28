@@ -4,10 +4,78 @@ const fs = require('fs')
 
 let mainWindow
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
+// 窗口状态管理
+const windowStateKeeper = {
+  data: {
     width: 1000,
     height: 700,
+    x: undefined,
+    y: undefined,
+    isMaximized: false
+  },
+
+  // 获取状态文件路径
+  getStatePath() {
+    const userDataPath = app.getPath('userData')
+    return path.join(userDataPath, 'window-state.json')
+  },
+
+  // 加载窗口状态
+  load() {
+    try {
+      const statePath = this.getStatePath()
+      if (fs.existsSync(statePath)) {
+        const data = JSON.parse(fs.readFileSync(statePath, 'utf8'))
+        this.data = { ...this.data, ...data }
+        console.log('Window state loaded:', this.data)
+      }
+    } catch (error) {
+      console.error('Failed to load window state:', error)
+    }
+  },
+
+  // 保存窗口状态
+  save(window) {
+    try {
+      if (window.isDestroyed()) return
+
+      const bounds = window.getBounds()
+      const isMaximized = window.isMaximized()
+
+      this.data = {
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        isMaximized
+      }
+
+      const statePath = this.getStatePath()
+      fs.writeFileSync(statePath, JSON.stringify(this.data, null, 2))
+      console.log('Window state saved:', this.data)
+    } catch (error) {
+      console.error('Failed to save window state:', error)
+    }
+  },
+
+  // 获取窗口选项
+  getWindowOptions() {
+    return {
+      width: this.data.width,
+      height: this.data.height,
+      x: this.data.x,
+      y: this.data.y
+    }
+  }
+}
+
+function createWindow() {
+  // 加载窗口状态
+  windowStateKeeper.load()
+  const windowOptions = windowStateKeeper.getWindowOptions()
+
+  mainWindow = new BrowserWindow({
+    ...windowOptions,
     minWidth: 600,
     minHeight: 400,
     resizable: true,
@@ -83,7 +151,24 @@ function createWindow() {
   }
 
   mainWindow.once('ready-to-show', () => {
+    // 恢复最大化状态
+    if (windowStateKeeper.data.isMaximized) {
+      mainWindow.maximize()
+    }
     mainWindow.show()
+  })
+
+  // 监听窗口状态变化并保存
+  const saveWindowState = () => windowStateKeeper.save(mainWindow)
+
+  mainWindow.on('resize', saveWindowState)
+  mainWindow.on('move', saveWindowState)
+  mainWindow.on('maximize', saveWindowState)
+  mainWindow.on('unmaximize', saveWindowState)
+
+  // 窗口关闭时保存状态
+  mainWindow.on('close', () => {
+    windowStateKeeper.save(mainWindow)
   })
 
   // 处理文件拖拽 - 使用 Electron 原生事件
