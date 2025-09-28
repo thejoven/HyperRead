@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { conversationStorage } from '@/lib/conversation-storage'
+import { toast } from "sonner"
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -28,7 +29,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
 
   // AI 配置状态
   const [aiConfig, setAiConfig] = useState({
-    provider: 'openai',
+    provider: 'custom',
     apiKey: '',
     apiUrl: '',
     model: '',
@@ -69,7 +70,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         setAiConfig(prev => ({
           ...prev,
           ...config,
-          isConfigured: !!(config.apiKey && config.model)
+          provider: 'custom', // 强制使用自定义服务商
+          isConfigured: !!(config.apiKey && config.model && config.apiUrl)
         }))
       } catch (error) {
         console.error('Failed to load AI config:', error)
@@ -207,21 +209,23 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
   // AI 配置处理函数
   const saveAiConfig = () => {
     try {
-      localStorage.setItem('ai-config', JSON.stringify(aiConfig))
+      const configToSave = { ...aiConfig, provider: 'custom' }
+      localStorage.setItem('ai-config', JSON.stringify(configToSave))
       setAiConfig(prev => ({
         ...prev,
-        isConfigured: !!(aiConfig.apiKey && aiConfig.model)
+        provider: 'custom',
+        isConfigured: !!(aiConfig.apiKey && aiConfig.model && aiConfig.apiUrl)
       }))
-      alert(t('common.success'))
+      toast.success(t('common.success'))
     } catch (error) {
       console.error('Failed to save AI config:', error)
-      alert(t('common.error'))
+      toast.error(t('common.error'))
     }
   }
 
   const testConnection = async () => {
-    if (!aiConfig.apiKey || !aiConfig.model) {
-      alert('请先填写 API Key 和模型名称')
+    if (!aiConfig.apiKey || !aiConfig.model || !aiConfig.apiUrl) {
+      toast.error('请先填写 API Key、API URL 和模型名称')
       return
     }
 
@@ -250,31 +254,11 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
   const renderAiSettings = () => {
     return (
       <div className="space-y-4">
-        {/* AI 服务商选择 */}
+        {/* 自定义 AI 服务配置 */}
         <div className="py-2 px-3 bg-muted/20 rounded-lg">
           <div className="mb-3">
-            <label className="text-sm font-medium text-foreground">{t('settings.ai.provider')}</label>
-            <p className="text-xs text-muted-foreground">{t('settings.ai.description')}</p>
-          </div>
-          <div className="space-y-2">
-            {[
-              { value: 'openai', label: t('settings.ai.providerOptions.openai') },
-              { value: 'anthropic', label: t('settings.ai.providerOptions.anthropic') },
-              { value: 'custom', label: t('settings.ai.providerOptions.custom') }
-            ].map((provider) => (
-              <Button
-                key={provider.value}
-                variant={aiConfig.provider === provider.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setAiConfig(prev => ({ ...prev, provider: provider.value }))}
-                className="w-full justify-start h-8 macos-button"
-              >
-                {provider.label}
-                {aiConfig.provider === provider.value && (
-                  <Check className="h-3 w-3 ml-auto" />
-                )}
-              </Button>
-            ))}
+            <label className="text-sm font-medium text-foreground">自定义 AI 服务配置</label>
+            <p className="text-xs text-muted-foreground">配置您的自定义 AI API 服务</p>
           </div>
         </div>
 
@@ -296,21 +280,19 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
           </div>
 
           {/* API URL */}
-          {(aiConfig.provider === 'custom' || aiConfig.provider === 'anthropic') && (
-            <div>
-              <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
-                <Globe className="w-3 h-3" />
-                {t('settings.ai.apiUrl')}
-              </label>
-              <Input
-                type="url"
-                placeholder={aiConfig.provider === 'anthropic' ? 'https://api.anthropic.com' : t('settings.ai.apiUrlPlaceholder')}
-                value={aiConfig.apiUrl}
-                onChange={(e) => setAiConfig(prev => ({ ...prev, apiUrl: e.target.value }))}
-                className="h-8"
-              />
-            </div>
-          )}
+          <div>
+            <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
+              <Globe className="w-3 h-3" />
+              {t('settings.ai.apiUrl')}
+            </label>
+            <Input
+              type="url"
+              placeholder={t('settings.ai.apiUrlPlaceholder')}
+              value={aiConfig.apiUrl}
+              onChange={(e) => setAiConfig(prev => ({ ...prev, apiUrl: e.target.value }))}
+              className="h-8"
+            />
+          </div>
 
           {/* 模型选择 */}
           <div>
@@ -319,11 +301,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
               {t('settings.ai.model')}
             </label>
             <Input
-              placeholder={
-                aiConfig.provider === 'openai' ? 'gpt-4-turbo-preview' :
-                aiConfig.provider === 'anthropic' ? 'claude-3-sonnet-20240229' :
-                t('settings.ai.modelPlaceholder')
-              }
+              placeholder={t('settings.ai.modelPlaceholder')}
               value={aiConfig.model}
               onChange={(e) => setAiConfig(prev => ({ ...prev, model: e.target.value }))}
               className="h-8"
@@ -337,7 +315,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
             variant="outline"
             size="sm"
             onClick={testConnection}
-            disabled={connectionStatus === 'testing' || !aiConfig.apiKey || !aiConfig.model}
+            disabled={connectionStatus === 'testing' || !aiConfig.apiKey || !aiConfig.model || !aiConfig.apiUrl}
             className="flex-1 h-8 macos-button"
           >
             {connectionStatus === 'testing' ? t('settings.ai.status.testing') : t('settings.ai.testConnection')}
@@ -435,11 +413,20 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
               variant="outline"
               size="sm"
               onClick={() => {
-                if (confirm('确定要清空所有对话历史吗？此操作不可恢复。')) {
-                  conversationStorage.clearAllConversations()
-                  alert('已清空所有对话历史')
-                  setActiveCategory('history') // 强制重新渲染
-                }
+                toast.error('确定要清空所有对话历史吗？此操作不可恢复。', {
+                  action: {
+                    label: '确定清空',
+                    onClick: () => {
+                      conversationStorage.clearAllConversations()
+                      toast.success('已清空所有对话历史')
+                      setActiveCategory('history') // 强制重新渲染
+                    }
+                  },
+                  cancel: {
+                    label: '取消',
+                    onClick: () => {}
+                  }
+                })
               }}
               className="flex-1 h-8 macos-button"
             >
@@ -458,7 +445,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
                 a.download = `ai-conversations-${new Date().toISOString().split('T')[0]}.json`
                 a.click()
                 URL.revokeObjectURL(url)
-                alert('对话历史已导出')
+                toast.success('对话历史已导出')
               }}
               className="flex-1 h-8 macos-button"
             >
@@ -479,13 +466,13 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
                     try {
                       const data = event.target?.result as string
                       if (conversationStorage.importConversations(data)) {
-                        alert('对话历史导入成功')
+                        toast.success('对话历史导入成功')
                         setActiveCategory('history') // 强制重新渲染
                       } else {
-                        alert('导入失败，请检查文件格式')
+                        toast.error('导入失败，请检查文件格式')
                       }
                     } catch (error) {
-                      alert('导入失败，文件格式错误')
+                      toast.error('导入失败，文件格式错误')
                     }
                   }
                   reader.readAsText(file)

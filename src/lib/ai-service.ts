@@ -28,19 +28,6 @@ interface AgentTask {
   error?: string
 }
 
-interface OpenAIResponse {
-  choices: Array<{
-    message: {
-      content: string
-    }
-  }>
-}
-
-interface AnthropicResponse {
-  content: Array<{
-    text: string
-  }>
-}
 
 export class AiService {
   private config: AiConfig
@@ -54,74 +41,13 @@ export class AiService {
       throw new Error('AI 服务未配置')
     }
 
-    switch (this.config.provider) {
-      case 'openai':
-        return this.callOpenAI(messages)
-      case 'anthropic':
-        return this.callAnthropic(messages)
-      case 'custom':
-        return this.callCustomAPI(messages)
-      default:
-        throw new Error(`不支持的 AI 服务商: ${this.config.provider}`)
-    }
-  }
-
-  private async callOpenAI(messages: Message[]): Promise<string> {
-    const apiUrl = this.config.apiUrl || 'https://api.openai.com/v1/chat/completions'
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.apiKey}`
-      },
-      body: JSON.stringify({
-        model: this.config.model || 'gpt-3.5-turbo',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.text()
-      throw new Error(`OpenAI API 错误: ${response.status} - ${errorData}`)
+    if (this.config.provider !== 'custom') {
+      throw new Error('仅支持自定义 AI 服务商')
     }
 
-    const data: OpenAIResponse = await response.json()
-    return data.choices[0]?.message?.content || '抱歉，我没有收到回复。'
+    return this.callCustomAPI(messages)
   }
 
-  private async callAnthropic(messages: Message[]): Promise<string> {
-    const apiUrl = this.config.apiUrl || 'https://api.anthropic.com/v1/messages'
-
-    // Anthropic API 格式转换
-    const systemMessage = messages.find(m => m.role === 'system')
-    const conversationMessages = messages.filter(m => m.role !== 'system')
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.config.apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: this.config.model || 'claude-3-sonnet-20240229',
-        max_tokens: 2000,
-        system: systemMessage?.content || '',
-        messages: conversationMessages
-      })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.text()
-      throw new Error(`Anthropic API 错误: ${response.status} - ${errorData}`)
-    }
-
-    const data: AnthropicResponse = await response.json()
-    return data.content[0]?.text || '抱歉，我没有收到回复。'
-  }
 
   private async callCustomAPI(messages: Message[]): Promise<string> {
     if (!this.config.apiUrl) {

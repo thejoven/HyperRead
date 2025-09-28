@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - '@scarf/scarf'
+  - '@tailwindcss/oxide'
+  - electron
+  - electron-winstaller
+  - esbuild
+  - puppeteer

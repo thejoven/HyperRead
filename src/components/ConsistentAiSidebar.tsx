@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { X, Send, Bot, User, Settings, Copy, Check, Trash2, FileText, MessageSquare, Layers, Clock, History } from 'lucide-react'
 import { createAiService } from '@/lib/ai-service'
 import { conversationStorage } from '@/lib/conversation-storage'
+import { toast } from "sonner"
 
 interface ConsistentAiSidebarProps {
   isOpen: boolean
@@ -37,7 +38,7 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [aiConfig, setAiConfig] = useState<AiConfig>({
-    provider: 'openai',
+    provider: 'custom',
     apiKey: '',
     apiUrl: '',
     model: '',
@@ -58,7 +59,8 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }
         const config = JSON.parse(savedConfig)
         setAiConfig({
           ...config,
-          isConfigured: !!(config.apiKey && config.model)
+          provider: 'custom', // 强制使用自定义服务商
+          isConfigured: !!(config.apiKey && config.model && config.apiUrl)
         })
       } catch (error) {
         console.error('Failed to load AI config:', error)
@@ -368,7 +370,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  alert('请在设置中配置 AI 服务商、API Key 和模型信息')
+                  toast.error('请在设置中配置 AI 服务商、API Key 和模型信息')
                 }}
                 className="h-6 w-6 p-0 macos-button flex-shrink-0"
                 title="配置 AI"

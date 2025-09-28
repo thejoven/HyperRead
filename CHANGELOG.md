@@ -5,6 +5,41 @@ All notable changes to HyperRead will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-09-28
+
+### 🚀 Major Release - AI Assistant & Modern UX
+
+### 🤖 AI Assistant System
+- ✨ **Complete AI Assistant Integration** - Full-featured AI chat sidebar with document analysis capabilities
+- 🔧 **Multi-provider Support** - Support for OpenAI, Anthropic, and custom API endpoints (Now simplified to custom-only in v2.0.0)
+- 📄 **Long Document Processing** - Intelligent document chunking with parallel processing for large files
+- 💬 **Conversation History Management** - Persistent conversation storage with import/export functionality
+- 🎯 **Document-aware Chat** - AI can analyze and answer questions about the current document content
+- 📊 **Processing Progress Indicators** - Real-time feedback during document analysis
+
+### 🎨 Modern User Experience
+- 🍞 **Toast Notifications System** - Replaced all popup alerts with elegant Sonner toast notifications
+- ✨ **Non-blocking Confirmations** - Confirmation dialogs now use toast with action buttons instead of blocking modals
+- 🎭 **Improved Error Handling** - Better user feedback with categorized success/error/info toasts
+- 📱 **Responsive Notifications** - Toast notifications automatically adapt to system theme
+
+### 🛠️ Technical Architecture Improvements
+- 🔒 **Enhanced Security** - Removed built-in AI providers, now only supports user-configured custom APIs
+- 🧹 **Code Modernization** - Updated all alert/confirm usages to modern toast patterns
+- 📦 **Dependency Updates** - Added Sonner for toast notifications, enhanced React 19 compatibility
+- 🎯 **Type Safety** - Improved TypeScript definitions for AI services and conversation management
+
+### ⚙️ Settings & Configuration
+- 🔧 **Streamlined AI Configuration** - Simplified setup process with custom API endpoint focus
+- 📝 **Enhanced Validation** - Better form validation with real-time feedback
+- 💾 **Persistent Storage** - Conversation history automatically saved and restored
+- 🗃️ **Data Management** - Export/import functionality for conversation backups
+
+### 🐛 Bug Fixes
+- 🔧 **Configuration Loading** - Fixed AI service configuration persistence across sessions
+- 🔄 **State Management** - Improved conversation state handling during document switches
+- 🎨 **UI Consistency** - Standardized notification patterns throughout the application
+
 ## [1.2.1] - 2025-09-19
 
 ### 🐛 Bug Fixes

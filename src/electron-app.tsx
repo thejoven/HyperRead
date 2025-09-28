@@ -9,8 +9,10 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import AboutModal from '@/components/AboutModal'
 import SettingsModal from '@/components/SettingsModal'
 import ConsistentAiSidebar from '@/components/ConsistentAiSidebar'
+import { Toaster } from '@/components/ui/sonner'
 import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import { toast } from "sonner"
 
 interface FileData {
   content: string
@@ -163,18 +165,18 @@ export default function ElectronApp() {
           // 检查是否是路径解析问题
           const isCurrentPathAbsolute = currentPath && (currentPath.startsWith('/') || currentPath.includes(':\\'))
           if (!isCurrentPathAbsolute) {
-            alert(`无法跳转到文件: ${targetPath}\n\n原因: 当前文件路径不是绝对路径，无法进行相对路径解析。\n\n请通过文件对话框重新打开此文件以启用内部链接功能。`)
+            toast.error(`无法跳转到文件: ${targetPath}\n\n原因: 当前文件路径不是绝对路径，无法进行相对路径解析。\n\n请通过文件对话框重新打开此文件以启用内部链接功能。`)
           } else {
-            alert(`无法打开文件: ${resolvedPath}`)
+            toast.error(`无法打开文件: ${resolvedPath}`)
           }
         }
       } else {
         console.error('electronAPI.readFile not available')
-        alert('文件读取功能不可用')
+        toast.error('文件读取功能不可用')
       }
     } catch (error) {
       console.error('File navigation error:', error)
-      alert(`文件跳转失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      toast.error(`文件跳转失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setLoading(false)
     }
@@ -281,11 +283,18 @@ export default function ElectronApp() {
       
       // 目录拖拽时，显示目录选择对话框
       const directoryName = event.detail.directoryName
-      const userConfirmed = confirm(`检测到文件夹"${directoryName}"拖拽。\n\n由于安全限制，需要您在对话框中选择要加载的文件夹。\n\n点击确定选择文件夹，或取消。`)
-      
-      if (userConfirmed) {
-        await handleOpenDirectory()
-      }
+      toast.error(`检测到文件夹"${directoryName}"拖拽。\n\n由于安全限制，需要您在对话框中选择要加载的文件夹。`, {
+        action: {
+          label: '选择文件夹',
+          onClick: async () => {
+            await handleOpenDirectory()
+          }
+        },
+        cancel: {
+          label: '取消',
+          onClick: () => {}
+        }
+      })
     }
 
     const handleDirectoryContent = (event: CustomEvent) => {
@@ -315,7 +324,7 @@ export default function ElectronApp() {
         }, 100)
       } else {
         console.log('React: no markdown files found in dragged directory')
-        alert('该文件夹中没有找到 Markdown 文件')
+        toast.error('该文件夹中没有找到 Markdown 文件')
       }
     }
 
@@ -446,7 +455,7 @@ export default function ElectronApp() {
         })))
         
         if (allFiles.length === 0) {
-          alert('未找到 Markdown 文件。请拖拽 .md 或 .markdown 文件，或包含这些文件的文件夹。')
+          toast.error('未找到 Markdown 文件。请拖拽 .md 或 .markdown 文件，或包含这些文件的文件夹。')
           return
         }
         
@@ -534,7 +543,7 @@ export default function ElectronApp() {
         
       } catch (error) {
         console.error('React: Error processing dropped files:', error)
-        alert('处理拖拽文件时出错: ' + (error as Error).message)
+        toast.error('处理拖拽文件时出错: ' + (error as Error).message)
       }
     }
     
@@ -649,7 +658,7 @@ export default function ElectronApp() {
       setFileData(data)
     } catch (error) {
       console.error('React: Failed to load file:', error)
-      alert('文件加载失败: ' + (error as Error).message)
+      toast.error('文件加载失败: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -668,7 +677,7 @@ export default function ElectronApp() {
       }
     } catch (error) {
       console.error('Failed to open file:', error)
-      alert('文件打开失败: ' + (error as Error).message)
+      toast.error('文件打开失败: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -693,11 +702,11 @@ export default function ElectronApp() {
         const firstFile = data.files[0]
         await loadFileFromDirectory(firstFile)
       } else if (data && data.files.length === 0) {
-        alert('该文件夹中没有找到 Markdown 文件')
+        toast.error('该文件夹中没有找到 Markdown 文件')
       }
     } catch (error) {
       console.error('React: Failed to open directory:', error)
-      alert('文件夹打开失败: ' + (error as Error).message)
+      toast.error('文件夹打开失败: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -731,7 +740,7 @@ export default function ElectronApp() {
       }
     } catch (error) {
       console.error('React: Failed to load file from directory:', error)
-      alert(t('ui.messages.fileLoadFailed') + ': ' + (error as Error).message)
+      toast.error(t('ui.messages.fileLoadFailed') + ': ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -1061,7 +1070,7 @@ export default function ElectronApp() {
       }
     } catch (error) {
       console.error('React: Failed to refresh directory:', error)
-      alert(t('ui.messages.directoryLoadFailed') + ': ' + (error as Error).message)
+      toast.error(t('ui.messages.directoryLoadFailed') + ': ' + (error as Error).message)
     } finally {
       setIsRefreshing(false)
     }
@@ -1456,6 +1465,9 @@ export default function ElectronApp() {
           filePath: fileData.filePath
         } : undefined}
       />
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   )
 }
