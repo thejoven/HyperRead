@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu } from 'lucide-react'
+import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
+import { conversationStorage } from '@/lib/conversation-storage'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -51,6 +52,11 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       id: 'ai',
       label: t('settings.categories.ai'),
       icon: <Bot className="w-4 h-4" />
+    },
+    {
+      id: 'history',
+      label: '对话历史',
+      icon: <History className="w-4 h-4" />
     }
   ]
 
@@ -360,6 +366,148 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
     )
   }
 
+  // 渲染对话历史设置内容
+  const renderHistorySettings = () => {
+    const storageInfo = conversationStorage.getStorageInfo()
+    const conversationList = conversationStorage.getConversationList()
+
+    return (
+      <div className="space-y-4">
+        {/* 存储信息 */}
+        <div className="py-2 px-3 bg-muted/20 rounded-lg">
+          <div className="mb-3">
+            <label className="text-sm font-medium text-foreground">存储状态</label>
+            <p className="text-xs text-muted-foreground">本地保存的对话历史信息</p>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span>保存的对话：</span>
+              <span className="font-mono">{storageInfo.conversationCount} / {storageInfo.maxConversations}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>存储大小：</span>
+              <span className="font-mono">{(storageInfo.storageSize / 1024).toFixed(1)} KB</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 对话历史列表 */}
+        {conversationList.length > 0 && (
+          <div className="py-2 px-3 bg-muted/20 rounded-lg">
+            <div className="mb-3">
+              <label className="text-sm font-medium text-foreground">对话历史</label>
+              <p className="text-xs text-muted-foreground">最近的文档对话记录</p>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {conversationList.slice(0, 10).map((conv, index) => (
+                <div key={conv.filePath} className="flex items-center justify-between p-2 bg-background/60 rounded border border-border/30">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate" title={conv.fileName}>
+                      {conv.fileName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {conv.messageCount} 条消息 · {conv.lastUpdated.toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      conversationStorage.deleteConversation(conv.filePath)
+                      // 强制重新渲染
+                      setActiveCategory('history')
+                    }}
+                    className="h-6 w-6 p-0 macos-button flex-shrink-0 ml-2"
+                    title="删除此对话历史"
+                  >
+                    <Trash className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 管理操作 */}
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (confirm('确定要清空所有对话历史吗？此操作不可恢复。')) {
+                  conversationStorage.clearAllConversations()
+                  alert('已清空所有对话历史')
+                  setActiveCategory('history') // 强制重新渲染
+                }
+              }}
+              className="flex-1 h-8 macos-button"
+            >
+              <Trash className="h-3 w-3 mr-1" />
+              清空所有历史
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const data = conversationStorage.exportConversations()
+                const blob = new Blob([data], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `ai-conversations-${new Date().toISOString().split('T')[0]}.json`
+                a.click()
+                URL.revokeObjectURL(url)
+                alert('对话历史已导出')
+              }}
+              className="flex-1 h-8 macos-button"
+            >
+              导出备份
+            </Button>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">导入对话历史</label>
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  const reader = new FileReader()
+                  reader.onload = (event) => {
+                    try {
+                      const data = event.target?.result as string
+                      if (conversationStorage.importConversations(data)) {
+                        alert('对话历史导入成功')
+                        setActiveCategory('history') // 强制重新渲染
+                      } else {
+                        alert('导入失败，请检查文件格式')
+                      }
+                    } catch (error) {
+                      alert('导入失败，文件格式错误')
+                    }
+                  }
+                  reader.readAsText(file)
+                }
+                e.target.value = '' // 清空input
+              }}
+              className="w-full text-xs p-2 border border-border/30 rounded bg-background/50"
+            />
+          </div>
+        </div>
+
+        {conversationList.length === 0 && (
+          <div className="text-center py-6">
+            <History className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">暂无对话历史</p>
+            <p className="text-xs text-muted-foreground mt-1">开始与文档对话后，历史记录会自动保存</p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // 渲染分类内容
   const renderCategoryContent = () => {
     switch (activeCategory) {
@@ -369,6 +517,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         return renderLanguageSettings()
       case 'ai':
         return renderAiSettings()
+      case 'history':
+        return renderHistorySettings()
       default:
         return renderReadingSettings()
     }
