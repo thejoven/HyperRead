@@ -155,12 +155,14 @@
     "linux": {
       "target": "AppImage",
       "desktop": {
-        "Name": "HyperRead",
-        "Comment": "现代化的Markdown文档阅读器",
-        "GenericName": "Markdown Reader",
-        "Keywords": "markdown;reader;document;text;",
-        "StartupWMClass": "HyperRead",
-        "MimeType": "text/markdown;text/x-markdown;text/plain;"
+        "entry": {
+          "Name": "HyperRead",
+          "Comment": "现代化的Markdown文档阅读器",
+          "GenericName": "Markdown Reader",
+          "Keywords": "markdown;reader;document;text;",
+          "StartupWMClass": "HyperRead",
+          "MimeType": "text/markdown;text/x-markdown;text/plain;"
+        }
       }
     }
   },
