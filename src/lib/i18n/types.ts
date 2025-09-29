@@ -127,6 +127,57 @@ export interface Translations {
     drag: string
     zoom: string
   }
+  aiSidebar: {
+    title: string
+    placeholders: {
+      input: string
+      inputDisabled: string
+      longDocProcessing: string
+    }
+    buttons: {
+      configure: string
+      clearChat: string
+      send: string
+    }
+    tooltips: {
+      configureAi: string
+      clearChat: string
+      close: string
+    }
+    status: {
+      configured: string
+      longDocSupport: string
+      processing: string
+      thinking: string
+      enterToSend: string
+      shiftEnterForNewLine: string
+    }
+    messages: {
+      startConversation: string
+      analysisReady: string
+      analysisReadyWithHistory: string
+      generalAssistant: string
+      errorPrefix: string
+      errorNetwork: string
+      longDocDetected: string
+      longDocChunks: string
+      longDocProgress: string
+      longDocFailed: string
+      needConfiguration: string
+    }
+    suggestions: {
+      title: string
+      whatIsThis: string
+      summarize: string
+      analyzeStructure: string
+      extractKeyInfo: string
+      explainConcept: string
+      summarizeLongDoc: string
+      analyzeLongDocStructure: string
+      extractLongDocKeyInfo: string
+      whatDoesLongDocSay: string
+    }
+  }
 }
 
 // 语言上下文接口

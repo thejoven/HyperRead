@@ -7,6 +7,7 @@ import { X, Send, Bot, User, Settings, Copy, Check, Trash2, FileText, MessageSqu
 import { createAiService } from '@/lib/ai-service'
 import { conversationStorage } from '@/lib/conversation-storage'
 import { toast } from "sonner"
+import { useT } from '@/lib/i18n'
 
 interface ConsistentAiSidebarProps {
   isOpen: boolean
@@ -34,6 +35,7 @@ interface AiConfig {
 }
 
 export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }: ConsistentAiSidebarProps) {
+  const t = useT()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -107,12 +109,12 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }
         const systemMessage: Message = {
           id: 'system-init',
           role: 'system',
-          content: `你是一个专业的文档分析助手。当前用户正在查看文档"${currentDocument.fileName}"。
+          content: `You are a professional document analysis assistant. The user is currently viewing the document "${currentDocument.fileName}".
 
-文档内容：
-${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 3000 ? '...\n\n(文档内容已截断，如需查看完整内容请告诉用户)' : ''}
+Document content:
+${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 3000 ? '...\n\n(Document content truncated, please tell the user if they need to see the complete content)' : ''}
 
-请基于这个文档内容来回答用户的问题。如果用户询问文档相关内容，请具体引用文档中的内容。保持回答准确、有用且友好。使用中文回答。`,
+Please answer user questions based on this document content. If users ask about document-related content, please specifically cite content from the document. Keep answers accurate, helpful, and friendly.`,
           timestamp: new Date()
         }
         setMessages([systemMessage])
@@ -122,7 +124,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
       const systemMessage: Message = {
         id: 'system-init',
         role: 'system',
-        content: '你是一个专业的文档分析助手。帮助用户分析文档内容、回答技术问题、提供建议等。保持回答准确、有用且友好。使用中文回答。',
+        content: 'You are a professional document analysis assistant. Help users analyze document content, answer technical questions, provide suggestions, etc. Keep answers accurate, helpful, and friendly.',
         timestamp: new Date()
       }
       setMessages([systemMessage])
@@ -218,7 +220,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `抱歉，AI 服务出现错误：${error instanceof Error ? error.message : '未知错误'}。请检查您的网络连接和 AI 配置。`,
+        content: `${t('aiSidebar.messages.errorPrefix')} ${error instanceof Error ? error.message : 'Unknown error'}${t('aiSidebar.messages.errorNetwork')}`,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])
@@ -237,7 +239,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
     const statusMessage: Message = {
       id: `processing-${Date.now()}`,
       role: 'assistant',
-      content: `📄 检测到长文档 (${Math.round(currentDocument.content.length / 1000)}k字符)，正在分段处理...`,
+      content: t('aiSidebar.messages.longDocDetected', { size: Math.round(currentDocument.content.length / 1000) }),
       timestamp: new Date()
     }
     setMessages(prev => [...prev, statusMessage])
@@ -251,7 +253,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
       const updateMessage: Message = {
         id: `chunks-${Date.now()}`,
         role: 'assistant',
-        content: `🔄 已分成 ${chunks.length} 个片段，开始并行处理...`,
+        content: t('aiSidebar.messages.longDocChunks', { count: chunks.length }),
         timestamp: new Date()
       }
       setMessages(prev => [...prev, updateMessage])
@@ -268,7 +270,11 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
             const progressMessage: Message = {
               id: `progress-${Date.now()}`,
               role: 'assistant',
-              content: `⚡ 处理进度: ${progress.completed}/${progress.total} (正在处理第${progress.currentTask.chunk.index + 1}部分)`,
+              content: t('aiSidebar.messages.longDocProgress', {
+                completed: progress.completed,
+                total: progress.total,
+                current: progress.currentTask.chunk.index + 1
+              }),
               timestamp: new Date()
             }
             setMessages(prev => {
@@ -305,7 +311,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `❌ 长文档处理失败：${error instanceof Error ? error.message : '未知错误'}`,
+        content: `${t('aiSidebar.messages.longDocFailed')} ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date()
       }
       setMessages(prev => {
@@ -370,10 +376,10 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  toast.error('请在设置中配置 AI 服务商、API Key 和模型信息')
+                  toast.error(t('aiSidebar.messages.needConfiguration'))
                 }}
                 className="h-6 w-6 p-0 macos-button flex-shrink-0"
-                title="配置 AI"
+                title={t('aiSidebar.tooltips.configureAi')}
               >
                 <Settings className="h-3 w-3" />
               </Button>
@@ -383,7 +389,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
               size="sm"
               onClick={clearChat}
               className="h-6 w-6 p-0 macos-button flex-shrink-0"
-              title="清空对话"
+              title={t('aiSidebar.tooltips.clearChat')}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -392,7 +398,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
               size="sm"
               onClick={onClose}
               className="h-6 w-6 p-0 macos-button flex-shrink-0"
-              title="关闭"
+              title={t('aiSidebar.tooltips.close')}
             >
               <X className="h-3 w-3" />
             </Button>
@@ -409,17 +415,17 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
               {isProcessingLongDoc ? (
                 <>
                   <Layers className="w-3 h-3 inline mr-1" />
-                  长文档处理中 {processingProgress.total > 0 && `(${processingProgress.completed}/${processingProgress.total})`}
+                  {t('aiSidebar.status.processing')} {processingProgress.total > 0 && `(${processingProgress.completed}/${processingProgress.total})`}
                 </>
               ) : (
                 <>
                   {aiConfig.provider === 'openai' && 'OpenAI'}
                   {aiConfig.provider === 'anthropic' && 'Anthropic'}
-                  {aiConfig.provider === 'custom' && '自定义'}
+                  {aiConfig.provider === 'custom' && t('settings.ai.providerOptions.custom')}
                   {' · '}
                   {aiConfig.model}
                   {currentDocument && currentDocument.content.length > 8000 && (
-                    <> · <Layers className="w-3 h-3 inline mx-1" />长文档支持</>
+                    <> · <Layers className="w-3 h-3 inline mx-1" />{t('aiSidebar.status.longDocSupport')}</>
                   )}
                 </>
               )}
@@ -436,29 +442,27 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
               <div className="w-10 h-10 bg-muted/60 rounded-md flex items-center justify-center mb-3">
                 <Bot className="h-5 w-5 text-muted-foreground" />
               </div>
-              <h4 className="text-sm font-medium mb-1 macos-text">开始对话</h4>
+              <h4 className="text-sm font-medium mb-1 macos-text">{t('aiSidebar.messages.startConversation')}</h4>
               <p className="text-xs text-muted-foreground mb-4 max-w-[220px] macos-text">
                 {currentDocument
-                  ? `正在分析 "${currentDocument.fileName}"，问我相关问题。${
-                      conversationStorage.loadConversation(currentDocument.filePath, currentDocument.fileName).length > 1
-                        ? ' 已恢复历史对话。'
-                        : ''
-                    }`
-                  : '我可以帮助您分析文档内容和回答问题。'}
+                  ? (conversationStorage.loadConversation(currentDocument.filePath, currentDocument.fileName).length > 1
+                      ? t('aiSidebar.messages.analysisReadyWithHistory', { fileName: currentDocument.fileName })
+                      : t('aiSidebar.messages.analysisReady', { fileName: currentDocument.fileName }))
+                  : t('aiSidebar.messages.generalAssistant')}
               </p>
               {currentDocument && (
                 <div className="w-full space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground macos-text">建议问题：</p>
+                  <p className="text-xs font-medium text-muted-foreground macos-text">{t('aiSidebar.suggestions.title')}</p>
                   <div className="space-y-1 text-xs">
                     {(currentDocument && currentDocument.content.length > 8000 ? [
-                      '📄 总结这个长文档',
-                      '🔍 分析文档结构',
-                      '📋 提取关键信息',
-                      '💡 这个文档讲什么？'
+                      t('aiSidebar.suggestions.summarizeLongDoc'),
+                      t('aiSidebar.suggestions.analyzeLongDocStructure'),
+                      t('aiSidebar.suggestions.extractLongDocKeyInfo'),
+                      t('aiSidebar.suggestions.whatDoesLongDocSay')
                     ] : [
-                      '这个文档讲什么？',
-                      '总结一下要点',
-                      '解释这个概念'
+                      t('aiSidebar.suggestions.whatIsThis'),
+                      t('aiSidebar.suggestions.summarize'),
+                      t('aiSidebar.suggestions.explainConcept')
                     ]).map((suggestion, index) => (
                       <Button
                         key={index}
@@ -536,7 +540,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
                   </div>
                   <div className="bg-background/80 border border-border/30 rounded-lg px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground macos-text">思考中</span>
+                      <span className="text-xs text-muted-foreground macos-text">{t('aiSidebar.status.thinking')}</span>
                       <div className="flex gap-0.5">
                         {[0, 1, 2].map((i) => (
                           <div
@@ -563,7 +567,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
             <div className="flex items-center gap-1.5">
               <Settings className="h-3 w-3 text-muted-foreground" />
               <p className="text-xs text-muted-foreground macos-text">
-                需要配置 AI 服务
+                {t('aiSidebar.messages.needConfiguration')}
               </p>
             </div>
           </div>
@@ -573,8 +577,8 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
             <Input
               ref={inputRef}
               placeholder={
-                isProcessingLongDoc ? "长文档处理中..." :
-                aiConfig.isConfigured ? "输入问题..." : "请先配置 AI 服务"
+                isProcessingLongDoc ? t('aiSidebar.placeholders.longDocProcessing') :
+                aiConfig.isConfigured ? t('aiSidebar.placeholders.input') : t('aiSidebar.placeholders.inputDisabled')
               }
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -595,7 +599,7 @@ ${currentDocument.content.substring(0, 3000)}${currentDocument.content.length > 
         </div>
         {aiConfig.isConfigured && (
           <p className="mt-1.5 text-xs text-muted-foreground text-center macos-text">
-            Enter 发送 · Shift+Enter 换行
+            {t('aiSidebar.status.enterToSend')} · {t('aiSidebar.status.shiftEnterForNewLine')}
           </p>
         )}
       </div>
