@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash } from 'lucide-react'
+import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { conversationStorage } from '@/lib/conversation-storage'
 import { toast } from "sonner"
+import ShortcutSettings from './ShortcutSettings'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -58,6 +59,11 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       id: 'history',
       label: '对话历史',
       icon: <History className="w-4 h-4" />
+    },
+    {
+      id: 'shortcuts',
+      label: t('settings.categories.shortcuts'),
+      icon: <Keyboard className="w-4 h-4" />
     }
   ]
 
@@ -495,6 +501,11 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
     )
   }
 
+  // 渲染快捷键设置内容
+  const renderShortcutSettings = () => {
+    return <ShortcutSettings />
+  }
+
   // 渲染分类内容
   const renderCategoryContent = () => {
     switch (activeCategory) {
@@ -506,6 +517,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         return renderAiSettings()
       case 'history':
         return renderHistorySettings()
+      case 'shortcuts':
+        return renderShortcutSettings()
       default:
         return renderReadingSettings()
     }

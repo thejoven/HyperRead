@@ -9,13 +9,22 @@ interface DocumentViewerProps {
   fontSize?: number
   filePath?: string
   onFileNavigation?: (targetPath: string, currentPath?: string) => void
+  searchQuery?: string
+  searchOptions?: { caseSensitive: boolean; useRegex: boolean; wholeWord: boolean }
 }
 
-export default memo(function DocumentViewer({ content, className = '', fontSize = 16, filePath, onFileNavigation }: DocumentViewerProps) {
+export default memo(function DocumentViewer({ content, className = '', fontSize = 16, filePath, onFileNavigation, searchQuery, searchOptions }: DocumentViewerProps) {
   return (
     <div className={className}>
       {/* Document Content */}
-      <MarkdownContent content={content} fontSize={fontSize} filePath={filePath} onFileNavigation={onFileNavigation} />
+      <MarkdownContent
+        content={content}
+        fontSize={fontSize}
+        filePath={filePath}
+        onFileNavigation={onFileNavigation}
+        searchQuery={searchQuery}
+        searchOptions={searchOptions}
+      />
     </div>
   )
 })

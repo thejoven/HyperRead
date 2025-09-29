@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import AboutModal from '@/components/AboutModal'
 import SettingsModal from '@/components/SettingsModal'
 import ConsistentAiSidebar from '@/components/ConsistentAiSidebar'
+import SearchPanel from '@/components/SearchPanel'
 import { Toaster } from '@/components/ui/sonner'
 import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { useT } from '@/lib/i18n'
@@ -76,7 +77,10 @@ export default function ElectronApp() {
   const [showAbout, setShowAbout] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showAiAssistant, setShowAiAssistant] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   const [fontSize, setFontSize] = useState(16)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchOptions, setSearchOptions] = useState({ caseSensitive: false, useRegex: false, wholeWord: false })
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Default to expanded
   const [isRefreshing, setIsRefreshing] = useState(false) // Track refresh state
   // Cache for enhanced drag-drop file contents
@@ -220,9 +224,75 @@ export default function ElectronApp() {
     localStorage.setItem('docs-sidebar-collapsed', JSON.stringify(isSidebarCollapsed))
   }, [isSidebarCollapsed])
 
+  // Handle Shift+Shift keyboard shortcut for search
+  useEffect(() => {
+    let shiftPressCount = 0
+    let shiftTimer: NodeJS.Timeout | null = null
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        shiftPressCount++
+
+        if (shiftPressCount === 1) {
+          // Start timer to reset count
+          shiftTimer = setTimeout(() => {
+            shiftPressCount = 0
+          }, 500) // Reset after 500ms
+        } else if (shiftPressCount === 2) {
+          // Shift pressed twice quickly
+          e.preventDefault()
+          if (fileData && fileData.content) {
+            setShowSearch(true)
+          }
+          shiftPressCount = 0
+          if (shiftTimer) {
+            clearTimeout(shiftTimer)
+          }
+        }
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        // Keep the count, don't reset on keyup
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      if (shiftTimer) {
+        clearTimeout(shiftTimer)
+      }
+    }
+  }, [fileData])
+
   // Toggle sidebar
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed)
+  }
+
+  // Navigate to a specific line in the document
+  const handleNavigateToLine = (lineNumber: number) => {
+    // Find all paragraph elements in the document viewer
+    const contentElement = document.querySelector('.content-scroll') || document.querySelector('.markdown-content')
+    if (!contentElement) return
+
+    // Get all text nodes and count lines to find the target
+    const lines = fileData?.content.split('\n') || []
+    if (lineNumber < 1 || lineNumber > lines.length) return
+
+    // Scroll to approximate position based on line number
+    const percentage = (lineNumber - 1) / lines.length
+    const scrollTop = contentElement.scrollHeight * percentage
+
+    contentElement.scrollTo({
+      top: scrollTop,
+      behavior: 'smooth'
+    })
   }
 
   // 处理文件拖拽事件
@@ -1275,9 +1345,26 @@ export default function ElectronApp() {
             </Button>
 
             {/* 主内容区域 */}
-            <div className="flex-1 overflow-hidden bg-background">
+            <div className="flex-1 overflow-hidden bg-background relative">
               {fileData ? (
                 <div className="h-full">
+                  {/* Search Panel - positioned above content */}
+                  {showSearch && (
+                    <div className="absolute top-0 left-0 right-0 z-50 p-4">
+                      <div className="max-w-4xl mx-auto">
+                        <SearchPanel
+                          isOpen={showSearch}
+                          onClose={() => setShowSearch(false)}
+                          content={fileData.content}
+                          onNavigateToLine={handleNavigateToLine}
+                          onSearchQueryChange={(query, options) => {
+                            setSearchQuery(query)
+                            setSearchOptions(options)
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="h-full overflow-y-auto content-scroll">
                     <div className="max-w-4xl mx-auto">
                       <DocumentViewer
@@ -1286,6 +1373,8 @@ export default function ElectronApp() {
                         fontSize={fontSize}
                         filePath={fileData.filePath}
                         onFileNavigation={handleFileNavigation}
+                        searchQuery={showSearch ? searchQuery : undefined}
+                        searchOptions={showSearch ? searchOptions : undefined}
                       />
                     </div>
                   </div>
@@ -1309,14 +1398,35 @@ export default function ElectronApp() {
             </div>
           </div>
         ) : fileData ? (
-          <div className="h-[calc(100vh-56px)] overflow-y-auto content-scroll">
-            <DocumentViewer
-              content={fileData.content}
-              className="container mx-auto px-4 py-8 max-w-4xl"
-              fontSize={fontSize}
-              filePath={fileData.filePath}
-              onFileNavigation={handleFileNavigation}
-            />
+          <div className="h-[calc(100vh-56px)] relative">
+            {/* Search Panel - positioned above content */}
+            {showSearch && (
+              <div className="absolute top-0 left-0 right-0 z-50 p-4">
+                <div className="max-w-4xl mx-auto">
+                  <SearchPanel
+                    isOpen={showSearch}
+                    onClose={() => setShowSearch(false)}
+                    content={fileData.content}
+                    onNavigateToLine={handleNavigateToLine}
+                    onSearchQueryChange={(query, options) => {
+                      setSearchQuery(query)
+                      setSearchOptions(options)
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="h-full overflow-y-auto content-scroll">
+              <DocumentViewer
+                content={fileData.content}
+                className="container mx-auto px-4 py-8 max-w-4xl"
+                fontSize={fontSize}
+                filePath={fileData.filePath}
+                onFileNavigation={handleFileNavigation}
+                searchQuery={showSearch ? searchQuery : undefined}
+                searchOptions={showSearch ? searchOptions : undefined}
+              />
+            </div>
           </div>
         ) : (
           <div className="container mx-auto px-4 py-12 h-[calc(100vh-56px)] flex items-center justify-center">

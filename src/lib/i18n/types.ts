@@ -67,6 +67,7 @@ export interface Translations {
       reading: string
       language: string
       ai: string
+      shortcuts: string
     }
     reading: {
       fontSize: string
@@ -176,6 +177,117 @@ export interface Translations {
       analyzeLongDocStructure: string
       extractLongDocKeyInfo: string
       whatDoesLongDocSay: string
+    }
+  }
+  search: {
+    placeholder: string
+    close: string
+    noResults: string
+    resultCount: string
+    modes: {
+      document: string
+      global: string
+    }
+    placeholders: {
+      document: string
+      global: string
+    }
+    actions: {
+      close: string
+      next: string
+      previous: string
+      select: string
+      indexDirectory: string
+    }
+    status: {
+      indexing: string
+      error: string
+    }
+    messages: {
+      noResults: string
+      needIndex: string
+    }
+    shortcuts: {
+      next: string
+      previous: string
+      close: string
+      select: string
+      switchMode: string
+    }
+    options: {
+      title: string
+      caseSensitive: string
+      wholeWord: string
+      regex: string
+    }
+  }
+  shortcuts: {
+    title: string
+    description: string
+    search: string
+    searchPlaceholder: string
+    category: string
+    action: string
+    keys: string
+    status: string
+    enabled: string
+    disabled: string
+    edit: string
+    reset: string
+    resetAll: string
+    export: string
+    import: string
+    recording: string
+    pressKeys: string
+    cancel: string
+    confirm: string
+    conflict: string
+    conflictTitle: string
+    conflictMessage: string
+    override: string
+    keepBoth: string
+    conflictResolution: string
+    currentShortcut: string
+    conflictingShortcut: string
+    suggestions: string
+    noConflict: string
+    categories: {
+      general: string
+      navigation: string
+      editor: string
+      search: string
+      view: string
+    }
+    actions: {
+      openFile: string
+      openFolder: string
+      settings: string
+      closeWindow: string
+      quitApp: string
+      nextFile: string
+      prevFile: string
+      goBack: string
+      goForward: string
+      searchDocument: string
+      searchGlobal: string
+      nextResult: string
+      prevResult: string
+      toggleSidebar: string
+      toggleAi: string
+      toggleTheme: string
+      zoomIn: string
+      zoomOut: string
+      resetZoom: string
+      increaseFont: string
+      decreaseFont: string
+    }
+    messages: {
+      resetAllConfirm: string
+      resetSuccess: string
+      exportSuccess: string
+      importSuccess: string
+      importFailed: string
+      conflictDetected: string
     }
   }
 }

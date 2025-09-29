@@ -18,14 +18,94 @@ interface MarkdownContentProps {
   className?: string
   filePath?: string
   onFileNavigation?: (targetPath: string, currentPath?: string) => void
+  searchQuery?: string
+  searchOptions?: { caseSensitive: boolean; useRegex: boolean; wholeWord: boolean }
 }
 
-export default function MarkdownContent({ content, fontSize = 16, className = '', filePath, onFileNavigation }: MarkdownContentProps) {
+// Helper function to highlight search matches in text
+function highlightSearchText(text: string, query: string, options: { caseSensitive: boolean; useRegex: boolean; wholeWord: boolean }): React.ReactNode {
+  if (!query || !query.trim()) {
+    return text
+  }
+
+  try {
+    let pattern = query
+    if (!options.useRegex) {
+      // Escape special regex characters
+      pattern = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+    if (options.wholeWord) {
+      pattern = `\\b${pattern}\\b`
+    }
+
+    const flags = options.caseSensitive ? 'g' : 'gi'
+    const regex = new RegExp(pattern, flags)
+
+    const parts: React.ReactNode[] = []
+    let lastIndex = 0
+    let match
+
+    while ((match = regex.exec(text)) !== null) {
+      // Add text before match
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index))
+      }
+
+      // Add highlighted match
+      parts.push(
+        <mark key={`${match.index}-${match[0]}`} className="bg-yellow-200/80 dark:bg-yellow-500/20 text-foreground px-0.5 rounded">
+          {match[0]}
+        </mark>
+      )
+
+      lastIndex = match.index + match[0].length
+
+      // Prevent infinite loop for zero-length matches
+      if (match.index === regex.lastIndex) {
+        regex.lastIndex++
+      }
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex))
+    }
+
+    return parts.length > 0 ? <>{parts}</> : text
+  } catch (error) {
+    // If regex is invalid, return original text
+    return text
+  }
+}
+
+export default function MarkdownContent({ content, fontSize = 16, className = '', filePath, onFileNavigation, searchQuery, searchOptions }: MarkdownContentProps) {
   const articleRef = useRef<HTMLElement>(null)
-  
+
   // Calculate relative sizes based on the base fontSize
   const scale = fontSize / 16
   const getFontSize = (baseSize: number) => Math.round(baseSize * scale)
+
+  // Helper function to process children and apply highlighting
+  const processChildren = (children: React.ReactNode): React.ReactNode => {
+    if (!searchQuery || !searchOptions) {
+      return children
+    }
+
+    if (typeof children === 'string') {
+      return highlightSearchText(children, searchQuery, searchOptions)
+    }
+
+    if (Array.isArray(children)) {
+      return children.map((child, index) => {
+        if (typeof child === 'string') {
+          return <span key={index}>{highlightSearchText(child, searchQuery, searchOptions)}</span>
+        }
+        return child
+      })
+    }
+
+    return children
+  }
   
   // Generate heading ID from text - same logic as before for consistency
   const usedHeadingIds = useRef(new Set<string>())
@@ -177,7 +257,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 className="font-bold text-foreground mb-8 pb-4 border-b-2 border-border scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(36)}px` }}
               >
-                {children}
+                {processChildren(children)}
               </h1>
             )
           },
@@ -190,7 +270,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 className="font-semibold text-foreground mt-10 mb-6 pb-3 border-b border-border scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(28)}px` }}
               >
-                {children}
+                {processChildren(children)}
               </h2>
             )
           },
@@ -203,7 +283,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 className="font-semibold text-foreground mt-8 mb-4 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(24)}px` }}
               >
-                {children}
+                {processChildren(children)}
               </h3>
             )
           },
@@ -216,7 +296,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 className="font-semibold text-foreground mt-6 mb-3 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(20)}px` }}
               >
-                {children}
+                {processChildren(children)}
               </h4>
             )
           },
@@ -229,7 +309,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 className="font-semibold text-foreground mt-5 mb-2 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(18)}px` }}
               >
-                {children}
+                {processChildren(children)}
               </h5>
             )
           },
@@ -242,13 +322,13 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
                 className="font-semibold text-foreground mt-4 mb-2 scroll-mt-20 break-words"
                 style={{ fontSize: `${getFontSize(16)}px` }}
               >
-                {children}
+                {processChildren(children)}
               </h6>
             )
           },
           p: ({ children }) => (
             <p className="text-muted-foreground leading-7 mb-6 text-base break-words overflow-wrap-anywhere">
-              {children}
+              {processChildren(children)}
             </p>
           ),
           ul: ({ children }) => (
@@ -263,14 +343,14 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
           ),
           li: ({ children }) => (
             <li className="text-muted-foreground leading-6 break-words">
-              {children}
+              {processChildren(children)}
             </li>
           ),
           blockquote: ({ children }) => (
             <Card className="my-6 border-l-4 border-l-primary border-t-0 border-r-0 border-b-0 rounded-l-none bg-muted/20">
               <CardContent className="p-6 py-4">
                 <div className="text-muted-foreground italic break-words overflow-wrap-anywhere">
-                  {children}
+                  {processChildren(children)}
                 </div>
               </CardContent>
             </Card>
@@ -280,12 +360,12 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
             const match = /language-(\w+)/.exec(className || '')
             const language = match ? match[1] : ''
             const codeString = String(children).replace(/\n$/, '')
-            
+
             // Handle Mermaid diagrams
             if (!inline && (language === 'mermaid' || language === 'mmd')) {
               return <MermaidDiagram chart={codeString} />
             }
-            
+
             return !inline && match ? (
               <Card className="my-6 overflow-hidden">
                 <CardContent className="p-0">
@@ -303,7 +383,7 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
               </Card>
             ) : (
               <code className="bg-muted text-muted-foreground px-2 py-1 rounded text-sm font-mono break-all whitespace-pre-wrap" {...props}>
-                {children}
+                {processChildren(children)}
               </code>
             )
           },
@@ -335,12 +415,12 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
           ),
           th: ({ children }) => (
             <th className="px-6 py-4 text-left text-sm font-semibold text-foreground bg-muted break-words min-w-0">
-              {children}
+              {processChildren(children)}
             </th>
           ),
           td: ({ children }) => (
             <td className="px-6 py-4 text-sm text-muted-foreground break-words min-w-0">
-              {children}
+              {processChildren(children)}
             </td>
           ),
           a: ({ href, children }) => {
@@ -484,12 +564,12 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
           },
           strong: ({ children }) => (
             <strong className="font-bold text-foreground">
-              {children}
+              {processChildren(children)}
             </strong>
           ),
           em: ({ children }) => (
             <em className="italic text-muted-foreground">
-              {children}
+              {processChildren(children)}
             </em>
           ),
           hr: () => (
