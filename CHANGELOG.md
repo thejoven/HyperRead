@@ -5,6 +5,38 @@ All notable changes to HyperRead will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-09-30
+
+### 🎯 Search & Highlighting Enhancements
+- ✨ **Complete Markdown Search Highlighting** - Extended search highlighting to all markdown elements (headings, tables, emphasis, inline code, etc.)
+- 🔍 **100% Text Coverage** - Search now highlights keywords in all text-containing elements, up from 20% coverage
+- 🎨 **Improved Search UX** - Better visual feedback with consistent highlighting across all content types
+
+### ⌨️ Keyboard Shortcuts System
+- ✨ **Customizable Shortcuts** - Full keyboard shortcuts management system with customization support
+- 🔄 **Double-Press Detection** - Support for double-press shortcuts (e.g., Shift Shift) with 500ms time window
+- 💾 **Persistent Configuration** - User-defined shortcuts saved and restored across sessions
+- 🎯 **Real-time Activation** - Shortcuts take effect immediately after modification without restart
+- ⚙️ **Shortcuts Settings Panel** - Dedicated settings interface for managing keyboard shortcuts
+- 🔧 **Conflict Detection** - Automatic detection and resolution of shortcut conflicts
+
+### ⚙️ Settings Interface Improvements
+- 📐 **Fixed Modal Dimensions** - Settings modal now has fixed 800×600px size for consistent layout
+- 📋 **Scrollable Content Area** - Right-side settings panel with independent scrolling
+- 🎨 **Improved Layout** - Better organization with left sidebar navigation and content separation
+- 🌍 **Complete Translations** - Added 22+ missing translation keys for settings interface
+
+### 🛠️ Technical Improvements
+- 🔧 **Dynamic Shortcut Listeners** - Keyboard event handlers now read from user configuration
+- 📦 **Storage Format Optimization** - Unified storage format for double-press (`'shift shift'`) and combo keys (`'ctrl+f'`)
+- 🎯 **Component Refactoring** - Enhanced ShortcutRecorder and ShortcutSettings components
+- ✨ **Zero TypeScript Errors** - All changes fully typed and validated
+
+### 🐛 Bug Fixes
+- 🔧 **Shortcut Recorder Fixed** - Double-press modifier keys (Shift, Alt, Ctrl, Cmd) now properly detected
+- 🔧 **Settings Shortcuts Active** - Fixed issue where customized shortcuts weren't working after configuration
+- 🔧 **Markdown Highlighting** - Fixed incomplete search highlighting in markdown rendered content
+
 ## [2.0.0] - 2025-09-28
 
 ### 🚀 Major Release - AI Assistant & Modern UX
