@@ -54,7 +54,7 @@ export default function ShortcutSettings() {
 
   // 所有分类
   const categories: Array<{ id: ShortcutCategory | 'all', label: string }> = [
-    { id: 'all', label: t('common.reset') },
+    { id: 'all', label: t('common.all') },
     { id: 'general', label: t('shortcuts.categories.general') },
     { id: 'navigation', label: t('shortcuts.categories.navigation') },
     { id: 'editor', label: t('shortcuts.categories.editor') },
@@ -333,7 +333,7 @@ export default function ShortcutSettings() {
         {filteredShortcuts.length === 0 && (
           <div className="text-center py-8">
             <p className="text-sm text-muted-foreground">
-              {searchQuery ? t('search.noResults') : 'No shortcuts in this category'}
+              {searchQuery ? t('search.noResults') : t('shortcuts.messages.noShortcuts')}
             </p>
           </div>
         )}
@@ -405,12 +405,49 @@ function ShortcutItem({ shortcut, onEdit, onReset, onToggle, t }: ShortcutItemPr
         </div>
         <div className="flex items-center gap-2 mt-1">
           <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted/60 border border-border/20">
-            {shortcut.keys.map((key, index) => (
-              <span key={index} className="text-xs font-mono font-semibold">
-                {formatKey(key)}
-                {index < shortcut.keys.length - 1 && <span className="mx-0.5 text-muted-foreground">+</span>}
-              </span>
-            ))}
+            {shortcut.keys.map((keyCombo, index) => {
+              // 检查是否包含空格（双击）或+（组合键）
+              const hasSpace = keyCombo.includes(' ')
+              const hasPlus = keyCombo.includes('+')
+
+              if (hasSpace) {
+                // 双击情况，用空格分隔显示
+                const keys = keyCombo.split(' ')
+                return (
+                  <span key={index} className="text-xs font-mono font-semibold">
+                    {keys.map((k, i) => (
+                      <span key={i}>
+                        {formatKey(k)}
+                        {i < keys.length - 1 && ' '}
+                      </span>
+                    ))}
+                    {index < shortcut.keys.length - 1 && <span className="mx-1 text-muted-foreground">/</span>}
+                  </span>
+                )
+              } else if (hasPlus) {
+                // 组合键情况，用+分隔显示
+                const keys = keyCombo.split('+')
+                return (
+                  <span key={index} className="text-xs font-mono font-semibold">
+                    {keys.map((k, i) => (
+                      <span key={i}>
+                        {formatKey(k)}
+                        {i < keys.length - 1 && <span className="mx-0.5 text-muted-foreground">+</span>}
+                      </span>
+                    ))}
+                    {index < shortcut.keys.length - 1 && <span className="mx-1 text-muted-foreground">/</span>}
+                  </span>
+                )
+              } else {
+                // 单个键
+                return (
+                  <span key={index} className="text-xs font-mono font-semibold">
+                    {formatKey(keyCombo)}
+                    {index < shortcut.keys.length - 1 && <span className="mx-1 text-muted-foreground">/</span>}
+                  </span>
+                )
+              }
+            })}
           </div>
         </div>
       </div>

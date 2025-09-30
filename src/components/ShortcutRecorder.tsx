@@ -68,10 +68,16 @@ export default function ShortcutRecorder({
   const [recordedKeys, setRecordedKeys] = useState<string[]>([])
   const [isRecording, setIsRecording] = useState(false)
 
+  // 双击检测状态
+  const [lastPressedKey, setLastPressedKey] = useState<string | null>(null)
+  const [lastPressTime, setLastPressTime] = useState<number>(0)
+
   // 重置录制状态
   const resetRecording = useCallback(() => {
     setRecordedKeys([])
     setIsRecording(false)
+    setLastPressedKey(null)
+    setLastPressTime(0)
   }, [])
 
   // 处理按键事件
@@ -82,17 +88,37 @@ export default function ShortcutRecorder({
       e.preventDefault()
       e.stopPropagation()
 
-      // 忽略单独的修饰键
-      if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) {
-        return
-      }
-
       // ESC 键关闭录制
       if (e.key === 'Escape') {
         onClose()
         return
       }
 
+      const currentTime = Date.now()
+      const timeDiff = currentTime - lastPressTime
+
+      // 检测双击（同一个键在500ms内按两次）
+      if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) {
+        if (lastPressedKey === e.key && timeDiff < 500) {
+          // 双击检测成功
+          setIsRecording(true)
+          const keyName = e.key.toLowerCase()
+          setRecordedKeys([keyName, keyName])
+          setLastPressedKey(null)
+          setLastPressTime(0)
+          return
+        } else {
+          // 记录第一次按下
+          setLastPressedKey(e.key)
+          setLastPressTime(currentTime)
+          setIsRecording(true)
+          return
+        }
+      }
+
+      // 重置双击检测
+      setLastPressedKey(null)
+      setLastPressTime(0)
       setIsRecording(true)
 
       const keys: string[] = []
@@ -129,7 +155,7 @@ export default function ShortcutRecorder({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, lastPressedKey, lastPressTime])
 
   // 关闭时重置状态
   useEffect(() => {
@@ -148,7 +174,16 @@ export default function ShortcutRecorder({
 
   const handleConfirm = () => {
     if (recordedKeys.length > 0) {
-      onConfirm(recordedKeys)
+      // 检测是否为双击（两个相同的键）
+      const isDoublePress = recordedKeys.length === 2 && recordedKeys[0] === recordedKeys[1]
+
+      if (isDoublePress) {
+        // 双击保存为一个字符串，用空格分隔
+        onConfirm([`${recordedKeys[0]} ${recordedKeys[1]}`])
+      } else {
+        // 组合键保存为一个字符串，用+分隔
+        onConfirm([recordedKeys.join('+')])
+      }
       resetRecording()
     }
   }
@@ -159,8 +194,12 @@ export default function ShortcutRecorder({
   }
 
   // 显示按键组合
+  // 检测是否为双击（两个相同的键）
+  const isDoublePress = recordedKeys.length === 2 && recordedKeys[0] === recordedKeys[1]
   const displayKeys = recordedKeys.length > 0
-    ? recordedKeys.map(formatKey).join(' + ')
+    ? (isDoublePress
+        ? recordedKeys.map(formatKey).join(' ')  // 双击用空格分隔
+        : recordedKeys.map(formatKey).join(' + '))  // 组合键用+分隔
     : t('shortcuts.pressKeys')
 
   return (

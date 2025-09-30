@@ -14,6 +14,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { toast } from "sonner"
+import { useShortcuts } from '@/contexts/ShortcutContext'
 
 interface FileData {
   content: string
@@ -64,6 +65,7 @@ declare global {
 
 export default function ElectronApp() {
   const t = useT()
+  const { shortcuts } = useShortcuts()
   const [fileData, setFileData] = useState<FileData | null>(null)
   const [directoryData, setDirectoryData] = useState<DirectoryData | null>(null)
   const [actualRootPath, setActualRootPath] = useState<string | null>(null)
@@ -224,51 +226,88 @@ export default function ElectronApp() {
     localStorage.setItem('docs-sidebar-collapsed', JSON.stringify(isSidebarCollapsed))
   }, [isSidebarCollapsed])
 
-  // Handle Shift+Shift keyboard shortcut for search
+  // Handle keyboard shortcuts for search
   useEffect(() => {
-    let shiftPressCount = 0
-    let shiftTimer: NodeJS.Timeout | null = null
+    // Get search-open shortcut configuration
+    const searchOpenShortcut = shortcuts.find(s => s.id === 'search-open')
+    if (!searchOpenShortcut || !searchOpenShortcut.enabled) return
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        shiftPressCount++
+    // Parse the shortcut keys
+    const keys = searchOpenShortcut.keys[0] // Use first key combination
+    const isDoubleShift = keys === 'shift shift'
 
-        if (shiftPressCount === 1) {
-          // Start timer to reset count
-          shiftTimer = setTimeout(() => {
+    if (isDoubleShift) {
+      let shiftPressCount = 0
+      let shiftTimer: NodeJS.Timeout | null = null
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Shift') {
+          shiftPressCount++
+
+          if (shiftPressCount === 1) {
+            // Start timer to reset count
+            shiftTimer = setTimeout(() => {
+              shiftPressCount = 0
+            }, 500) // Reset after 500ms
+          } else if (shiftPressCount === 2) {
+            // Shift pressed twice quickly
+            e.preventDefault()
+            if (fileData && fileData.content) {
+              setShowSearch(true)
+            }
             shiftPressCount = 0
-          }, 500) // Reset after 500ms
-        } else if (shiftPressCount === 2) {
-          // Shift pressed twice quickly
+            if (shiftTimer) {
+              clearTimeout(shiftTimer)
+            }
+          }
+        }
+      }
+
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === 'Shift') {
+          // Keep the count, don't reset on keyup
+        }
+      }
+
+      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('keyup', handleKeyUp)
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown)
+        window.removeEventListener('keyup', handleKeyUp)
+        if (shiftTimer) {
+          clearTimeout(shiftTimer)
+        }
+      }
+    } else {
+      // Handle other key combinations
+      const handleKeyDown = (e: KeyboardEvent) => {
+        const pressedKey = e.key.toLowerCase()
+        const hasCtrl = e.ctrlKey || e.metaKey
+        const hasShift = e.shiftKey
+        const hasAlt = e.altKey
+
+        // Build pressed combination
+        let combination = ''
+        if (hasCtrl) combination += 'ctrl+'
+        if (hasShift) combination += 'shift+'
+        if (hasAlt) combination += 'alt+'
+        combination += pressedKey
+
+        if (combination === keys) {
           e.preventDefault()
           if (fileData && fileData.content) {
             setShowSearch(true)
           }
-          shiftPressCount = 0
-          if (shiftTimer) {
-            clearTimeout(shiftTimer)
-          }
         }
       }
-    }
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        // Keep the count, don't reset on keyup
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown)
       }
     }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-      if (shiftTimer) {
-        clearTimeout(shiftTimer)
-      }
-    }
-  }, [fileData])
+  }, [fileData, shortcuts])
 
   // Toggle sidebar
   const toggleSidebar = () => {

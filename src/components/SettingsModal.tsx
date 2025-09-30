@@ -57,7 +57,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
     },
     {
       id: 'history',
-      label: '对话历史',
+      label: t('settings.categories.history'),
       icon: <History className="w-4 h-4" />
     },
     {
@@ -263,8 +263,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         {/* 自定义 AI 服务配置 */}
         <div className="py-2 px-3 bg-muted/20 rounded-lg">
           <div className="mb-3">
-            <label className="text-sm font-medium text-foreground">自定义 AI 服务配置</label>
-            <p className="text-xs text-muted-foreground">配置您的自定义 AI API 服务</p>
+            <label className="text-sm font-medium text-foreground">{t('settings.history.aiConfig')}</label>
+            <p className="text-xs text-muted-foreground">{t('settings.history.aiConfigDesc')}</p>
           </div>
         </div>
 
@@ -360,16 +360,16 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         {/* 存储信息 */}
         <div className="py-2 px-3 bg-muted/20 rounded-lg">
           <div className="mb-3">
-            <label className="text-sm font-medium text-foreground">存储状态</label>
-            <p className="text-xs text-muted-foreground">本地保存的对话历史信息</p>
+            <label className="text-sm font-medium text-foreground">{t('settings.history.storageStatus')}</label>
+            <p className="text-xs text-muted-foreground">{t('settings.history.storageStatusDesc')}</p>
           </div>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
-              <span>保存的对话：</span>
+              <span>{t('settings.history.savedConversations')}：</span>
               <span className="font-mono">{storageInfo.conversationCount} / {storageInfo.maxConversations}</span>
             </div>
             <div className="flex justify-between">
-              <span>存储大小：</span>
+              <span>{t('settings.history.storageSize')}：</span>
               <span className="font-mono">{(storageInfo.storageSize / 1024).toFixed(1)} KB</span>
             </div>
           </div>
@@ -379,8 +379,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         {conversationList.length > 0 && (
           <div className="py-2 px-3 bg-muted/20 rounded-lg">
             <div className="mb-3">
-              <label className="text-sm font-medium text-foreground">对话历史</label>
-              <p className="text-xs text-muted-foreground">最近的文档对话记录</p>
+              <label className="text-sm font-medium text-foreground">{t('settings.history.historyList')}</label>
+              <p className="text-xs text-muted-foreground">{t('settings.history.historyListDesc')}</p>
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {conversationList.slice(0, 10).map((conv, index) => (
@@ -390,7 +390,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
                       {conv.fileName}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {conv.messageCount} 条消息 · {conv.lastUpdated.toLocaleDateString()}
+                      {conv.messageCount} {t('settings.history.messages')} · {conv.lastUpdated.toLocaleDateString()}
                     </div>
                   </div>
                   <Button
@@ -402,7 +402,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
                       setActiveCategory('history')
                     }}
                     className="h-6 w-6 p-0 macos-button flex-shrink-0 ml-2"
-                    title="删除此对话历史"
+                    title={t('settings.history.deleteConversation')}
                   >
                     <Trash className="h-3 w-3" />
                   </Button>
@@ -419,17 +419,17 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
               variant="outline"
               size="sm"
               onClick={() => {
-                toast.error('确定要清空所有对话历史吗？此操作不可恢复。', {
+                toast.error(t('settings.history.clearAllConfirm'), {
                   action: {
-                    label: '确定清空',
+                    label: t('settings.history.clearAllAction'),
                     onClick: () => {
                       conversationStorage.clearAllConversations()
-                      toast.success('已清空所有对话历史')
+                      toast.success(t('settings.history.clearAllSuccess'))
                       setActiveCategory('history') // 强制重新渲染
                     }
                   },
                   cancel: {
-                    label: '取消',
+                    label: t('common.cancel'),
                     onClick: () => {}
                   }
                 })
@@ -437,7 +437,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
               className="flex-1 h-8 macos-button"
             >
               <Trash className="h-3 w-3 mr-1" />
-              清空所有历史
+              {t('settings.history.clearAll')}
             </Button>
             <Button
               variant="outline"
@@ -451,16 +451,16 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
                 a.download = `ai-conversations-${new Date().toISOString().split('T')[0]}.json`
                 a.click()
                 URL.revokeObjectURL(url)
-                toast.success('对话历史已导出')
+                toast.success(t('settings.history.exportSuccess'))
               }}
               className="flex-1 h-8 macos-button"
             >
-              导出备份
+              {t('settings.history.exportBackup')}
             </Button>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground block mb-2">导入对话历史</label>
+            <label className="text-sm font-medium text-foreground block mb-2">{t('settings.history.importHistory')}</label>
             <input
               type="file"
               accept=".json"
@@ -472,13 +472,13 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
                     try {
                       const data = event.target?.result as string
                       if (conversationStorage.importConversations(data)) {
-                        toast.success('对话历史导入成功')
+                        toast.success(t('settings.history.importSuccess'))
                         setActiveCategory('history') // 强制重新渲染
                       } else {
-                        toast.error('导入失败，请检查文件格式')
+                        toast.error(t('settings.history.importFailed'))
                       }
                     } catch (error) {
-                      toast.error('导入失败，文件格式错误')
+                      toast.error(t('settings.history.importError'))
                     }
                   }
                   reader.readAsText(file)
@@ -493,8 +493,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         {conversationList.length === 0 && (
           <div className="text-center py-6">
             <History className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">暂无对话历史</p>
-            <p className="text-xs text-muted-foreground mt-1">开始与文档对话后，历史记录会自动保存</p>
+            <p className="text-sm text-muted-foreground">{t('settings.history.noHistory')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('settings.history.noHistoryDesc')}</p>
           </div>
         )}
       </div>
@@ -529,10 +529,10 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 macos-fade-in p-4"
       onClick={handleBackdropClick}
     >
-      <Card className="w-[500px] max-w-[90vw] h-auto glass-effect border border-border/30 shadow-2xl macos-scale-in overflow-hidden">
-        {/* 主体内容区 - 单列布局 */}
-        <div className="flex">
-          {/* 左侧导航栏 - 灰色背景，缩小宽度 */}
+      <Card className="w-[800px] h-[600px] glass-effect border border-border/30 shadow-2xl macos-scale-in overflow-hidden flex flex-col">
+        {/* 主体内容区 - 固定高度，横向布局 */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* 左侧导航栏 - 灰色背景，固定宽度 */}
           <div className="w-32 bg-muted/30 border-r border-border/20 flex-shrink-0">
             <div className="p-2">
               <nav className="space-y-1">
@@ -556,9 +556,9 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
             </div>
           </div>
 
-          {/* 右侧内容区 - 白色背景 */}
-          <div className="flex-1 bg-background">
-            <div className="p-4">
+          {/* 右侧内容区 - 白色背景，可滚动 */}
+          <div className="flex-1 bg-background overflow-y-auto">
+            <div className="p-6">
               {renderCategoryContent()}
             </div>
           </div>
