@@ -194,9 +194,9 @@ const TreeNodeComponent = memo(({
               <ChevronRight className="h-3.5 w-3.5 mr-1 flex-shrink-0 transition-transform duration-150" />
             )}
             {isExpanded ? (
-              <FolderOpen className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+              <FolderOpen className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-primary" />
             ) : (
-              <Folder className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+              <Folder className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-primary" />
             )}
             <span className="truncate text-xs font-medium macos-text">{node.name}</span>
             <span className="text-xs text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-150 font-mono">

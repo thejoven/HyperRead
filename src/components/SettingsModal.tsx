@@ -495,7 +495,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
           <div className={`text-xs text-center p-2 rounded ${
             connectionStatus === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
             connectionStatus === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+            'bg-primary/10 text-primary'
           }`}>
             {t(`settings.ai.status.${connectionStatus}`)}
           </div>

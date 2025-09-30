@@ -153,9 +153,9 @@
 }
 
 .macos-file-item.active {
-  background: #007AFF;
+  background: hsl(var(--primary));
   color: white;
-  box-shadow: 0 1px 3px rgba(0, 122, 255, 0.3);
+  box-shadow: 0 1px 3px hsl(var(--primary) / 0.3);
 }
 
 .dark .macos-file-item:hover {
@@ -177,8 +177,8 @@
 
 /* macOS 风格的拖拽提示 */
 .macos-drop-zone {
-  background: linear-gradient(135deg, rgba(0, 122, 255, 0.1) 0%, rgba(0, 122, 255, 0.05) 100%);
-  border: 2px dashed #007AFF;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--primary) / 0.05) 100%);
+  border: 2px dashed hsl(var(--primary));
   border-radius: 12px;
 }
 

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* macOS 风格的浅色主题 */
+    /* macOS 风格的浅色主题 - 青色调 */
     --background: 0 0% 98%;
     --foreground: 0 0% 13%;
 
@@ -14,57 +14,61 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 13%;
 
-    --primary: 211 100% 50%; /* iOS/macOS 蓝色 */
+    /* 主色调优化方案：
+       原色 #96f3f6 (183deg 85% 77%) 太亮
+       优化为更深、更饱和的青色，确保可读性 */
+    --primary: 183 70% 45%; /* 优化后的青色 - 深度适中，对比度好 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96%;
+    --secondary: 183 15% 96%; /* 淡青色背景 */
     --secondary-foreground: 0 0% 13%;
 
-    --muted: 0 0% 96%;
+    --muted: 183 10% 96%; /* 极淡青色 */
     --muted-foreground: 0 0% 45%;
 
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 13%;
+    --accent: 183 60% 92%; /* 明亮的青色强调 */
+    --accent-foreground: 183 70% 25%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 89%;
-    --input: 0 0% 89%;
-    --ring: 211 100% 50%;
+    --border: 183 15% 89%;
+    --input: 183 10% 89%;
+    --ring: 183 70% 45%;
 
     --radius: 0.5rem;
   }
 
   .dark {
-    /* macOS 风格的深色主题 */
-    --background: 0 0% 7%;
+    /* macOS 风格的深色主题 - 青色调 */
+    --background: 183 8% 7%;
     --foreground: 0 0% 98%;
 
-    --card: 0 0% 10%;
+    --card: 183 8% 10%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 10%;
+    --popover: 183 8% 10%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 211 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    /* 深色模式使用较亮的青色以保持视觉舒适 */
+    --primary: 183 75% 55%; /* 深色模式下稍亮的青色 */
+    --primary-foreground: 183 10% 10%;
 
-    --secondary: 0 0% 15%;
+    --secondary: 183 12% 15%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 15%;
+    --muted: 183 10% 15%;
     --muted-foreground: 0 0% 63%;
 
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 183 25% 20%; /* 深色模式的强调色 */
+    --accent-foreground: 183 75% 70%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 183 12% 20%;
+    --input: 183 10% 15%;
+    --ring: 183 75% 55%;
   }
 }
 
@@ -122,13 +126,74 @@ html {
   box-sizing: border-box;
 }
 
-/* Code block styling */
+/* Code block styling - Light mode */
 .hljs {
   background: hsl(var(--muted)) !important;
   color: hsl(var(--foreground)) !important;
   padding: 1.5rem !important;
   border-radius: 0.5rem !important;
   overflow-x: auto !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Code block styling - Dark mode */
+.dark .hljs {
+  background: hsl(183 8% 12%) !important; /* 略深于背景 */
+  color: hsl(0 0% 92%) !important;
+  border: 1px solid hsl(183 12% 25%) !important;
+}
+
+/* Dark mode - syntax highlighting colors */
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-literal,
+.dark .hljs-section,
+.dark .hljs-link {
+  color: hsl(183 75% 65%) !important; /* 明亮的青色 */
+}
+
+.dark .hljs-string,
+.dark .hljs-title,
+.dark .hljs-name,
+.dark .hljs-type,
+.dark .hljs-attribute,
+.dark .hljs-symbol,
+.dark .hljs-bullet,
+.dark .hljs-built_in,
+.dark .hljs-addition,
+.dark .hljs-variable,
+.dark .hljs-template-tag,
+.dark .hljs-template-variable {
+  color: hsl(150 60% 60%) !important; /* 柔和的绿色 */
+}
+
+.dark .hljs-comment,
+.dark .hljs-quote,
+.dark .hljs-deletion,
+.dark .hljs-meta {
+  color: hsl(0 0% 55%) !important; /* 灰色注释 */
+}
+
+.dark .hljs-number,
+.dark .hljs-regexp,
+.dark .hljs-selector-id,
+.dark .hljs-selector-class,
+.dark .hljs-selector-attr,
+.dark .hljs-selector-pseudo {
+  color: hsl(280 60% 70%) !important; /* 紫色数字 */
+}
+
+.dark .hljs-doctag,
+.dark .hljs-formula {
+  color: hsl(30 80% 65%) !important; /* 橙色 */
+}
+
+.dark .hljs-tag {
+  color: hsl(183 75% 65%) !important;
+}
+
+.dark .hljs-attr {
+  color: hsl(280 60% 70%) !important;
 }
 
 /* Inline code styling */
@@ -138,6 +203,12 @@ html {
   padding: 0.125rem 0.25rem !important;
   border-radius: 0.25rem !important;
   font-size: 0.875rem !important;
+}
+
+.dark :not(pre) > code {
+  background: hsl(183 12% 18%) !important;
+  color: hsl(183 75% 70%) !important;
+  border: 1px solid hsl(183 12% 25%) !important;
 }
 
 /* Table improvements */
@@ -220,12 +291,43 @@ a:hover {
   user-select: text;
 }
 
+/* Mermaid diagram dark mode enhancements */
+.dark .mermaid-container svg {
+  background: transparent !important;
+}
+
+.dark .mermaid-container .node rect,
+.dark .mermaid-container .node circle,
+.dark .mermaid-container .node ellipse,
+.dark .mermaid-container .node polygon {
+  fill: hsl(183 8% 15%) !important;
+  stroke: hsl(183 75% 55%) !important;
+}
+
+.dark .mermaid-container .node .label,
+.dark .mermaid-container text,
+.dark .mermaid-container .nodeLabel,
+.dark .mermaid-container .edgeLabel {
+  fill: hsl(0 0% 92%) !important;
+  color: hsl(0 0% 92%) !important;
+}
+
+.dark .mermaid-container .edgePath .path,
+.dark .mermaid-container .flowchart-link {
+  stroke: hsl(183 60% 50%) !important;
+}
+
+.dark .mermaid-container .marker {
+  fill: hsl(183 60% 50%) !important;
+  stroke: hsl(183 60% 50%) !important;
+}
+
 /* Print styles */
 @media print {
   .sidebar {
     display: none;
   }
-  
+
   .main-content {
     margin-left: 0 !important;
   }

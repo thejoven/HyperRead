@@ -24,14 +24,35 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [justFinishedDragging, setJustFinishedDragging] = useState(false)
 
+  // Detect dark mode
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
   const chartId = id || `mermaid-${Math.random().toString(36).substr(2, 9)}`
+
+  // Detect dark mode changes
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'))
+    }
+
+    checkDarkMode()
+
+    // Watch for theme changes
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     // Initialize mermaid with different configs for regular vs fullscreen
     const initializeMermaid = (useMaxWidth = true) => {
       mermaid.initialize({
         startOnLoad: false,
-        theme: 'default',
+        theme: isDarkMode ? 'dark' : 'default',
         securityLevel: 'loose',
         flowchart: {
           useMaxWidth: useMaxWidth,
@@ -88,7 +109,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     }
 
     renderRegularChart()
-  }, [chart, chartId])
+  }, [chart, chartId, isDarkMode])
 
   // Handle fullscreen toggle
   const toggleFullscreen = () => {
@@ -271,7 +292,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
             // Re-initialize mermaid without width constraints for fullscreen
             mermaid.initialize({
               startOnLoad: false,
-              theme: 'default',
+              theme: isDarkMode ? 'dark' : 'default',
               securityLevel: 'loose',
               flowchart: {
                 useMaxWidth: false,
@@ -326,7 +347,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
       const timer = setTimeout(renderFullscreenChart, 200)
       return () => clearTimeout(timer)
     }
-  }, [isFullscreen, chart, chartId, panX, panY, zoomLevel])
+  }, [isFullscreen, chart, chartId, panX, panY, zoomLevel, isDarkMode])
 
   // Re-initialize mermaid when exiting fullscreen
   useEffect(() => {
@@ -334,7 +355,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
       // Re-initialize mermaid with width constraints for regular view
       mermaid.initialize({
         startOnLoad: false,
-        theme: 'default',
+        theme: isDarkMode ? 'dark' : 'default',
         securityLevel: 'loose',
         flowchart: {
           useMaxWidth: true,
@@ -349,7 +370,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
         }
       })
     }
-  }, [isFullscreen])
+  }, [isFullscreen, isDarkMode])
 
   // Handle escape key to close fullscreen
   useEffect(() => {

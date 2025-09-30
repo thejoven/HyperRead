@@ -5,6 +5,54 @@ All notable changes to HyperRead will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-09-30
+
+### 🎨 UI/UX Major Improvements
+
+#### Color Scheme Overhaul
+- ✨ **New Cyan Brand Color** - Changed primary color from blue (#007AFF) to optimized cyan (#1aafb8)
+- 🎨 **Complete Theme System** - Designed comprehensive color palette with light/dark mode variations
+- 📄 **Color Scheme Documentation** - Added detailed COLOR_SCHEME.md with 3 alternative color schemes
+- 🌈 **Consistent Branding** - Updated all UI elements (file list, TOC, settings) to use new cyan theme
+
+#### Settings Interface Redesign
+- 📐 **Hierarchical Categories** - Introduced two-level category system (General, AI Assistant)
+- 📏 **Wider Sidebar** - Increased settings sidebar width from 8rem to 12rem for better navigation
+- 🎯 **Collapsible Categories** - Added expand/collapse functionality for category groups
+- 🔄 **Better Organization** - Grouped related settings: General (Font/Language/Shortcuts), AI Assistant (API/Roles/History)
+
+#### Dark Mode Enhancements
+- 🌙 **Code Block Optimization** - Complete syntax highlighting color scheme for dark mode
+- 🎨 **8 Syntax Token Types** - Distinct colors for keywords, strings, numbers, comments, etc.
+- 📊 **Mermaid Diagram Support** - Auto-switching between light/dark themes with proper text visibility
+- 🔍 **Enhanced Readability** - Improved contrast for all code and diagram elements in dark mode
+
+### 🤖 AI Assistant Features
+
+#### Multi-Role System
+- ✨ **Role Management** - Create, edit, and delete custom AI assistant roles
+- 👥 **Default Roles** - Pre-configured roles: Document Assistant, Translation Expert, Summarization Expert
+- 🔄 **Dynamic Role Switching** - Change AI persona during conversation with instant effect
+- 💾 **Persistent Configuration** - Roles saved in localStorage with full customization support
+- 🌍 **Bilingual Support** - Complete i18n for role management interface (EN/ZH)
+
+#### System Improvements
+- 🗑️ **Removed Long Document Processing** - Simplified AI service by removing complex chunking system
+- 🎯 **Streamlined API** - Cleaner codebase with unified message processing
+- 📝 **Better System Prompts** - Role-based prompts that adapt to document context
+
+### 🛠️ Technical Improvements
+- 🎨 **CSS Variables Migration** - Converted hardcoded colors to CSS custom properties
+- 🔧 **Type Safety** - Added AiRole interface with proper TypeScript typing
+- 🌐 **I18n Expansion** - Added 30+ new translation keys for roles and color descriptions
+- 📦 **Storage Format** - Standardized role storage format in localStorage
+
+### 🐛 Bug Fixes
+- 🔧 **Dark Mode Code Visibility** - Fixed unreadable code blocks in dark mode
+- 🔧 **Mermaid Text Color** - Fixed black text on dark background in diagrams
+- 🔧 **Settings Modal Height** - Proper scrolling for role management with many entries
+- 🔧 **Theme Consistency** - All UI elements now respect the new cyan color scheme
+
 ## [2.1.0] - 2025-09-30
 
 ### 🎯 Search & Highlighting Enhancements
