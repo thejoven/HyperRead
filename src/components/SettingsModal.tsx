@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard } from 'lucide-react'
+import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard, UserCog, Edit2, Save, ChevronRight, ChevronDown, Settings2 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { conversationStorage } from '@/lib/conversation-storage'
 import { toast } from "sonner"
@@ -22,11 +22,27 @@ interface SettingsCategory {
   id: string
   label: string
   icon: React.ReactNode
+  children?: SettingsSubCategory[]
+}
+
+interface SettingsSubCategory {
+  id: string
+  label: string
+  icon: React.ReactNode
+}
+
+interface AiRole {
+  id: string
+  name: string
+  systemPrompt: string
+  description?: string
+  isDefault?: boolean
 }
 
 export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeChange }: SettingsModalProps) {
   const { t, currentLanguage, languages, changeLanguage } = useTranslation()
   const [activeCategory, setActiveCategory] = useState('reading')
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['general']))
 
   // AI 配置状态
   const [aiConfig, setAiConfig] = useState({
@@ -38,34 +54,71 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
   })
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle')
 
-  // 动态设置分类，使用多语言
+  // AI 角色管理状态
+  const [aiRoles, setAiRoles] = useState<AiRole[]>([])
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
+  const [editingRole, setEditingRole] = useState<AiRole | null>(null)
+
+  // 动态设置分类，使用多语言（支持二级分类）
   const settingsCategories: SettingsCategory[] = [
     {
-      id: 'reading',
-      label: t('settings.categories.reading'),
-      icon: <BookOpen className="w-4 h-4" />
+      id: 'general',
+      label: t('settings.categories.general'),
+      icon: <Settings2 className="w-4 h-4" />,
+      children: [
+        {
+          id: 'reading',
+          label: t('settings.categories.reading'),
+          icon: <BookOpen className="w-3.5 h-3.5" />
+        },
+        {
+          id: 'language',
+          label: t('settings.categories.language'),
+          icon: <Languages className="w-3.5 h-3.5" />
+        },
+        {
+          id: 'shortcuts',
+          label: t('settings.categories.shortcuts'),
+          icon: <Keyboard className="w-3.5 h-3.5" />
+        }
+      ]
     },
     {
-      id: 'language',
-      label: t('settings.categories.language'),
-      icon: <Languages className="w-4 h-4" />
-    },
-    {
-      id: 'ai',
-      label: t('settings.categories.ai'),
-      icon: <Bot className="w-4 h-4" />
-    },
-    {
-      id: 'history',
-      label: t('settings.categories.history'),
-      icon: <History className="w-4 h-4" />
-    },
-    {
-      id: 'shortcuts',
-      label: t('settings.categories.shortcuts'),
-      icon: <Keyboard className="w-4 h-4" />
+      id: 'ai-assistant',
+      label: t('settings.categories.aiAssistant'),
+      icon: <Bot className="w-4 h-4" />,
+      children: [
+        {
+          id: 'ai',
+          label: t('settings.categories.ai'),
+          icon: <Key className="w-3.5 h-3.5" />
+        },
+        {
+          id: 'roles',
+          label: t('settings.categories.roles'),
+          icon: <UserCog className="w-3.5 h-3.5" />
+        },
+        {
+          id: 'history',
+          label: t('settings.categories.history'),
+          icon: <History className="w-3.5 h-3.5" />
+        }
+      ]
     }
   ]
+
+  // 切换分类展开/收起
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId)
+      } else {
+        newSet.add(categoryId)
+      }
+      return newSet
+    })
+  }
 
   // 加载 AI 配置
   useEffect(() => {
@@ -82,6 +135,26 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       } catch (error) {
         console.error('Failed to load AI config:', error)
       }
+    }
+  }, [])
+
+  // 加载 AI 角色配置
+  useEffect(() => {
+    const savedRoles = localStorage.getItem('ai-roles')
+    if (savedRoles) {
+      try {
+        const roles = JSON.parse(savedRoles)
+        setAiRoles(roles)
+      } catch (error) {
+        console.error('Failed to load AI roles:', error)
+        // 加载默认角色
+        setAiRoles(getDefaultRoles())
+      }
+    } else {
+      // 初始化默认角色
+      const defaultRoles = getDefaultRoles()
+      setAiRoles(defaultRoles)
+      localStorage.setItem('ai-roles', JSON.stringify(defaultRoles))
     }
   }, [])
 
@@ -103,6 +176,87 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       document.body.style.overflow = 'unset'
     }
   }, [isOpen, onClose])
+
+  // 获取默认角色
+  const getDefaultRoles = (): AiRole[] => {
+    return [
+      {
+        id: 'default',
+        name: t('settings.roles.defaultRoles.documentAssistant.name'),
+        systemPrompt: 'You are a professional document analysis assistant. Help users analyze document content, answer technical questions, provide suggestions, etc. Keep answers accurate, helpful, and friendly.',
+        description: t('settings.roles.defaultRoles.documentAssistant.description'),
+        isDefault: true
+      },
+      {
+        id: 'translator',
+        name: t('settings.roles.defaultRoles.translator.name'),
+        systemPrompt: 'You are a professional translator. Translate the content accurately while maintaining the original meaning and style. Provide natural and fluent translations.',
+        description: t('settings.roles.defaultRoles.translator.description')
+      },
+      {
+        id: 'summarizer',
+        name: t('settings.roles.defaultRoles.summarizer.name'),
+        systemPrompt: 'You are an expert at summarizing documents. Extract key points and provide concise, well-structured summaries that capture the essential information.',
+        description: t('settings.roles.defaultRoles.summarizer.description')
+      }
+    ]
+  }
+
+  // 角色管理函数
+  const saveRoles = (roles: AiRole[]) => {
+    try {
+      localStorage.setItem('ai-roles', JSON.stringify(roles))
+      setAiRoles(roles)
+      toast.success(t('settings.roles.roleSaved'))
+    } catch (error) {
+      console.error('Failed to save AI roles:', error)
+      toast.error(t('settings.roles.saveFailed'))
+    }
+  }
+
+  const addRole = () => {
+    const newRole: AiRole = {
+      id: `role-${Date.now()}`,
+      name: t('settings.roles.addRole').replace('添加', '').replace('Add New ', ''),
+      systemPrompt: '',
+      description: ''
+    }
+    setEditingRoleId(newRole.id)
+    setEditingRole(newRole)
+    const updatedRoles = [...aiRoles, newRole]
+    setAiRoles(updatedRoles)
+  }
+
+  const updateRole = (role: AiRole) => {
+    const updatedRoles = aiRoles.map(r => r.id === role.id ? role : r)
+    saveRoles(updatedRoles)
+    setEditingRoleId(null)
+    setEditingRole(null)
+  }
+
+  const deleteRole = (roleId: string) => {
+    const role = aiRoles.find(r => r.id === roleId)
+    if (role?.isDefault) {
+      toast.error(t('settings.roles.cannotDeleteDefault'))
+      return
+    }
+    const updatedRoles = aiRoles.filter(r => r.id !== roleId)
+    saveRoles(updatedRoles)
+  }
+
+  const startEditRole = (role: AiRole) => {
+    setEditingRoleId(role.id)
+    setEditingRole({ ...role })
+  }
+
+  const cancelEditRole = () => {
+    if (editingRole && !aiRoles.find(r => r.id === editingRole.id)?.name) {
+      // 如果是新角色但未保存，删除它
+      setAiRoles(aiRoles.filter(r => r.id !== editingRole.id))
+    }
+    setEditingRoleId(null)
+    setEditingRole(null)
+  }
 
   if (!isOpen) return null
 
@@ -501,6 +655,134 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
     )
   }
 
+  // 渲染角色管理设置内容
+  const renderRolesSettings = () => {
+    return (
+      <div className="space-y-4">
+        {/* 角色说明 */}
+        <div className="py-2 px-3 bg-muted/20 rounded-lg">
+          <div className="mb-3">
+            <label className="text-sm font-medium text-foreground">{t('settings.roles.title')}</label>
+            <p className="text-xs text-muted-foreground">{t('settings.roles.description')}</p>
+          </div>
+        </div>
+
+        {/* 角色列表 */}
+        <div className="space-y-2">
+          {aiRoles.map((role) => (
+            <div key={role.id} className="p-3 bg-muted/20 rounded-lg border border-border/30">
+              {editingRoleId === role.id && editingRole ? (
+                // 编辑模式
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">{t('settings.roles.roleName')}</label>
+                    <Input
+                      value={editingRole.name}
+                      onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
+                      className="h-7 text-xs"
+                      placeholder={t('settings.roles.roleNamePlaceholder')}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">{t('settings.roles.roleDescription')}</label>
+                    <Input
+                      value={editingRole.description || ''}
+                      onChange={(e) => setEditingRole({ ...editingRole, description: e.target.value })}
+                      className="h-7 text-xs"
+                      placeholder={t('settings.roles.roleDescriptionPlaceholder')}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">{t('settings.roles.systemPrompt')}</label>
+                    <textarea
+                      value={editingRole.systemPrompt}
+                      onChange={(e) => setEditingRole({ ...editingRole, systemPrompt: e.target.value })}
+                      className="w-full min-h-[100px] p-2 text-xs border border-border/30 rounded-md bg-background/50 resize-y"
+                      placeholder={t('settings.roles.systemPromptPlaceholder')}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => updateRole(editingRole)}
+                      disabled={!editingRole.name.trim() || !editingRole.systemPrompt.trim()}
+                      className="flex-1 h-7 macos-button"
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      {t('settings.roles.saveRole')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={cancelEditRole}
+                      className="flex-1 h-7 macos-button"
+                    >
+                      {t('settings.roles.cancelEdit')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                // 显示模式
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-medium">{role.name}</h4>
+                        {role.isDefault && (
+                          <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">{t('settings.roles.defaultRole')}</span>
+                        )}
+                      </div>
+                      {role.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{role.description}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-1 ml-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEditRole(role)}
+                        className="h-6 w-6 p-0 macos-button"
+                        title={t('settings.roles.editRole')}
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                      {!role.isDefault && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteRole(role.id)}
+                          className="h-6 w-6 p-0 macos-button"
+                          title={t('settings.roles.deleteRole')}
+                        >
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-2 p-2 bg-background/60 rounded text-xs text-muted-foreground">
+                    <div className="line-clamp-2">{role.systemPrompt}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* 添加新角色按钮 */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={addRole}
+          className="w-full h-8 macos-button"
+        >
+          <Plus className="h-3 w-3 mr-1" />
+          {t('settings.roles.addRole')}
+        </Button>
+      </div>
+    )
+  }
+
   // 渲染快捷键设置内容
   const renderShortcutSettings = () => {
     return <ShortcutSettings />
@@ -515,6 +797,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         return renderLanguageSettings()
       case 'ai':
         return renderAiSettings()
+      case 'roles':
+        return renderRolesSettings()
       case 'history':
         return renderHistorySettings()
       case 'shortcuts':
@@ -532,25 +816,60 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       <Card className="w-[800px] h-[600px] glass-effect border border-border/30 shadow-2xl macos-scale-in overflow-hidden flex flex-col">
         {/* 主体内容区 - 固定高度，横向布局 */}
         <div className="flex flex-1 overflow-hidden">
-          {/* 左侧导航栏 - 灰色背景，固定宽度 */}
-          <div className="w-32 bg-muted/30 border-r border-border/20 flex-shrink-0">
-            <div className="p-2">
+          {/* 左侧导航栏 - 灰色背景，增加宽度以支持二级分类 */}
+          <div className="w-48 bg-muted/30 border-r border-border/20 flex-shrink-0 overflow-y-auto">
+            <div className="p-3">
               <nav className="space-y-1">
                 {settingsCategories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => setActiveCategory(category.id)}
-                    className={`
-                      w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-colors
-                      ${activeCategory === category.id
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                      }
-                    `}
-                  >
-                    {category.icon}
-                    <span className="text-xs font-medium">{category.label}</span>
-                  </button>
+                  <div key={category.id}>
+                    {/* 一级分类 */}
+                    <button
+                      onClick={() => {
+                        if (category.children && category.children.length > 0) {
+                          toggleCategory(category.id)
+                        } else {
+                          setActiveCategory(category.id)
+                        }
+                      }}
+                      className={`
+                        w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors
+                        ${!category.children && activeCategory === category.id
+                          ? 'bg-primary/10 text-primary border border-primary/20'
+                          : 'hover:bg-muted/50 text-foreground'
+                        }
+                      `}
+                    >
+                      {category.icon}
+                      <span className="text-sm font-medium flex-1">{category.label}</span>
+                      {category.children && category.children.length > 0 && (
+                        expandedCategories.has(category.id)
+                          ? <ChevronDown className="w-3.5 h-3.5" />
+                          : <ChevronRight className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+
+                    {/* 二级分类 */}
+                    {category.children && expandedCategories.has(category.id) && (
+                      <div className="ml-2 mt-1 space-y-1">
+                        {category.children.map((subCategory) => (
+                          <button
+                            key={subCategory.id}
+                            onClick={() => setActiveCategory(subCategory.id)}
+                            className={`
+                              w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors
+                              ${activeCategory === subCategory.id
+                                ? 'bg-primary/10 text-primary'
+                                : 'hover:bg-muted/40 text-muted-foreground hover:text-foreground'
+                              }
+                            `}
+                          >
+                            {subCategory.icon}
+                            <span className="text-xs">{subCategory.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </nav>
             </div>
