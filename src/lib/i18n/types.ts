@@ -82,6 +82,14 @@ export interface Translations {
       widthWide: string
       widthFull: string
       widthFullDesc: string
+      primaryColor: string
+      primaryColorDesc: string
+      colorCyan: string
+      colorBlue: string
+      colorPurple: string
+      colorGreen: string
+      colorOrange: string
+      colorPink: string
     }
     language: {
       title: string

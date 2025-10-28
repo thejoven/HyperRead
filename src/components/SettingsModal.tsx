@@ -17,6 +17,8 @@ interface SettingsModalProps {
   onFontSizeChange: (size: number) => void
   contentWidth: 'narrow' | 'medium' | 'wide' | 'full'
   onContentWidthChange: (width: 'narrow' | 'medium' | 'wide' | 'full') => void
+  primaryColor: 'cyan' | 'blue' | 'purple' | 'green' | 'orange' | 'pink'
+  onPrimaryColorChange: (color: 'cyan' | 'blue' | 'purple' | 'green' | 'orange' | 'pink') => void
 }
 
 // 设置类别定义
@@ -41,7 +43,7 @@ interface AiRole {
   isDefault?: boolean
 }
 
-export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeChange, contentWidth, onContentWidthChange }: SettingsModalProps) {
+export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeChange, contentWidth, onContentWidthChange, primaryColor, onPrimaryColorChange }: SettingsModalProps) {
   const { t, currentLanguage, languages, changeLanguage } = useTranslation()
   const [activeCategory, setActiveCategory] = useState('reading')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['general']))
@@ -291,6 +293,15 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       { value: 'full' as const, label: t('settings.reading.widthFull'), description: t('settings.reading.widthFullDesc') }
     ]
 
+    const colorOptions = [
+      { value: 'cyan' as const, label: t('settings.reading.colorCyan'), color: 'hsl(183, 70%, 45%)' },
+      { value: 'blue' as const, label: t('settings.reading.colorBlue'), color: 'hsl(217, 91%, 60%)' },
+      { value: 'purple' as const, label: t('settings.reading.colorPurple'), color: 'hsl(262, 83%, 58%)' },
+      { value: 'green' as const, label: t('settings.reading.colorGreen'), color: 'hsl(142, 76%, 36%)' },
+      { value: 'orange' as const, label: t('settings.reading.colorOrange'), color: 'hsl(24, 94%, 50%)' },
+      { value: 'pink' as const, label: t('settings.reading.colorPink'), color: 'hsl(330, 81%, 60%)' }
+    ]
+
     return (
       <div className="space-y-2">
         {/* 字体大小设置 - 一行布局 */}
@@ -357,6 +368,33 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
               >
                 <div className="text-sm font-medium">{option.label}</div>
                 <div className="text-xs text-muted-foreground">{option.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 主配色设置 */}
+        <div className="py-2 px-3 bg-muted/20 rounded-lg">
+          <div className="mb-3">
+            <label className="text-sm font-medium text-foreground">{t('settings.reading.primaryColor')}</label>
+            <p className="text-xs text-muted-foreground">{t('settings.reading.primaryColorDesc')}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {colorOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => onPrimaryColorChange(option.value)}
+                className={`px-3 py-2 text-left rounded-lg border transition-all flex items-center gap-2 ${
+                  primaryColor === option.value
+                    ? 'bg-primary/10 border-primary/30 text-primary ring-2 ring-primary/20'
+                    : 'bg-muted/30 border-border/30 hover:bg-muted/50'
+                }`}
+              >
+                <div
+                  className="w-4 h-4 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: option.color }}
+                />
+                <div className="text-sm font-medium">{option.label}</div>
               </button>
             ))}
           </div>
