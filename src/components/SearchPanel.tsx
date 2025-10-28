@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { X, Search, ChevronDown, ChevronUp, Type, Regex, FileSearch } from 'lucide-react'
 import { searchInContent, formatResultCount, debounce, SearchOptions, SearchMatch } from '@/lib/search/search-engine'
 import SearchResultItem from './SearchResultItem'
+import { useT } from '@/lib/i18n'
 
 interface SearchPanelProps {
   isOpen: boolean
@@ -17,6 +18,7 @@ interface SearchPanelProps {
 }
 
 export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine, onSearchQueryChange }: SearchPanelProps) {
+  const t = useT()
   const [query, setQuery] = useState('')
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
     caseSensitive: false,
@@ -180,7 +182,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                 <Input
                   ref={inputRef}
                   type="text"
-                  placeholder="在文档中搜索..."
+                  placeholder={t('search.placeholders.document')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="pl-10 pr-4 h-9 text-sm bg-muted/50 border-border/50 focus:bg-background"
@@ -196,7 +198,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   onClick={goToPreviousMatch}
                   disabled={matches.length === 0}
                   className="h-9 w-9 p-0 hover:bg-muted"
-                  title="上一个 (Shift+Enter)"
+                  title={t('search.shortcuts.previousHint')}
                   aria-label="Previous match"
                 >
                   <ChevronUp className="h-4 w-4" />
@@ -207,7 +209,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   onClick={goToNextMatch}
                   disabled={matches.length === 0}
                   className="h-9 w-9 p-0 hover:bg-muted"
-                  title="下一个 (Enter)"
+                  title={t('search.shortcuts.nextHint')}
                   aria-label="Next match"
                 >
                   <ChevronDown className="h-4 w-4" />
@@ -220,7 +222,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                 size="sm"
                 onClick={onClose}
                 className="h-9 w-9 p-0 hover:bg-muted"
-                title="关闭 (Esc)"
+                title={`${t('search.actions.close')} (Esc)`}
                 aria-label="Close search panel"
               >
                 <X className="h-4 w-4" />
@@ -235,7 +237,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   size="sm"
                   onClick={() => toggleOption('caseSensitive')}
                   className={`h-7 px-2.5 text-xs ${searchOptions.caseSensitive ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-                  title="区分大小写"
+                  title={t('search.options.caseSensitive')}
                   aria-label="Toggle case sensitive search"
                   aria-pressed={searchOptions.caseSensitive}
                 >
@@ -247,7 +249,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   size="sm"
                   onClick={() => toggleOption('wholeWord')}
                   className={`h-7 px-2.5 text-xs ${searchOptions.wholeWord ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-                  title="全词匹配"
+                  title={t('search.options.wholeWord')}
                   aria-label="Toggle whole word search"
                   aria-pressed={searchOptions.wholeWord}
                 >
@@ -259,7 +261,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   size="sm"
                   onClick={() => toggleOption('useRegex')}
                   className={`h-7 px-2.5 text-xs ${searchOptions.useRegex ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-                  title="正则表达式"
+                  title={t('search.options.regex')}
                   aria-label="Toggle regex search"
                   aria-pressed={searchOptions.useRegex}
                 >
@@ -271,10 +273,10 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
               {/* Result Count */}
               <div className="text-xs text-muted-foreground font-mono">
                 {isSearching ? (
-                  <span>搜索中...</span>
+                  <span>{t('search.status.searching')}</span>
                 ) : query ? (
                   <span>
-                    {matches.length === 0 ? '无结果' : `${matches.length} 项结果`}
+                    {matches.length === 0 ? t('search.status.noResultsFound') : t('search.status.resultsCount', { count: matches.length })}
                     {matches.length > 0 && ` · ${currentMatchIndex + 1}/${matches.length}`}
                     {searchTime > 0 && (
                       <span className="ml-2 opacity-60">
@@ -283,7 +285,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                     )}
                   </span>
                 ) : (
-                  <span>输入搜索内容</span>
+                  <span>{t('search.status.enterSearchTerm')}</span>
                 )}
               </div>
             </div>
@@ -299,19 +301,19 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
               {matches.length === 0 && query && !isSearching ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm font-medium">未找到匹配项</p>
-                  <p className="text-xs mt-1 opacity-70">尝试不同的搜索词或搜索选项</p>
+                  <p className="text-sm font-medium">{t('search.messages.noMatchesFound')}</p>
+                  <p className="text-xs mt-1 opacity-70">{t('search.messages.tryDifferentTerms')}</p>
                 </div>
               ) : matches.length === 0 && !query ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm font-medium">开始搜索文档</p>
+                  <p className="text-sm font-medium">{t('search.messages.startSearching')}</p>
                   <p className="text-xs mt-2 opacity-70 space-x-1">
                     <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Enter</kbd>
-                    <span>下一个</span>
+                    <span>{t('search.shortcuts.next')}</span>
                     <span>·</span>
                     <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Shift+Enter</kbd>
-                    <span>上一个</span>
+                    <span>{t('search.shortcuts.previous')}</span>
                   </p>
                 </div>
               ) : (

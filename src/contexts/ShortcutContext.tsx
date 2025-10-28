@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 
-// 快捷键类别 - 目前只有搜索
-export type ShortcutCategory = 'search'
+// 快捷键类别
+export type ShortcutCategory = 'search' | 'view' | 'general' | 'navigation' | 'editor'
 
 // 单个快捷键配置
 export interface ShortcutConfig {
@@ -29,9 +29,9 @@ export interface ShortcutContextType {
   getShortcutsByCategory: (category: ShortcutCategory) => ShortcutConfig[]
 }
 
-// 默认快捷键配置 - 只保留搜索相关
+// 默认快捷键配置
 const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
-  // Search shortcuts only
+  // Search shortcuts
   {
     id: 'search-open',
     category: 'search',
@@ -62,6 +62,23 @@ const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
     description: 'shortcuts.actions.searchPrev',
     defaultKeys: ['shift+enter', 'shift+f3'],
     keys: ['shift+enter', 'shift+f3'],
+    enabled: true
+  },
+  // View shortcuts
+  {
+    id: 'view-toggle-sidebar',
+    category: 'view',
+    description: 'shortcuts.actions.toggleSidebar',
+    defaultKeys: ['cmd+b', 'ctrl+b'],
+    keys: ['cmd+b', 'ctrl+b'],
+    enabled: true
+  },
+  {
+    id: 'view-toggle-sidebar-alt',
+    category: 'view',
+    description: 'shortcuts.actions.toggleSidebar',
+    defaultKeys: ['cmd+.', 'ctrl+.'],
+    keys: ['cmd+.', 'ctrl+.'],
     enabled: true
   }
 ]

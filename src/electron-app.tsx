@@ -81,6 +81,7 @@ export default function ElectronApp() {
   const [showAiAssistant, setShowAiAssistant] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [fontSize, setFontSize] = useState(16)
+  const [contentWidth, setContentWidth] = useState<'narrow' | 'medium' | 'wide' | 'full'>('medium')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOptions, setSearchOptions] = useState({ caseSensitive: false, useRegex: false, wholeWord: false })
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Default to expanded
@@ -197,6 +198,12 @@ export default function ElectronApp() {
       setFontSize(parseInt(savedFontSize, 10))
     }
 
+    // Load content width from localStorage
+    const savedContentWidth = localStorage.getItem('docs-content-width')
+    if (savedContentWidth) {
+      setContentWidth(savedContentWidth as 'narrow' | 'medium' | 'wide' | 'full')
+    }
+
     // Load sidebar state from localStorage
     const savedSidebarState = localStorage.getItem('docs-sidebar-collapsed')
     if (savedSidebarState) {
@@ -220,6 +227,11 @@ export default function ElectronApp() {
   useEffect(() => {
     localStorage.setItem('docs-font-size', fontSize.toString())
   }, [fontSize])
+
+  // Save content width to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('docs-content-width', contentWidth)
+  }, [contentWidth])
 
   // Save sidebar state to localStorage when changed
   useEffect(() => {
@@ -313,6 +325,41 @@ export default function ElectronApp() {
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed)
   }
+
+  // Get max width class based on content width setting
+  const getMaxWidthClass = () => {
+    switch (contentWidth) {
+      case 'narrow':
+        return 'max-w-2xl'  // 672px
+      case 'medium':
+        return 'max-w-4xl'  // 896px
+      case 'wide':
+        return 'max-w-6xl'  // 1152px
+      case 'full':
+        return 'max-w-none' // No max width
+      default:
+        return 'max-w-4xl'
+    }
+  }
+
+  // Handle keyboard shortcut for toggling sidebar (Command+. or Command+B)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const hasCmd = e.metaKey || e.ctrlKey
+      const key = e.key
+
+      // Command+. or Command+B to toggle sidebar
+      if (hasCmd && (key === '.' || key === 'b' || key === 'B')) {
+        e.preventDefault()
+        toggleSidebar()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isSidebarCollapsed])
 
   // Navigate to a specific line in the document
   const handleNavigateToLine = (lineNumber: number) => {
@@ -1251,9 +1298,9 @@ export default function ElectronApp() {
   }, [])
 
   return (
-    <div className="h-screen bg-background overflow-hidden">
+    <div className="h-screen w-screen bg-background overflow-hidden flex flex-col">
       {/* macOS 风格的标题栏区域 */}
-      <header className="macos-toolbar drag-region sticky top-0 z-50">
+      <header className="macos-toolbar drag-region flex-shrink-0 sticky top-0 z-50">
         <div className="flex items-center h-14 relative py-2">
           {/* 左侧为交通灯按钮预留空间 (约78px) */}
           <div className="w-30 flex-shrink-0"></div>
@@ -1334,7 +1381,7 @@ export default function ElectronApp() {
       </header>
 
       {/* 主内容区域 */}
-      <main className={`relative transition-all duration-300 ease-in-out ${showAiAssistant ? 'mr-72' : ''}`}>
+      <main className={`flex-1 relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col ${showAiAssistant ? 'mr-72' : ''}`}>
         {loading && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="text-center">
@@ -1345,7 +1392,7 @@ export default function ElectronApp() {
         )}
 
         {isDirectoryMode && directoryData ? (
-          <div className="flex h-[calc(100vh-56px)] relative">
+          <div className="flex flex-1 relative overflow-hidden">
             {/* 文件列表侧边栏 - 带动画的收起/展开 */}
             <div className={`transition-all duration-300 ease-in-out ${
               isSidebarCollapsed
@@ -1368,10 +1415,9 @@ export default function ElectronApp() {
               variant="ghost"
               size="sm"
               onClick={toggleSidebar}
-              className={`absolute top-1/2 transform -translate-y-1/2 z-20 h-12 w-5 p-0 bg-background hover:bg-background border border-border transition-all duration-300 ease-in-out opacity-50 hover:opacity-100 ${
+              className={`absolute top-1/2 transform -translate-y-1/2 z-20 h-12 w-5 p-0 bg-background hover:bg-background border border-border transition-all duration-300 ease-in-out opacity-50 hover:opacity-100 rounded-md ${
                 isSidebarCollapsed ? 'left-2' : 'left-[276px]'
               }`}
-              style={{ borderRadius: 0, boxShadow: 'none' }}
               title={isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
             >
               <div className="flex flex-col items-center justify-center h-full">
@@ -1390,7 +1436,7 @@ export default function ElectronApp() {
                   {/* Search Panel - positioned above content */}
                   {showSearch && (
                     <div className="absolute top-0 left-0 right-0 z-50 p-4">
-                      <div className="max-w-4xl mx-auto">
+                      <div className={`${getMaxWidthClass()} mx-auto`}>
                         <SearchPanel
                           isOpen={showSearch}
                           onClose={() => setShowSearch(false)}
@@ -1405,7 +1451,7 @@ export default function ElectronApp() {
                     </div>
                   )}
                   <div className="h-full overflow-y-auto content-scroll">
-                    <div className="max-w-4xl mx-auto">
+                    <div className={`${getMaxWidthClass()} mx-auto`}>
                       <DocumentViewer
                         content={fileData.content}
                         className="px-4 py-6"
@@ -1437,11 +1483,11 @@ export default function ElectronApp() {
             </div>
           </div>
         ) : fileData ? (
-          <div className="h-[calc(100vh-56px)] relative">
+          <div className="flex-1 relative overflow-hidden">
             {/* Search Panel - positioned above content */}
             {showSearch && (
               <div className="absolute top-0 left-0 right-0 z-50 p-4">
-                <div className="max-w-4xl mx-auto">
+                <div className={`${getMaxWidthClass()} mx-auto`}>
                   <SearchPanel
                     isOpen={showSearch}
                     onClose={() => setShowSearch(false)}
@@ -1458,7 +1504,7 @@ export default function ElectronApp() {
             <div className="h-full overflow-y-auto content-scroll">
               <DocumentViewer
                 content={fileData.content}
-                className="container mx-auto px-4 py-8 max-w-4xl"
+                className={`container mx-auto px-4 py-8 ${getMaxWidthClass()}`}
                 fontSize={fontSize}
                 filePath={fileData.filePath}
                 onFileNavigation={handleFileNavigation}
@@ -1468,7 +1514,7 @@ export default function ElectronApp() {
             </div>
           </div>
         ) : (
-          <div className="container mx-auto px-4 py-12 h-[calc(100vh-56px)] flex items-center justify-center">
+          <div className="container mx-auto px-4 py-12 flex-1 flex items-center justify-center">
             <Card className={`max-w-lg w-full transition-all duration-300 macos-scale-in ${
               isDragOver 
                 ? 'macos-drop-zone shadow-lg scale-105' 
@@ -1602,6 +1648,8 @@ export default function ElectronApp() {
         onClose={() => setShowSettings(false)}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
+        contentWidth={contentWidth}
+        onContentWidthChange={setContentWidth}
       />
 
       {/* AI Assistant Sidebar */}

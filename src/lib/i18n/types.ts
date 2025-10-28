@@ -75,6 +75,13 @@ export interface Translations {
       resetDefault: string
       increase: string
       decrease: string
+      contentWidth: string
+      contentWidthDesc: string
+      widthNarrow: string
+      widthMedium: string
+      widthWide: string
+      widthFull: string
+      widthFullDesc: string
     }
     language: {
       title: string
@@ -202,10 +209,17 @@ export interface Translations {
     status: {
       indexing: string
       error: string
+      searching: string
+      noResultsFound: string
+      resultsCount: string
+      enterSearchTerm: string
     }
     messages: {
       noResults: string
       needIndex: string
+      noMatchesFound: string
+      tryDifferentTerms: string
+      startSearching: string
     }
     shortcuts: {
       next: string
@@ -213,6 +227,8 @@ export interface Translations {
       close: string
       select: string
       switchMode: string
+      nextHint: string
+      previousHint: string
     }
     options: {
       title: string
@@ -220,6 +236,18 @@ export interface Translations {
       wholeWord: string
       regex: string
     }
+  }
+  tableOfContents: {
+    placeholder: string
+    clearSearch: string
+    collapse: string
+    openToc: string
+    expandToc: string
+    noMatchingItems: string
+    tryOtherKeywords: string
+    noToc: string
+    jumpTo: string
+    itemsCount: string
   }
   shortcuts: {
     title: string

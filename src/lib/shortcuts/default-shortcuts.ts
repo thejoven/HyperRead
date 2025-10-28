@@ -221,6 +221,19 @@ const viewShortcuts: DefaultShortcut[] = [
     customizable: true,
   },
   {
+    id: 'view.toggleSidebarAlt',
+    name: 'Toggle Sidebar (Alt)',
+    description: 'Alternative shortcut to show/hide file list sidebar',
+    category: 'view',
+    defaultKeys: {
+      type: 'combo',
+      modifiers: [primaryMod()],
+      key: '.',
+    },
+    priority: 7,
+    customizable: true,
+  },
+  {
     id: 'view.toggleTheme',
     name: 'Toggle Theme',
     description: 'Switch between light and dark theme',

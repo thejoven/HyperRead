@@ -15,6 +15,8 @@ interface SettingsModalProps {
   onClose: () => void
   fontSize: number
   onFontSizeChange: (size: number) => void
+  contentWidth: 'narrow' | 'medium' | 'wide' | 'full'
+  onContentWidthChange: (width: 'narrow' | 'medium' | 'wide' | 'full') => void
 }
 
 // 设置类别定义
@@ -39,7 +41,7 @@ interface AiRole {
   isDefault?: boolean
 }
 
-export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeChange }: SettingsModalProps) {
+export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeChange, contentWidth, onContentWidthChange }: SettingsModalProps) {
   const { t, currentLanguage, languages, changeLanguage } = useTranslation()
   const [activeCategory, setActiveCategory] = useState('reading')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['general']))
@@ -282,6 +284,13 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
 
   // 渲染阅读设置内容
   const renderReadingSettings = () => {
+    const widthOptions = [
+      { value: 'narrow' as const, label: t('settings.reading.widthNarrow'), description: '672px' },
+      { value: 'medium' as const, label: t('settings.reading.widthMedium'), description: '896px' },
+      { value: 'wide' as const, label: t('settings.reading.widthWide'), description: '1152px' },
+      { value: 'full' as const, label: t('settings.reading.widthFull'), description: t('settings.reading.widthFullDesc') }
+    ]
+
     return (
       <div className="space-y-2">
         {/* 字体大小设置 - 一行布局 */}
@@ -327,6 +336,30 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
           >
             {t('settings.reading.resetDefault')} (16px)
           </Button>
+        </div>
+
+        {/* 内容宽度设置 */}
+        <div className="py-2 px-3 bg-muted/20 rounded-lg">
+          <div className="mb-3">
+            <label className="text-sm font-medium text-foreground">{t('settings.reading.contentWidth')}</label>
+            <p className="text-xs text-muted-foreground">{t('settings.reading.contentWidthDesc')}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {widthOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => onContentWidthChange(option.value)}
+                className={`px-3 py-2 text-left rounded-lg border transition-all ${
+                  contentWidth === option.value
+                    ? 'bg-primary/10 border-primary/30 text-primary'
+                    : 'bg-muted/30 border-border/30 hover:bg-muted/50'
+                }`}
+              >
+                <div className="text-sm font-medium">{option.label}</div>
+                <div className="text-xs text-muted-foreground">{option.description}</div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     )

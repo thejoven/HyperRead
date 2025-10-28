@@ -5,6 +5,7 @@ import { List, X, ChevronRight, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 
 interface Heading {
   id: string
@@ -58,6 +59,8 @@ const extractHeadings = (content: string): Heading[] => {
 }
 
 export default function TableOfContents({ content, className }: TableOfContentsProps) {
+  const t = useT()
+
   // 状态管理
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPanelExpanded, setIsPanelExpanded] = useState(false)
@@ -237,7 +240,7 @@ export default function TableOfContents({ content, className }: TableOfContentsP
       <div className="relative flex-1">
         <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
         <Input
-          placeholder="搜索目录..."
+          placeholder={t('tableOfContents.placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-8 h-8 text-xs bg-muted/30 border-0 focus:bg-background/90 focus:ring-1 focus:ring-primary/20 transition-all"
@@ -248,7 +251,7 @@ export default function TableOfContents({ content, className }: TableOfContentsP
             size="sm"
             onClick={() => setSearchTerm('')}
             className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted/70"
-            title="清除搜索"
+            title={t('tableOfContents.clearSearch')}
           >
             <X className="h-3 w-3" />
           </Button>
@@ -261,12 +264,12 @@ export default function TableOfContents({ content, className }: TableOfContentsP
         size="sm"
         onClick={() => isModal ? setIsModalOpen(false) : setIsPanelExpanded(false)}
         className="h-8 w-8 p-0 hover:bg-muted/70 transition-colors flex-shrink-0"
-        title="收起目录"
+        title={t('tableOfContents.collapse')}
       >
         <X className="h-4 w-4" />
       </Button>
     </div>
-  ), [searchTerm])
+  ), [searchTerm, t])
 
   // 自定义滚动容器组件
   const CustomScrollArea = ({ children, className }: { children: React.ReactNode, className?: string }) => (
@@ -309,7 +312,7 @@ export default function TableOfContents({ content, className }: TableOfContentsP
                 isActive && "bg-primary/10 text-primary font-medium border-primary/20 shadow-sm ring-1 ring-primary/10",
                 !isActive && "text-foreground/90 hover:text-foreground"
               )}
-              title={`跳转到: ${heading.text}`}
+              title={`${t('tableOfContents.jumpTo')}: ${heading.text}`}
             >
             <ChevronRight
               className={cn(
@@ -336,8 +339,8 @@ export default function TableOfContents({ content, className }: TableOfContentsP
       {searchTerm && filteredHeadings.length === 0 && (
         <div className="text-center py-8 px-4 text-muted-foreground">
           <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
-          <p className="text-xs leading-relaxed">未找到匹配的目录项</p>
-          <p className="text-xs mt-1 opacity-60">尝试使用其他关键词</p>
+          <p className="text-xs leading-relaxed">{t('tableOfContents.noMatchingItems')}</p>
+          <p className="text-xs mt-1 opacity-60">{t('tableOfContents.tryOtherKeywords')}</p>
         </div>
       )}
 
@@ -346,11 +349,11 @@ export default function TableOfContents({ content, className }: TableOfContentsP
           <div className="h-8 w-8 mx-auto mb-2 opacity-40 rounded bg-muted flex items-center justify-center">
             <List className="h-4 w-4" />
           </div>
-          <p className="text-xs">暂无目录</p>
+          <p className="text-xs">{t('tableOfContents.noToc')}</p>
         </div>
       )}
     </div>
-  ), [filteredHeadings, activeHeading, searchTerm, scrollToHeading])
+  ), [filteredHeadings, activeHeading, searchTerm, scrollToHeading, t])
 
   // 如果没有标题，不显示目录
   if (headings.length === 0) {
@@ -372,7 +375,7 @@ export default function TableOfContents({ content, className }: TableOfContentsP
             "h-10 w-10 p-0 rounded-full",
             className
           )}
-          title={`打开目录 (${filteredHeadings.length}项)`}
+          title={`${t('tableOfContents.openToc')} (${t('tableOfContents.itemsCount', { count: filteredHeadings.length })})`}
         >
           <List className="h-4 w-4" />
         </Button>
@@ -414,7 +417,7 @@ export default function TableOfContents({ content, className }: TableOfContentsP
           "h-10 w-10 p-0 rounded-full animate-in zoom-in-95 duration-200",
           className
         )}
-        title={`展开目录 (${filteredHeadings.length}项)`}
+        title={`${t('tableOfContents.expandToc')} (${t('tableOfContents.itemsCount', { count: filteredHeadings.length })})`}
       >
         <List className="h-4 w-4" />
       </Button>
