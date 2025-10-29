@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { X, Send, Bot, User, Settings, Copy, Check, Trash2, FileText, MessageSquare, Layers, Clock, History, UserCog, ChevronDown } from 'lucide-react'
@@ -17,6 +17,8 @@ interface ConsistentAiSidebarProps {
     content: string
     filePath: string
   }
+  width?: number
+  onWidthChange?: (width: number) => void
 }
 
 interface Message {
@@ -42,7 +44,7 @@ interface AiRole {
   isDefault?: boolean
 }
 
-export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }: ConsistentAiSidebarProps) {
+export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, width = 288, onWidthChange }: ConsistentAiSidebarProps) {
   const t = useT()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
@@ -61,6 +63,46 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const previousDocumentRef = useRef<typeof currentDocument>(null)
+
+  // Handle resizer drag (左侧拖动条，向左拖动增加宽度)
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!onWidthChange) return
+
+    e.preventDefault()
+    e.stopPropagation()
+
+    const startX = e.clientX
+    const startWidth = width
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = startX - e.clientX // 反向计算：向左移动是正值
+      const newWidth = Math.min(Math.max(startWidth + deltaX, 288), 800)
+      onWidthChange(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      // 恢复默认样式
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    // 立即设置拖动状态
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [width, onWidthChange])
+
+  // 确保组件卸载时恢复文本选择
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [])
 
   // 加载 AI 配置
   useEffect(() => {
@@ -260,9 +302,21 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }
   const displayMessages = messages.filter(m => m.role !== 'system')
 
   return (
-    <div className={`fixed top-14 right-0 h-[calc(100vh-56px)] w-72 min-w-72 z-40 macos-sidebar flex flex-col border-l border-border transition-transform duration-300 ease-in-out ${
-      isOpen ? 'translate-x-0' : 'translate-x-full'
-    }`}>
+    <div
+      className={`fixed top-14 right-0 h-[calc(100vh-56px)] z-40 macos-sidebar flex border-l border-border transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}
+      style={{ width: `${width}px` }}
+    >
+      {/* Resize handle - 左侧拖动条 */}
+      {onWidthChange && (
+        <div
+          className="resize-handle-left"
+          onMouseDown={handleMouseDown}
+          style={{ cursor: 'col-resize' }}
+        />
+      )}
+      <div className="flex-1 flex flex-col">
       {/* 头部 - 与FileList保持一致 */}
       <div className="px-2 py-2 border-b border-border/50 flex-shrink-0 bg-background/80">
         <div className="flex items-center gap-1">
@@ -548,6 +602,7 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument }
             {t('aiSidebar.status.enterToSend')} · {t('aiSidebar.status.shiftEnterForNewLine')}
           </p>
         )}
+      </div>
       </div>
     </div>
   )

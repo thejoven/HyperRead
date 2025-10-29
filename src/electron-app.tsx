@@ -87,6 +87,8 @@ export default function ElectronApp() {
   const [searchOptions, setSearchOptions] = useState({ caseSensitive: false, useRegex: false, wholeWord: false })
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Default to expanded
   const [isRefreshing, setIsRefreshing] = useState(false) // Track refresh state
+  const [sidebarWidth, setSidebarWidth] = useState(288) // Default width 288px (equivalent to w-72)
+  const [aiSidebarWidth, setAiSidebarWidth] = useState(288) // Default width 288px for AI sidebar
   // Cache for enhanced drag-drop file contents
   const [fileContentCache, setFileContentCache] = useState<Map<string, string>>(new Map())
 
@@ -216,6 +218,24 @@ export default function ElectronApp() {
     if (savedSidebarState) {
       setIsSidebarCollapsed(JSON.parse(savedSidebarState))
     }
+
+    // Load sidebar width from localStorage
+    const savedSidebarWidth = localStorage.getItem('docs-sidebar-width')
+    if (savedSidebarWidth) {
+      const width = parseInt(savedSidebarWidth, 10)
+      if (width >= 200 && width <= 600) { // Validate width is within bounds
+        setSidebarWidth(width)
+      }
+    }
+
+    // Load AI sidebar width from localStorage
+    const savedAiSidebarWidth = localStorage.getItem('docs-ai-sidebar-width')
+    if (savedAiSidebarWidth) {
+      const width = parseInt(savedAiSidebarWidth, 10)
+      if (width >= 288 && width <= 800) { // AI sidebar can be wider
+        setAiSidebarWidth(width)
+      }
+    }
   }, [])
 
   // Debug: Check electronAPI availability on mount
@@ -250,6 +270,16 @@ export default function ElectronApp() {
   useEffect(() => {
     localStorage.setItem('docs-sidebar-collapsed', JSON.stringify(isSidebarCollapsed))
   }, [isSidebarCollapsed])
+
+  // Save sidebar width to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('docs-sidebar-width', sidebarWidth.toString())
+  }, [sidebarWidth])
+
+  // Save AI sidebar width to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('docs-ai-sidebar-width', aiSidebarWidth.toString())
+  }, [aiSidebarWidth])
 
   // Handle keyboard shortcuts for search
   useEffect(() => {
@@ -1548,7 +1578,12 @@ export default function ElectronApp() {
       </header>
 
       {/* 主内容区域 */}
-      <main className={`flex-1 relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col ${showAiAssistant ? 'mr-72' : ''}`}>
+      <main
+        className="flex-1 relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col"
+        style={{
+          marginRight: showAiAssistant ? `${aiSidebarWidth}px` : '0px'
+        }}
+      >
         {loading && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="text-center">
@@ -1561,11 +1596,13 @@ export default function ElectronApp() {
         {isDirectoryMode && directoryData ? (
           <div className="flex flex-1 relative overflow-hidden">
             {/* 文件列表侧边栏 - 带动画的收起/展开 */}
-            <div className={`transition-all duration-300 ease-in-out ${
-              isSidebarCollapsed
-                ? 'w-0 min-w-0 overflow-hidden'
-                : 'w-72 min-w-72'
-            }`}>
+            <div
+              className="transition-all duration-300 ease-in-out overflow-hidden"
+              style={{
+                width: isSidebarCollapsed ? '0px' : `${sidebarWidth}px`,
+                minWidth: isSidebarCollapsed ? '0px' : `${sidebarWidth}px`
+              }}
+            >
               <FileList
                 files={directoryData.files}
                 rootPath={directoryData.rootPath}
@@ -1574,6 +1611,8 @@ export default function ElectronApp() {
                 isCollapsed={isSidebarCollapsed}
                 onRefresh={handleRefresh}
                 isRefreshing={isRefreshing}
+                width={sidebarWidth}
+                onWidthChange={setSidebarWidth}
               />
             </div>
 
@@ -1582,9 +1621,10 @@ export default function ElectronApp() {
               variant="ghost"
               size="sm"
               onClick={toggleSidebar}
-              className={`absolute top-1/2 transform -translate-y-1/2 z-20 h-12 w-5 p-0 bg-background hover:bg-background border border-border transition-all duration-300 ease-in-out opacity-50 hover:opacity-100 rounded-md ${
-                isSidebarCollapsed ? 'left-2' : 'left-[276px]'
-              }`}
+              className="absolute top-1/2 transform -translate-y-1/2 z-20 h-12 w-5 p-0 bg-background hover:bg-background border border-border transition-all duration-300 ease-in-out opacity-50 hover:opacity-100 rounded-md"
+              style={{
+                left: isSidebarCollapsed ? '8px' : `${sidebarWidth - 12}px`
+              }}
               title={isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
             >
               <div className="flex flex-col items-center justify-center h-full">
@@ -1830,6 +1870,8 @@ export default function ElectronApp() {
           content: fileData.content,
           filePath: fileData.filePath
         } : undefined}
+        width={aiSidebarWidth}
+        onWidthChange={setAiSidebarWidth}
       />
 
       {/* Toast notifications */}

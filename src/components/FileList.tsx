@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, memo } from 'react'
+import { useState, useMemo, memo, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,8 @@ interface FileListProps {
   isCollapsed?: boolean
   onRefresh?: () => void
   isRefreshing?: boolean
+  width?: number
+  onWidthChange?: (width: number) => void
 }
 
 interface TreeNode {
@@ -231,27 +233,118 @@ export default function FileList({
   onFileSelect,
   isCollapsed = false,
   onRefresh,
-  isRefreshing = false
+  isRefreshing = false,
+  width = 288,
+  onWidthChange
 }: FileListProps) {
   const t = useT()
   const [searchTerm, setSearchTerm] = useState('')
   const tree = useMemo(() => buildTree(files), [files])
   const filteredTree = useMemo(() => filterTree(tree, searchTerm), [tree, searchTerm])
 
+  // Handle resizer drag
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!onWidthChange) return
+
+    e.preventDefault()
+    e.stopPropagation()
+
+    const startX = e.clientX
+    const startWidth = width
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startX
+      const newWidth = Math.min(Math.max(startWidth + deltaX, 200), 600)
+      onWidthChange(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      // 恢复默认样式
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    // 立即设置拖动状态
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [width, onWidthChange])
+
+  // 确保组件卸载时恢复文本选择
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [])
+
 
 
   if (files.length === 0) {
     return (
-      <div className="relative w-72 min-w-72 h-full macos-sidebar border-r border-border">
-        <div className="px-2 py-2 border-b border-border/50 bg-background/80">
-          <div className="flex items-center gap-1">
+      <div className="relative h-full macos-sidebar border-r border-border flex">
+        <div className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
+          {/* 搜索栏区域 - 融入目录栏设计 */}
+          <div className="px-3 py-3 border-b border-r border-border/50 bg-background/40 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+                <Input
+                  placeholder={t('ui.placeholders.searchFiles')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 h-7 text-xs bg-background/60 border-border/40 focus:border-primary/40 focus:bg-background/80 rounded-md transition-all shadow-sm"
+                />
+              </div>
+              {onRefresh && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  className="h-7 w-7 p-0 macos-button flex-shrink-0 rounded-md"
+                  title={t('ui.buttons.refreshFiles')}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="p-3">
+            <p className="text-xs text-muted-foreground text-center py-6 macos-text">
+              {t('ui.messages.noMarkdownFiles')}
+            </p>
+          </div>
+        </div>
+        {/* Resize handle */}
+        {onWidthChange && (
+          <div
+            className="resize-handle"
+            onMouseDown={handleMouseDown}
+            style={{ cursor: 'col-resize' }}
+          />
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative h-full macos-sidebar border-r border-border flex">
+      <div className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
+        {/* 搜索栏区域 - 融入目录栏设计 */}
+        <div className="px-3 py-3 border-b border-r border-border/50 flex-shrink-0 bg-background/40 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
               <Input
                 placeholder={t('ui.placeholders.searchFiles')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-7 h-6 text-xs bg-background/50 border-border/30 focus:border-border/60"
+                className="pl-8 h-7 text-xs bg-background/60 border-border/40 focus:border-primary/40 focus:bg-background/80 rounded-md transition-all shadow-sm"
               />
             </div>
             {onRefresh && (
@@ -260,79 +353,50 @@ export default function FileList({
                 size="sm"
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                className="h-6 w-6 p-0 macos-button flex-shrink-0"
+                className="h-7 w-7 p-0 macos-button flex-shrink-0 rounded-md"
                 title={t('ui.buttons.refreshFiles')}
               >
-                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
             )}
           </div>
         </div>
-        <div className="p-3">
-          <p className="text-xs text-muted-foreground text-center py-6 macos-text">
-            {t('ui.messages.noMarkdownFiles')}
-          </p>
-        </div>
-
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative w-72 min-w-72 h-full macos-sidebar flex flex-col border-r border-border">
-      <div className="px-2 py-2 border-b border-border/50 flex-shrink-0 bg-background/80">
-        <div className="flex items-center gap-1">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-            <Input
-              placeholder={t('ui.placeholders.searchFiles')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 h-6 text-xs bg-background/50 border-border/30 focus:border-border/60"
-            />
+        <div className="flex-1 overflow-y-auto sidebar-scroll">
+          <div className="p-2 space-y-1">
+            {filteredTree.length > 0 ? (
+              filteredTree.map((node) => (
+                <TreeNodeComponent
+                  key={node.path}
+                  node={node}
+                  currentFile={currentFile}
+                  onFileSelect={onFileSelect}
+                />
+              ))
+            ) : searchTerm ? (
+              <div className="text-xs text-muted-foreground text-center py-6 macos-text">
+                {t('ui.messages.noMatchingFiles')}
+              </div>
+            ) : (
+              tree.map((node) => (
+                <TreeNodeComponent
+                  key={node.path}
+                  node={node}
+                  currentFile={currentFile}
+                  onFileSelect={onFileSelect}
+                />
+              ))
+            )}
           </div>
-          {onRefresh && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="h-6 w-6 p-0 macos-button flex-shrink-0"
-              title={t('ui.buttons.refreshFiles')}
-            >
-              <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          )}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto sidebar-scroll">
-        <div className="p-2 space-y-1">
-          {filteredTree.length > 0 ? (
-            filteredTree.map((node) => (
-              <TreeNodeComponent
-                key={node.path}
-                node={node}
-                currentFile={currentFile}
-                onFileSelect={onFileSelect}
-              />
-            ))
-          ) : searchTerm ? (
-            <div className="text-xs text-muted-foreground text-center py-6 macos-text">
-              {t('ui.messages.noMatchingFiles')}
-            </div>
-          ) : (
-            tree.map((node) => (
-              <TreeNodeComponent
-                key={node.path}
-                node={node}
-                currentFile={currentFile}
-                onFileSelect={onFileSelect}
-              />
-            ))
-          )}
-        </div>
-      </div>
-
+      {/* Resize handle */}
+      {onWidthChange && (
+        <div
+          className="resize-handle"
+          onMouseDown={handleMouseDown}
+          style={{ cursor: 'col-resize' }}
+        />
+      )}
     </div>
   )
 }

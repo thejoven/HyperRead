@@ -225,3 +225,103 @@
     transform: scale(1);
   }
 }
+
+/* 拖动条样式 */
+.resize-handle {
+  position: relative;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  flex-shrink: 0;
+  background: transparent;
+  transition: background-color 0.15s ease;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+/* 拖动条的视觉指示器 */
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+.dark .resize-handle::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Hover 效果 */
+.resize-handle:hover::after {
+  width: 3px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dark .resize-handle:hover::after {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 拖动时的效果 */
+.resize-handle:active::after {
+  width: 4px;
+  background: hsl(var(--primary) / 0.5);
+}
+
+.dark .resize-handle:active::after {
+  background: hsl(var(--primary) / 0.6);
+}
+
+/* 左侧拖动条样式 (用于右侧侧边栏) */
+.resize-handle-left {
+  position: relative;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  flex-shrink: 0;
+  background: transparent;
+  transition: background-color 0.15s ease;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+/* 左侧拖动条的视觉指示器 */
+.resize-handle-left::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+.dark .resize-handle-left::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Hover 效果 */
+.resize-handle-left:hover::after {
+  width: 3px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dark .resize-handle-left:hover::after {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 拖动时的效果 */
+.resize-handle-left:active::after {
+  width: 4px;
+  background: hsl(var(--primary) / 0.5);
+}
+
+.dark .resize-handle-left:active::after {
+  background: hsl(var(--primary) / 0.6);
+}
