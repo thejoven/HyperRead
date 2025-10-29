@@ -1,6 +1,20 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+
+// 防抖函数
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout | null = null
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+    timeoutId = setTimeout(() => func(...args), wait)
+  }
+}
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { X, Send, Bot, User, Settings, Copy, Check, Trash2, FileText, MessageSquare, Layers, Clock, History, UserCog, ChevronDown } from 'lucide-react'
@@ -64,7 +78,17 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
   const inputRef = useRef<HTMLInputElement>(null)
   const previousDocumentRef = useRef<typeof currentDocument>(null)
 
-  // Handle resizer drag (左侧拖动条，向左拖动增加宽度)
+  // 使用 useRef 存储防抖函数实例
+  const debouncedWidthChangeRef = useRef<((width: number) => void) | null>(null)
+
+  // 初始化防抖函数
+  useEffect(() => {
+    if (onWidthChange) {
+      debouncedWidthChangeRef.current = debounce(onWidthChange, 16) // 约60fps
+    }
+  }, [onWidthChange])
+
+  // Handle resizer drag (左侧拖动条，向左拖动增加宽度) - 优化版本
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!onWidthChange) return
 
@@ -73,11 +97,23 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
 
     const startX = e.clientX
     const startWidth = width
+    let lastWidth = width
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = startX - e.clientX // 反向计算：向左移动是正值
       const newWidth = Math.min(Math.max(startWidth + deltaX, 288), 800)
-      onWidthChange(newWidth)
+
+      // 只有当宽度实际变化时才更新
+      if (newWidth !== lastWidth) {
+        lastWidth = newWidth
+
+        // 立即更新本地状态用于视觉反馈
+        if (debouncedWidthChangeRef.current) {
+          debouncedWidthChangeRef.current(newWidth)
+        } else {
+          onWidthChange(newWidth)
+        }
+      }
     }
 
     const handleMouseUp = () => {
@@ -86,6 +122,11 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
       // 恢复默认样式
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+
+      // 确保最终宽度被正确设置
+      if (lastWidth !== width && onWidthChange) {
+        onWidthChange(lastWidth)
+      }
     }
 
     // 立即设置拖动状态

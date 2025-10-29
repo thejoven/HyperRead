@@ -1,6 +1,20 @@
 'use client'
 
 import { useState, useMemo, memo, useRef, useCallback, useEffect } from 'react'
+
+// 防抖函数
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout | null = null
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+    timeoutId = setTimeout(() => func(...args), wait)
+  }
+}
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -35,18 +49,30 @@ interface TreeNode {
   file?: FileInfo
 }
 
+// 搜索缓存
+let searchCache: { term: string; tree: TreeNode[]; result: TreeNode[] } | null = null
+
 function filterTree(tree: TreeNode[], searchTerm: string): TreeNode[] {
-  if (!searchTerm.trim()) return tree
-  
+  const trimmedTerm = searchTerm.trim()
+  if (!trimmedTerm) return tree
+
+  // 检查缓存
+  if (searchCache &&
+      searchCache.term === trimmedTerm &&
+      searchCache.tree === tree) {
+    return searchCache.result
+  }
+
   const filtered: TreeNode[] = []
-  
+  const lowerSearchTerm = trimmedTerm.toLowerCase()
+
   for (const node of tree) {
     if (node.type === 'file') {
-      if (node.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+      if (node.name.toLowerCase().includes(lowerSearchTerm)) {
         filtered.push(node)
       }
     } else if (node.type === 'directory' && node.children) {
-      const filteredChildren = filterTree(node.children, searchTerm)
+      const filteredChildren = filterTree(node.children, trimmedTerm)
       if (filteredChildren.length > 0) {
         filtered.push({
           ...node,
@@ -55,12 +81,16 @@ function filterTree(tree: TreeNode[], searchTerm: string): TreeNode[] {
       }
     }
   }
-  
+
+  // 更新缓存
+  searchCache = { term: trimmedTerm, tree, result: filtered }
+
   return filtered
 }
 
 function buildTree(files: FileInfo[]): TreeNode[] {
-  const tree: TreeNode[] = []
+  if (files.length === 0) return []
+
   const nodeMap = new Map<string, TreeNode>()
 
   // 创建根节点
@@ -71,8 +101,8 @@ function buildTree(files: FileInfo[]): TreeNode[] {
     children: []
   })
 
-  // 处理所有文件
-  files.forEach(file => {
+  // 处理所有文件 - 使用更高效的算法
+  for (const file of files) {
     const pathParts = file.relativePath.split('/')
     let currentPath = '.'
 
@@ -115,9 +145,9 @@ function buildTree(files: FileInfo[]): TreeNode[] {
     if (parentNode && parentNode.children) {
       parentNode.children.push(fileNode)
     }
-  })
+  }
 
-  // 排序并返回根目录的子节点
+  // 优化排序函数 - 避免不必要的递归
   const sortNodes = (nodes: TreeNode[]) => {
     nodes.sort((a, b) => {
       if (a.type !== b.type) {
@@ -125,11 +155,13 @@ function buildTree(files: FileInfo[]): TreeNode[] {
       }
       return a.name.localeCompare(b.name)
     })
-    nodes.forEach(node => {
-      if (node.children) {
+
+    // 只对包含子节点的目录进行递归排序
+    for (const node of nodes) {
+      if (node.children && node.children.length > 0) {
         sortNodes(node.children)
       }
-    })
+    }
   }
 
   const rootNode = nodeMap.get('.')
@@ -239,10 +271,32 @@ export default function FileList({
 }: FileListProps) {
   const t = useT()
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const tree = useMemo(() => buildTree(files), [files])
-  const filteredTree = useMemo(() => filterTree(tree, searchTerm), [tree, searchTerm])
+  const filteredTree = useMemo(() => filterTree(tree, debouncedSearchTerm), [tree, debouncedSearchTerm])
 
-  // Handle resizer drag
+  // 搜索防抖
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 150) // 150ms 防抖延迟
+
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [searchTerm])
+
+  // 使用 useRef 存储防抖函数实例
+  const debouncedWidthChangeRef = useRef<((width: number) => void) | null>(null)
+
+  // 初始化防抖函数
+  useEffect(() => {
+    if (onWidthChange) {
+      debouncedWidthChangeRef.current = debounce(onWidthChange, 16) // 约60fps
+    }
+  }, [onWidthChange])
+
+  // Handle resizer drag - 优化版本
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!onWidthChange) return
 
@@ -251,11 +305,23 @@ export default function FileList({
 
     const startX = e.clientX
     const startWidth = width
+    let lastWidth = width
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX
       const newWidth = Math.min(Math.max(startWidth + deltaX, 200), 600)
-      onWidthChange(newWidth)
+
+      // 只有当宽度实际变化时才更新
+      if (newWidth !== lastWidth) {
+        lastWidth = newWidth
+
+        // 立即更新本地状态用于视觉反馈
+        if (debouncedWidthChangeRef.current) {
+          debouncedWidthChangeRef.current(newWidth)
+        } else {
+          onWidthChange(newWidth)
+        }
+      }
     }
 
     const handleMouseUp = () => {
@@ -264,6 +330,11 @@ export default function FileList({
       // 恢复默认样式
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+
+      // 确保最终宽度被正确设置
+      if (lastWidth !== width && onWidthChange) {
+        onWidthChange(lastWidth)
+      }
     }
 
     // 立即设置拖动状态

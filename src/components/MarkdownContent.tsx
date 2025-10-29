@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -78,7 +78,7 @@ function highlightSearchText(text: string, query: string, options: { caseSensiti
   }
 }
 
-export default function MarkdownContent({ content, fontSize = 16, className = '', filePath, onFileNavigation, searchQuery, searchOptions }: MarkdownContentProps) {
+function MarkdownContent({ content, fontSize = 16, className = '', filePath, onFileNavigation, searchQuery, searchOptions }: MarkdownContentProps) {
   const articleRef = useRef<HTMLElement>(null)
 
   // Calculate relative sizes based on the base fontSize
@@ -597,3 +597,16 @@ export default function MarkdownContent({ content, fontSize = 16, className = ''
     </div>
   )
 }
+
+// 使用严格比较函数优化 memoization
+export default memo(MarkdownContent, (prevProps, nextProps) => {
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.fontSize === nextProps.fontSize &&
+    prevProps.filePath === nextProps.filePath &&
+    prevProps.searchQuery === nextProps.searchQuery &&
+    prevProps.searchOptions?.caseSensitive === nextProps.searchOptions?.caseSensitive &&
+    prevProps.searchOptions?.useRegex === nextProps.searchOptions?.useRegex &&
+    prevProps.searchOptions?.wholeWord === nextProps.searchOptions?.wholeWord
+  )
+})

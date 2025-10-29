@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import DocumentViewer from '@/components/DocumentViewer'
+import MarkdownContentWrapper from '@/components/MarkdownContentWrapper'
 import FileList from '@/components/FileList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import AboutModal from '@/components/AboutModal'
@@ -1657,19 +1658,15 @@ export default function ElectronApp() {
                       </div>
                     </div>
                   )}
-                  <div className="h-full overflow-y-auto content-scroll">
-                    <div className={`${getMaxWidthClass()} mx-auto`}>
-                      <DocumentViewer
-                        content={fileData.content}
-                        className="px-4 py-6"
-                        fontSize={fontSize}
-                        filePath={fileData.filePath}
-                        onFileNavigation={handleFileNavigation}
-                        searchQuery={showSearch ? searchQuery : undefined}
-                        searchOptions={showSearch ? searchOptions : undefined}
-                      />
-                    </div>
-                  </div>
+                  <MarkdownContentWrapper
+                    content={fileData.content}
+                    filePath={fileData.filePath}
+                    fontSize={fontSize}
+                    onFileNavigation={handleFileNavigation}
+                    searchQuery={showSearch ? searchQuery : undefined}
+                    searchOptions={showSearch ? searchOptions : undefined}
+                    className={`${getMaxWidthClass()} mx-auto px-4 py-6`}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
@@ -1708,17 +1705,15 @@ export default function ElectronApp() {
                 </div>
               </div>
             )}
-            <div className="h-full overflow-y-auto content-scroll">
-              <DocumentViewer
-                content={fileData.content}
-                className={`container mx-auto px-4 py-8 ${getMaxWidthClass()}`}
-                fontSize={fontSize}
-                filePath={fileData.filePath}
-                onFileNavigation={handleFileNavigation}
-                searchQuery={showSearch ? searchQuery : undefined}
-                searchOptions={showSearch ? searchOptions : undefined}
-              />
-            </div>
+            <MarkdownContentWrapper
+              content={fileData.content}
+              filePath={fileData.filePath}
+              fontSize={fontSize}
+              onFileNavigation={handleFileNavigation}
+              searchQuery={showSearch ? searchQuery : undefined}
+              searchOptions={showSearch ? searchOptions : undefined}
+              className={`container mx-auto px-4 py-8 ${getMaxWidthClass()}`}
+            />
           </div>
         ) : (
           <div className="container mx-auto px-4 py-12 flex-1 flex items-center justify-center">
