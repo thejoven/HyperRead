@@ -327,7 +327,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
             )
           },
           p: ({ children }) => (
-            <p className="text-muted-foreground leading-7 mb-6 text-base break-words overflow-wrap-anywhere">
+            <p className="text-muted-foreground leading-7 mb-6 break-words overflow-wrap-anywhere">
               {processChildren(children)}
             </p>
           ),
