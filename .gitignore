@@ -156,3 +156,5 @@ chrome_*.pak
 icudtl.dat
 LICENSE.electron.txt
 LICENSES.chromium.html
+
+AGENTS.md

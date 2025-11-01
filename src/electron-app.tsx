@@ -7,21 +7,19 @@ import DocumentViewer from '@/components/DocumentViewer'
 import MarkdownContentWrapper from '@/components/MarkdownContentWrapper'
 import FileList from '@/components/FileList'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import AboutModal from '@/components/AboutModal'
 import SettingsModal from '@/components/SettingsModal'
 import ConsistentAiSidebar from '@/components/ConsistentAiSidebar'
 import SearchPanel from '@/components/SearchPanel'
 import { Toaster } from '@/components/ui/sonner'
-import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight, MessageSquare, PanelLeft } from 'lucide-react'
+import { FileText, FolderOpen, Folder, Settings, ChevronLeft, ChevronRight, MessageSquare, PanelLeft } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { toast } from "sonner"
 import { useShortcuts } from '@/contexts/ShortcutContext'
+import { useTabs } from '@/hooks/use-tabs'
+import DocumentTabs from '@/components/DocumentTabs'
+import type { FileData } from '@/types/file'
 
-interface FileData {
-  content: string
-  fileName: string
-  filePath: string
-}
+// FileData type moved to src/types/file.ts
 
 interface FileInfo {
   name: string
@@ -60,6 +58,7 @@ declare global {
       handleDirectoryDrop: (directoryName: string) => void
       handleMultipleFileContents: (data: { fileContents: Record<string, string>; totalFiles: number }) => void
       classifyFiles: (fileData: any[]) => Promise<{ directories: any[]; markdownFiles: any[] }>
+      getFullScreen?: () => Promise<boolean>
     }
   }
 }
@@ -77,7 +76,6 @@ export default function ElectronApp() {
   const [isDragOver, setIsDragOver] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isDirectoryMode, setIsDirectoryMode] = useState(false)
-  const [showAbout, setShowAbout] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showAiAssistant, setShowAiAssistant] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
@@ -90,8 +88,31 @@ export default function ElectronApp() {
   const [isRefreshing, setIsRefreshing] = useState(false) // Track refresh state
   const [sidebarWidth, setSidebarWidth] = useState(288) // Default width 288px (equivalent to w-72)
   const [aiSidebarWidth, setAiSidebarWidth] = useState(288) // Default width 288px for AI sidebar
-  // Cache for enhanced drag-drop file contents
-  const [fileContentCache, setFileContentCache] = useState<Map<string, string>>(new Map())
+  const [isFullScreen, setIsFullScreen] = useState(false)
+  // Tabs + cache (componentized)
+  const {
+    openTabs,
+    activeTab,
+    cache: fileContentCache,
+    openTabWithData,
+    activateTab,
+    closeTab,
+    setCacheEntry,
+    setCacheBulk,
+    setActiveTab,
+  } = useTabs()
+
+  const handleActivateTab = async (filePath: string) => {
+    await activateTab(filePath)
+    const tab = openTabs.find(t => t.filePath === filePath)
+    const cached = fileContentCache.get(filePath)
+    if (cached && tab) {
+      setFileData({ content: cached, fileName: tab.fileName, filePath })
+    } else if (window.electronAPI?.readFile) {
+      const data = await window.electronAPI.readFile(filePath)
+      setFileData(data)
+    }
+  }
 
   // 路径解析函数 - 将相对路径转换为绝对路径
   const resolvePath = (targetPath: string, currentPath?: string): string => {
@@ -168,6 +189,7 @@ export default function ElectronApp() {
         const newFileData = await window.electronAPI.readFile(resolvedPath)
 
         if (newFileData) {
+          openTabWithData(newFileData)
           setFileData(newFileData)
           console.log('Successfully navigated to:', resolvedPath)
         } else {
@@ -237,6 +259,25 @@ export default function ElectronApp() {
         setAiSidebarWidth(width)
       }
     }
+  }, [])
+
+  // 监听全屏状态变化（macOS 隐藏交通灯时移除左侧预留）
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const val = await window.electronAPI?.getFullScreen?.()
+        if (typeof val === 'boolean') setIsFullScreen(val)
+      } catch {}
+    }
+    init()
+
+    const handler = (e: CustomEvent) => {
+      if (e?.detail && typeof e.detail.isFull === 'boolean') {
+        setIsFullScreen(e.detail.isFull)
+      }
+    }
+    window.addEventListener('fullscreen-changed', handler as EventListener)
+    return () => window.removeEventListener('fullscreen-changed', handler as EventListener)
   }, [])
 
   // Debug: Check electronAPI availability on mount
@@ -606,19 +647,17 @@ export default function ElectronApp() {
       if (fileData.isDirectory) {
         // For directory mode, cache the content
         const filePath = fileData.originalName
-        setFileContentCache(prev => {
-          const newCache = new Map(prev)
-          newCache.set(filePath, fileData.content)
-          return newCache
-        })
+        setCacheEntry(filePath, fileData.content)
       }
       
-      // Set current file data
-      setFileData({
+      // Open/activate tab
+      const opened = {
         content: fileData.content,
         fileName: fileData.fileName,
         filePath: fileData.originalName // 使用原始文件名作为显示路径
-      })
+      }
+      openTabWithData(opened)
+      setFileData(opened)
       
       // Only set directory mode to false for single file drops
       if (!fileData.isDirectory) {
@@ -691,7 +730,7 @@ export default function ElectronApp() {
       const { fileContents, totalFiles } = event.detail
 
       // Update the file content cache with all the file contents
-      setFileContentCache(new Map(Object.entries(fileContents)))
+      setCacheBulk(fileContents)
       console.log(`React: cached ${totalFiles} file contents for enhanced drag mode`)
     }
 
@@ -705,12 +744,14 @@ export default function ElectronApp() {
 
       const fileData = event.detail
 
-      // 设置文件数据，退出目录模式
-      setFileData({
+      // 设置文件数据并打开标签，退出目录模式
+      const opened2 = {
         content: fileData.content,
         fileName: fileData.fileName,
         filePath: fileData.originalName
-      })
+      }
+      openTabWithData(opened2)
+      setFileData(opened2)
       setIsDirectoryMode(false)
       setIsEnhancedDragMode(false)
 
@@ -869,7 +910,7 @@ export default function ElectronApp() {
             `Dropped ${directories.length} folder(s)` : 
             'Dropped files'
           
-          setFileContentCache(fileContentsCache)
+          setCacheBulk(Object.fromEntries(fileContentsCache))
           setDirectoryData({ files: fileInfos, rootPath })
           setActualRootPath(null) // No actual path for drag-drop mode
           setDraggedDirectoryEntries(directoryEntries) // 保存目录条目以支持刷新
@@ -884,11 +925,13 @@ export default function ElectronApp() {
             const firstFile = allFiles[0]
             const content = fileContentsCache.get(firstFile.fullPath)
             if (content) {
-              setFileData({
+              const opened = {
                 content: content,
                 fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
                 filePath: firstFile.fullPath
-              })
+              }
+              openTabWithData(opened)
+              setFileData(opened)
             }
           }
           
@@ -1009,6 +1052,7 @@ export default function ElectronApp() {
       console.log('React: calling electronAPI.readFile with:', filePath)
       const data = await window.electronAPI.readFile(filePath)
       console.log('React: file loaded successfully:', data.fileName)
+      openTabWithData(data)
       setFileData(data)
     } catch (error) {
       console.error('React: Failed to load file:', error)
@@ -1025,6 +1069,8 @@ export default function ElectronApp() {
     try {
       const data = await window.electronAPI.openFileDialog()
       if (data) {
+        openTabWithData(data)
+        setFileData(data)
         setFileData(data)
         setIsDirectoryMode(false)
         setDirectoryData(null)
@@ -1077,20 +1123,24 @@ export default function ElectronApp() {
       if (isEnhancedDragMode && fileContentCache.has(fileInfo.fullPath)) {
         console.log('React: using cached content for enhanced drag mode:', fileInfo.fullPath)
         const cachedContent = fileContentCache.get(fileInfo.fullPath)!
-        setFileData({
+        const opened = {
           content: cachedContent,
           fileName: fileInfo.name,
           filePath: fileInfo.fullPath
-        })
+        }
+        openTabWithData(opened)
+        setFileData(opened)
       } else {
         // Fallback to IPC file reading
         console.log('React: reading file via IPC:', fileInfo.fullPath)
         const data = await window.electronAPI.readFile(fileInfo.fullPath)
         // Ensure filePath is set to the full path to avoid same-name file conflicts
-        setFileData({
+        const opened2 = {
           ...data,
           filePath: fileInfo.fullPath
-        })
+        }
+        openTabWithData(opened2)
+        setFileData(opened2)
       }
     } catch (error) {
       console.error('React: Failed to load file from directory:', error)
@@ -1351,7 +1401,7 @@ export default function ElectronApp() {
       console.log('✅ React: Updated backup files list with latest successful scan')
     }
 
-    setFileContentCache(fileContentsCache)
+    setCacheBulk(Object.fromEntries(fileContentsCache))
     setDirectoryData({ files: fileInfos, rootPath })
 
     // 检查当前选中的文件是否还存在
@@ -1367,11 +1417,13 @@ export default function ElectronApp() {
       const content = fileContentsCache.get(firstFile.fullPath)
       if (content) {
         console.log('React: Loading first file after refresh:', firstFile.name)
-        setFileData({
+        const opened = {
           content: content,
           fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
           filePath: firstFile.fullPath
-        })
+        }
+        openTabWithData(opened)
+        setFileData(opened)
       }
     }
   }
@@ -1414,7 +1466,7 @@ export default function ElectronApp() {
         setActualRootPath(data.rootPath)
         // Clear enhanced drag mode cache as directory has been rescanned
         if (isEnhancedDragMode) {
-          setFileContentCache(new Map())
+          setCacheBulk({})
           setIsEnhancedDragMode(false)
           console.log('React: cleared enhanced drag mode cache after refresh')
         }
@@ -1474,15 +1526,17 @@ export default function ElectronApp() {
       },
       handleMultipleFileContentsDirect: (data: { fileContents: Record<string, string>; totalFiles: number }) => {
         console.log('React: handleMultipleFileContentsDirect called directly with:', data.totalFiles, 'files')
-        setFileContentCache(new Map(Object.entries(data.fileContents)))
+        setCacheBulk(data.fileContents)
       },
       handleFileContentDirect: (data: { content: string; fileName: string; originalName: string; isDirectory: boolean }) => {
         console.log('React: handleFileContentDirect called directly with:', data.fileName)
-        setFileData({
+        const opened = {
           content: data.content,
           fileName: data.fileName,
           filePath: data.originalName
-        })
+        }
+        openTabWithData(opened)
+        setFileData(opened)
       }
     }
 
@@ -1500,8 +1554,12 @@ export default function ElectronApp() {
       {/* macOS 风格的标题栏区域 */}
       <header className="macos-toolbar drag-region flex-shrink-0 sticky top-0 z-50">
         <div className="flex items-center h-14 relative py-2">
-          {/* 左侧为交通灯按钮预留空间 (约78px) */}
-          <div className="w-20 flex-shrink-0"></div>
+          {/* 左侧为交通灯按钮预留空间 (mac 非全屏时预留) */}
+          {window.electronAPI?.platform === 'darwin' && !isFullScreen ? (
+            <div className="w-20 flex-shrink-0" />
+          ) : (
+            <div className="w-2 flex-shrink-0" />
+          )}
 
           {/* 缩放左侧栏按钮 - 放在交通灯按钮右侧 */}
           <div className="no-drag">
@@ -1515,17 +1573,38 @@ export default function ElectronApp() {
               <PanelLeft className="h-3.5 w-3.5" />
             </Button>
           </div>
-
-          {/* 灵活空间 */}
-          <div className="flex-1"></div>
+          {/* Tabs 区域（在左侧按钮右侧） */}
+          <div className="w-2 flex-shrink-0"></div>
+          <div className="flex-1 overflow-hidden no-drag">
+            <DocumentTabs
+              tabs={openTabs}
+              activeTab={activeTab}
+              onActivate={handleActivateTab}
+              onClose={(path) => {
+                // keep current content in view after close by activating neighbor via hook callback
+                closeTab(path, async (fp) => {
+                  const tab = openTabs.find(t => t.filePath === fp)
+                  const cached = fileContentCache.get(fp)
+                  if (cached && tab) {
+                    setFileData({ content: cached, fileName: tab.fileName, filePath: fp })
+                  } else if (window.electronAPI?.readFile) {
+                    const data = await window.electronAPI.readFile(fp)
+                    setFileData(data)
+                  }
+                })
+              }
+              }
+            />
+          </div>
+          <div className="w-2 flex-shrink-0"></div>
           
           {/* 右侧标题区域 */}
-          {fileData && (
+          {/* {fileData && (
             <div className="flex items-center justify-end min-w-0 mr-4">
               <div className="flex items-center gap-3 min-w-0">
                 {isDirectoryMode && directoryData && (
                   <p className="text-xs text-muted-foreground truncate macos-text" title={directoryData.rootPath}>
-                    📁 {directoryData.rootPath.split('/').pop() || directoryData.rootPath}
+                  📁 {directoryData.rootPath.split('/').pop() || directoryData.rootPath}
                   </p>
                 )}
                 <p className="text-sm font-medium text-foreground truncate macos-text-title" title={fileData.fileName}>
@@ -1533,7 +1612,7 @@ export default function ElectronApp() {
                 </p>
               </div>
             </div>
-          )}
+          )} */}
           
           {/* 右侧所有按钮 */}
           <div className="flex items-center gap-1 mr-4 no-drag">
@@ -1576,15 +1655,7 @@ export default function ElectronApp() {
             >
               <Settings className="h-3.5 w-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAbout(true)}
-              className="h-7 w-7 p-0 macos-button"
-              title={t('ui.buttons.about')}
-            >
-              <Info className="h-3.5 w-3.5" />
-            </Button>
+            {/* About 入口已移至设置内的“关于软件”页，不再在工具栏显示 */}
             <ThemeToggle />
           </div>
         </div>
@@ -1804,8 +1875,7 @@ export default function ElectronApp() {
         )}
       </main>
 
-      {/* About Modal */}
-      <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+      {/* About 已集成至设置页面 */}
 
       {/* 重新拖拽提示覆盖层 */}
       {showRefreshHint && (

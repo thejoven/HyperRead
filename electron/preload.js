@@ -154,5 +154,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isElectron: true,
 
   // 获取平台信息
-  platform: process.platform
+  platform: process.platform,
+  // 查询全屏状态
+  getFullScreen: () => ipcRenderer.invoke('get-fullscreen')
+})
+
+// 额外桥接：全屏状态查询与事件分发
+// 已在上方 electronAPI 合并暴露 getFullScreen 时一并提供（避免重复 expose）
+
+ipcRenderer.on('fullscreen-changed', (_event, isFull) => {
+  try {
+    const ev = new CustomEvent('fullscreen-changed', { detail: { isFull } })
+    window.dispatchEvent(ev)
+  } catch (e) {
+    console.warn('Preload: failed to dispatch fullscreen-changed', e)
+  }
 })

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard, UserCog, Edit2, Save, ChevronRight, ChevronDown, Settings2 } from 'lucide-react'
+import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard, UserCog, Edit2, Save, ChevronRight, ChevronDown, Settings2, Info, Github, Copy, Check as CheckIcon, X as XIcon } from 'lucide-react'
+import packageJson from '../../package.json'
 import { useTranslation } from '@/lib/i18n'
 import { conversationStorage } from '@/lib/conversation-storage'
 import { toast } from "sonner"
@@ -62,6 +63,9 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
   const [aiRoles, setAiRoles] = useState<AiRole[]>([])
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
   const [editingRole, setEditingRole] = useState<AiRole | null>(null)
+  // 关于页复制状态
+  const [aboutCopiedGithub, setAboutCopiedGithub] = useState(false)
+  const [aboutCopiedX, setAboutCopiedX] = useState(false)
 
   // 动态设置分类，使用多语言（支持二级分类）
   const settingsCategories: SettingsCategory[] = [
@@ -108,6 +112,12 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
           icon: <History className="w-3.5 h-3.5" />
         }
       ]
+    },
+    // 底部增加“关于软件”入口
+    {
+      id: 'about',
+      label: t('ui.buttons.about'),
+      icon: <Info className="w-4 h-4" />
     }
   ]
 
@@ -859,6 +869,102 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
     return <ShortcutSettings />
   }
 
+  // 渲染关于软件内容（迁移自 AboutModal）
+  const renderAboutSettings = () => {
+    const version = packageJson.version
+    const platform = (window as any).electronAPI?.platform === 'darwin' ? 'macOS' : (window as any).electronAPI?.platform || 'Web'
+
+    const copyToClipboard = async (text: string, onDone: () => void) => {
+      try {
+        await navigator.clipboard.writeText(text)
+        onDone()
+        setTimeout(onDone, 1500)
+      } catch {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+        onDone()
+        setTimeout(onDone, 1500)
+      }
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div className="text-center md:text-left space-y-3">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center mx-auto md:mx-0 shadow-lg overflow-hidden">
+              <img src="./logo.png" alt="HyperRead Logo" className="w-16 h-16 object-contain"
+                onError={(e) => { const t=e.target as HTMLImageElement; t.style.display='none'; t.parentElement!.innerHTML='<span class="text-3xl">📚</span>' }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold macos-text-title">HyperRead</h2>
+              <p className="text-sm text-muted-foreground macos-text mt-1">{t('app.subtitle')}</p>
+            </div>
+          </div>
+
+          <div className="bg-muted/20 rounded-xl p-4 space-y-3">
+            <h3 className="text-sm font-semibold macos-text-title text-foreground">{t('about.appInfo')}</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">{t('about.version')}</span>
+                <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v{version}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">{t('about.platform')}</span>
+                <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">{platform}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold macos-text-title text-foreground mb-3">{t('about.features')}</h3>
+            <div className="space-y-2">
+              {[ t('about.featureList.dragDrop'), t('about.featureList.fileTree'), t('about.featureList.charts'), t('about.featureList.themes'), t('about.featureList.multiLang'), t('about.featureList.macOS')].map((feature, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-sm text-muted-foreground macos-text">{feature}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">GitHub:</div>
+              <Button onClick={() => copyToClipboard('https://github.com/thejoven/hyperread', () => setAboutCopiedGithub(v=>!v))} className="w-full macos-button bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary hover:text-primary justify-between" variant="outline">
+                <div className="flex items-center">
+                  <Github className="w-4 h-4 mr-2" />
+                  <span className="macos-text font-medium text-sm">github.com/thejoven/hyperread</span>
+                </div>
+                {aboutCopiedGithub ? (<CheckIcon className="w-3.5 h-3.5 text-green-500" />) : (<Copy className="w-3.5 h-3.5 opacity-70" />)}
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">X (Twitter):</div>
+              <Button onClick={() => copyToClipboard('https://x.com/thejoven_com', () => setAboutCopiedX(v=>!v))} className="w-full macos-button bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary hover:text-primary justify-between" variant="outline">
+                <div className="flex items-center">
+                  <XIcon className="w-4 h-4 mr-2" />
+                  <span className="macos-text font-medium text-sm">x.com/thejoven_com</span>
+                </div>
+                {aboutCopiedX ? (<CheckIcon className="w-3.5 h-3.5 text-green-500" />) : (<Copy className="w-3.5 h-3.5 opacity-70" />)}
+              </Button>
+            </div>
+
+            <div className="text-center pt-2">
+              <p className="text-xs text-muted-foreground/60 macos-text">© 2025 theJoven. All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // 渲染分类内容
   const renderCategoryContent = () => {
     switch (activeCategory) {
@@ -874,6 +980,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         return renderHistorySettings()
       case 'shortcuts':
         return renderShortcutSettings()
+      case 'about':
+        return renderAboutSettings()
       default:
         return renderReadingSettings()
     }

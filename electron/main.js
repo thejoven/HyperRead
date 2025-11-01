@@ -158,6 +158,15 @@ function createWindow() {
     mainWindow.show()
   })
 
+  // 广播全屏状态变化到渲染进程
+  const sendFullScreen = (isFull) => {
+    try {
+      mainWindow?.webContents?.send('fullscreen-changed', isFull)
+    } catch {}
+  }
+  mainWindow.on('enter-full-screen', () => sendFullScreen(true))
+  mainWindow.on('leave-full-screen', () => sendFullScreen(false))
+
   // 监听窗口状态变化并保存
   const saveWindowState = () => windowStateKeeper.save(mainWindow)
 
@@ -482,6 +491,15 @@ ipcMain.handle('open-directory-dialog', async () => {
   }
   
   return null
+})
+
+// 查询当前窗口是否全屏
+ipcMain.handle('get-fullscreen', async () => {
+  try {
+    return !!mainWindow && mainWindow.isFullScreen()
+  } catch {
+    return false
+  }
 })
 
 // 分类拖拽的文件
