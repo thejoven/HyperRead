@@ -109,7 +109,7 @@ function createWindow() {
     backgroundColor: '#ffffff',
     vibrancy: 'content',
     visualEffectState: 'active',
-    trafficLightPosition: { x: 20, y: 22 }
+    trafficLightPosition: { x: 20, y: 20 }
   })
 
   // 始终加载静态文件，不依赖开发服务器

@@ -12,7 +12,7 @@ import SettingsModal from '@/components/SettingsModal'
 import ConsistentAiSidebar from '@/components/ConsistentAiSidebar'
 import SearchPanel from '@/components/SearchPanel'
 import { Toaster } from '@/components/ui/sonner'
-import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
+import { FileText, FolderOpen, Folder, Info, Settings, ChevronLeft, ChevronRight, MessageSquare, PanelLeft } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { toast } from "sonner"
 import { useShortcuts } from '@/contexts/ShortcutContext'
@@ -1501,9 +1501,21 @@ export default function ElectronApp() {
       <header className="macos-toolbar drag-region flex-shrink-0 sticky top-0 z-50">
         <div className="flex items-center h-14 relative py-2">
           {/* 左侧为交通灯按钮预留空间 (约78px) */}
-          <div className="w-30 flex-shrink-0"></div>
+          <div className="w-20 flex-shrink-0"></div>
 
-          
+          {/* 缩放左侧栏按钮 - 放在交通灯按钮右侧 */}
+          <div className="no-drag">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className={`h-7 w-7 p-0 macos-button ml-2 ${isSidebarCollapsed ? 'bg-primary/10 text-primary' : ''}`}
+              title={isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
+            >
+              <PanelLeft className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
           {/* 灵活空间 */}
           <div className="flex-1"></div>
           
