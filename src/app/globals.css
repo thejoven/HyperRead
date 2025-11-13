@@ -325,6 +325,12 @@ a:hover {
   stroke: hsl(183 60% 50%) !important;
 }
 
+/* 强制文本换行，防止内容溢出 */
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* Print styles */
 @media print {
   .sidebar {

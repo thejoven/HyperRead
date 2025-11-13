@@ -344,7 +344,7 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
 
   return (
     <div
-      className={`fixed top-14 right-0 h-[calc(100vh-56px)] z-40 macos-sidebar flex border-l border-border transition-transform duration-300 ease-in-out ${
+      className={`fixed top-14 right-0 h-[calc(100vh-56px)] z-40 macos-sidebar flex border-l border-border transition-transform duration-300 ease-in-out overflow-hidden ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ width: `${width}px` }}
@@ -357,11 +357,11 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
           style={{ cursor: 'col-resize' }}
         />
       )}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* 头部 - 与FileList保持一致 */}
       <div className="px-2 py-2 border-b border-border/50 flex-shrink-0 bg-background/80">
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-1 min-w-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {currentDocument && (
               <>
                 <FileText className="h-3 w-3 text-muted-foreground" />
@@ -416,9 +416,9 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
       {/* AI 状态 - 简洁版 */}
       {aiConfig.isConfigured && (
         <div className="px-2 py-1.5 text-xs text-muted-foreground bg-background/80 border-b border-border/30">
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-            <span className="macos-text">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></div>
+            <span className="macos-text truncate">
               {aiConfig.provider === 'openai' && 'OpenAI'}
               {aiConfig.provider === 'anthropic' && 'Anthropic'}
               {aiConfig.provider === 'custom' && t('settings.ai.providerOptions.custom')}
@@ -481,15 +481,15 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
                     </div>
                   )}
 
-                  <div className={`group flex flex-col max-w-[80%] ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`group flex flex-col max-w-[80%] min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
                     <div
-                      className={`rounded-lg px-3 py-2 text-xs macos-text leading-relaxed ${
+                      className={`rounded-lg px-3 py-2 text-xs macos-text leading-relaxed overflow-hidden ${
                         message.role === 'user'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-background/80 border border-border/30 text-foreground'
                       }`}
                     >
-                      <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                      <div className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</div>
                     </div>
                     <div className="flex items-center gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                       <span className="text-xs text-muted-foreground font-mono">
