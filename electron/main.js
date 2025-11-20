@@ -382,32 +382,34 @@ function createWindow() {
     // })
 }
 
-// 递归扫描目录中的 Markdown 文件
+// 递归扫描目录中的 Markdown 和 PDF 文件
 function scanDirectory(dirPath) {
-  const markdownFiles = []
-  
+  const documentFiles = []
+
   function scanRecursive(currentPath) {
     try {
       const entries = fs.readdirSync(currentPath, { withFileTypes: true })
-      
+
       for (const entry of entries) {
         const fullPath = path.join(currentPath, entry.name)
-        
+
         if (entry.isDirectory()) {
           // 跳过隐藏文件夹和 node_modules
           if (!entry.name.startsWith('.') && entry.name !== 'node_modules') {
             scanRecursive(fullPath)
           }
         } else if (entry.isFile()) {
-          // 检查是否是 Markdown 文件
-          if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
+          // 检查是否是 Markdown 或 PDF 文件
+          const ext = path.extname(entry.name).toLowerCase()
+          if (ext === '.md' || ext === '.markdown' || ext === '.pdf') {
             const relativePath = path.relative(dirPath, fullPath)
-            markdownFiles.push({
+            documentFiles.push({
               name: path.basename(entry.name, path.extname(entry.name)),
               fileName: entry.name,
               fullPath: fullPath,
               relativePath: relativePath,
-              directory: path.dirname(relativePath) || '.'
+              directory: path.dirname(relativePath) || '.',
+              fileType: ext === '.pdf' ? 'pdf' : 'markdown'
             })
           }
         }
@@ -416,9 +418,9 @@ function scanDirectory(dirPath) {
       console.error('Error scanning directory:', currentPath, error)
     }
   }
-  
+
   scanRecursive(dirPath)
-  return markdownFiles.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
+  return documentFiles.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
 }
 
 // IPC 处理程序
@@ -428,10 +430,30 @@ ipcMain.handle('read-file', async (event, filePath) => {
     if (!filePath || typeof filePath !== 'string') {
       throw new Error(`无效的文件路径: ${filePath}`)
     }
+
+    const ext = path.extname(filePath).toLowerCase()
+    const fileName = path.basename(filePath, ext)
+
+    // 处理PDF文件 - 直接返回文件路径，不转换为 base64
+    if (ext === '.pdf') {
+      console.log('Main: PDF file path returned:', fileName)
+      return {
+        content: filePath, // 直接返回文件路径
+        fileName,
+        filePath,
+        fileType: 'pdf'
+      }
+    }
+
+    // 处理Markdown和文本文件
     const content = fs.readFileSync(filePath, 'utf-8')
-    const fileName = path.basename(filePath, '.md')
     console.log('Main: file read successfully:', fileName)
-    return { content, fileName, filePath }
+    return {
+      content,
+      fileName,
+      filePath,
+      fileType: ext === '.md' || ext === '.markdown' ? 'markdown' : 'text'
+    }
   } catch (error) {
     console.error('Main: read-file error:', error)
     throw new Error(`读取文件失败: ${error.message}`)
@@ -464,17 +486,37 @@ ipcMain.handle('open-file-dialog', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
     filters: [
-      { name: 'Markdown Files', extensions: ['md', 'markdown'] }
+      { name: 'Documents', extensions: ['md', 'markdown', 'pdf'] },
+      { name: 'Markdown Files', extensions: ['md', 'markdown'] },
+      { name: 'PDF Files', extensions: ['pdf'] }
     ]
   })
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     const filePath = result.filePaths[0]
+    const ext = path.extname(filePath).toLowerCase()
+    const fileName = path.basename(filePath, ext)
+
+    // 处理PDF文件 - 直接返回文件路径
+    if (ext === '.pdf') {
+      return {
+        content: filePath, // 直接返回文件路径
+        fileName,
+        filePath,
+        fileType: 'pdf'
+      }
+    }
+
+    // 处理Markdown文件
     const content = fs.readFileSync(filePath, 'utf-8')
-    const fileName = path.basename(filePath, '.md')
-    return { content, fileName, filePath }
+    return {
+      content,
+      fileName,
+      filePath,
+      fileType: 'markdown'
+    }
   }
-  
+
   return null
 })
 
@@ -666,7 +708,7 @@ function getFileFromArgs(argv) {
   // 过滤掉electron本身的参数，查找文件路径
   const args = argv.slice(1) // 跳过第一个参数（electron可执行文件路径）
   for (const arg of args) {
-    if (arg && !arg.startsWith('-') && (arg.endsWith('.md') || arg.endsWith('.markdown') || arg.endsWith('.txt'))) {
+    if (arg && !arg.startsWith('-') && (arg.endsWith('.md') || arg.endsWith('.markdown') || arg.endsWith('.txt') || arg.endsWith('.pdf'))) {
       if (fs.existsSync(arg)) {
         return arg
       }
@@ -680,16 +722,29 @@ function openFileInRenderer(filePath) {
   if (mainWindow && filePath) {
     console.log('Opening file via association:', filePath)
     try {
-      const content = fs.readFileSync(filePath, 'utf8')
-      const fileName = path.basename(filePath, path.extname(filePath))
+      const ext = path.extname(filePath).toLowerCase()
+      const fileName = path.basename(filePath, ext)
       const originalName = path.basename(filePath)
+
+      let content
+      let fileType
+
+      // 处理PDF文件 - 直接传递文件路径
+      if (ext === '.pdf') {
+        content = filePath // 直接传递路径
+        fileType = 'pdf'
+      } else {
+        content = fs.readFileSync(filePath, 'utf8')
+        fileType = ext === '.md' || ext === '.markdown' ? 'markdown' : 'text'
+      }
 
       mainWindow.webContents.executeJavaScript(`
         if (window.electronAPI?.setFileData) {
           window.electronAPI.setFileData({
             content: ${JSON.stringify(content)},
             fileName: ${JSON.stringify(fileName)},
-            originalName: ${JSON.stringify(originalName)}
+            originalName: ${JSON.stringify(originalName)},
+            fileType: ${JSON.stringify(fileType)}
           })
         }
       `)

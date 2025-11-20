@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import DocumentViewer from '@/components/DocumentViewer'
 import MarkdownContentWrapper from '@/components/MarkdownContentWrapper'
+import PdfViewerSimple from '@/components/PdfViewerSimple'
 import FileList from '@/components/FileList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import SettingsModal from '@/components/SettingsModal'
 import ConsistentAiSidebar from '@/components/ConsistentAiSidebar'
 import SearchPanel from '@/components/SearchPanel'
 import { Toaster } from '@/components/ui/sonner'
-import { FileText, FolderOpen, Folder, Settings, ChevronLeft, ChevronRight, MessageSquare, PanelLeft } from 'lucide-react'
+import { FileText, FolderOpen, Folder, Settings, ChevronLeft, ChevronRight, MessageSquare, PanelLeft, FileType } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { toast } from "sonner"
 import { useShortcuts } from '@/contexts/ShortcutContext'
@@ -27,6 +28,7 @@ interface FileInfo {
   fullPath: string
   relativePath: string
   directory: string
+  fileType?: 'markdown' | 'pdf'
 }
 
 interface DirectoryData {
@@ -1724,32 +1726,44 @@ export default function ElectronApp() {
             <div className="flex-1 overflow-hidden bg-background relative">
               {fileData ? (
                 <div className="h-full">
-                  {/* Search Panel - positioned above content */}
-                  {showSearch && (
-                    <div className="absolute top-0 left-0 right-0 z-50 p-4">
-                      <div className={`${getMaxWidthClass()} mx-auto`}>
-                        <SearchPanel
-                          isOpen={showSearch}
-                          onClose={() => setShowSearch(false)}
-                          content={fileData.content}
-                          onNavigateToLine={handleNavigateToLine}
-                          onSearchQueryChange={(query, options) => {
-                            setSearchQuery(query)
-                            setSearchOptions(options)
-                          }}
-                        />
-                      </div>
-                    </div>
+                  {/* PDF 查看器 */}
+                  {fileData.fileType === 'pdf' ? (
+                    <PdfViewerSimple
+                      data={fileData.content}
+                      fileName={fileData.fileName}
+                      filePath={fileData.filePath}
+                      className="h-full"
+                    />
+                  ) : (
+                    <>
+                      {/* Search Panel - positioned above content */}
+                      {showSearch && (
+                        <div className="absolute top-0 left-0 right-0 z-50 p-4">
+                          <div className={`${getMaxWidthClass()} mx-auto`}>
+                            <SearchPanel
+                              isOpen={showSearch}
+                              onClose={() => setShowSearch(false)}
+                              content={fileData.content}
+                              onNavigateToLine={handleNavigateToLine}
+                              onSearchQueryChange={(query, options) => {
+                                setSearchQuery(query)
+                                setSearchOptions(options)
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <MarkdownContentWrapper
+                        content={fileData.content}
+                        filePath={fileData.filePath}
+                        fontSize={fontSize}
+                        onFileNavigation={handleFileNavigation}
+                        searchQuery={showSearch ? searchQuery : undefined}
+                        searchOptions={showSearch ? searchOptions : undefined}
+                        className={`${getMaxWidthClass()} mx-auto px-4 py-6`}
+                      />
+                    </>
                   )}
-                  <MarkdownContentWrapper
-                    content={fileData.content}
-                    filePath={fileData.filePath}
-                    fontSize={fontSize}
-                    onFileNavigation={handleFileNavigation}
-                    searchQuery={showSearch ? searchQuery : undefined}
-                    searchOptions={showSearch ? searchOptions : undefined}
-                    className={`${getMaxWidthClass()} mx-auto px-4 py-6`}
-                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
@@ -1771,32 +1785,44 @@ export default function ElectronApp() {
           </div>
         ) : fileData ? (
           <div className="flex-1 relative overflow-hidden">
-            {/* Search Panel - positioned above content */}
-            {showSearch && (
-              <div className="absolute top-0 left-0 right-0 z-50 p-4">
-                <div className={`${getMaxWidthClass()} mx-auto`}>
-                  <SearchPanel
-                    isOpen={showSearch}
-                    onClose={() => setShowSearch(false)}
-                    content={fileData.content}
-                    onNavigateToLine={handleNavigateToLine}
-                    onSearchQueryChange={(query, options) => {
-                      setSearchQuery(query)
-                      setSearchOptions(options)
-                    }}
-                  />
-                </div>
-              </div>
+            {/* PDF 查看器 */}
+            {fileData.fileType === 'pdf' ? (
+              <PdfViewerSimple
+                data={fileData.content}
+                fileName={fileData.fileName}
+                filePath={fileData.filePath}
+                className="h-full"
+              />
+            ) : (
+              <>
+                {/* Search Panel - positioned above content */}
+                {showSearch && (
+                  <div className="absolute top-0 left-0 right-0 z-50 p-4">
+                    <div className={`${getMaxWidthClass()} mx-auto`}>
+                      <SearchPanel
+                        isOpen={showSearch}
+                        onClose={() => setShowSearch(false)}
+                        content={fileData.content}
+                        onNavigateToLine={handleNavigateToLine}
+                        onSearchQueryChange={(query, options) => {
+                          setSearchQuery(query)
+                          setSearchOptions(options)
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                <MarkdownContentWrapper
+                  content={fileData.content}
+                  filePath={fileData.filePath}
+                  fontSize={fontSize}
+                  onFileNavigation={handleFileNavigation}
+                  searchQuery={showSearch ? searchQuery : undefined}
+                  searchOptions={showSearch ? searchOptions : undefined}
+                  className={`container mx-auto px-4 py-8 ${getMaxWidthClass()}`}
+                />
+              </>
             )}
-            <MarkdownContentWrapper
-              content={fileData.content}
-              filePath={fileData.filePath}
-              fontSize={fontSize}
-              onFileNavigation={handleFileNavigation}
-              searchQuery={showSearch ? searchQuery : undefined}
-              searchOptions={showSearch ? searchOptions : undefined}
-              className={`container mx-auto px-4 py-8 ${getMaxWidthClass()}`}
-            />
           </div>
         ) : (
           <div className="container mx-auto px-4 py-12 flex-1 flex items-center justify-center">

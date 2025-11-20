@@ -12,13 +12,34 @@ export default defineConfig({
       writeBundle() {
         const logoSource = path.resolve(__dirname, 'logo/logo.png')
         const distLogo = path.resolve(__dirname, 'dist/logo.png')
-        
+
         if (existsSync(logoSource)) {
           try {
             copyFileSync(logoSource, distLogo)
             console.log('Logo copied from logo directory to dist root')
           } catch (error) {
             console.warn('Failed to copy logo:', error)
+          }
+        }
+      }
+    },
+    // Plugin to copy PDF.js worker file
+    {
+      name: 'copy-pdf-worker',
+      writeBundle() {
+        const workerSource = path.resolve(__dirname, 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs')
+        const distDir = path.resolve(__dirname, 'dist')
+        const distWorker = path.resolve(distDir, 'pdf.worker.min.mjs')
+
+        if (existsSync(workerSource)) {
+          try {
+            if (!existsSync(distDir)) {
+              mkdirSync(distDir, { recursive: true })
+            }
+            copyFileSync(workerSource, distWorker)
+            console.log('PDF worker copied to dist root')
+          } catch (error) {
+            console.warn('Failed to copy PDF worker:', error)
           }
         }
       }

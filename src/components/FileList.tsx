@@ -18,7 +18,7 @@ function debounce<T extends (...args: any[]) => any>(
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw } from 'lucide-react'
+import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw, FileType } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 
 interface FileInfo {
@@ -27,6 +27,7 @@ interface FileInfo {
   fullPath: string
   relativePath: string
   directory: string
+  fileType?: 'markdown' | 'pdf'
 }
 
 interface FileListProps {
@@ -188,6 +189,7 @@ const TreeNodeComponent = memo(({
 
   if (node.type === 'file' && node.file) {
     const isActive = currentFile === node.file.fullPath
+    const isPdf = node.file.fileType === 'pdf' || node.file.fileName.toLowerCase().endsWith('.pdf')
 
     return (
       <div className="flex items-center group">
@@ -196,15 +198,21 @@ const TreeNodeComponent = memo(({
           variant="ghost"
           size="sm"
           className={`justify-start h-7 px-2 py-1 w-full text-left transition-all duration-150 macos-file-item ${
-            isActive 
-              ? 'active text-white' 
+            isActive
+              ? 'active text-white'
               : 'text-muted-foreground hover:text-foreground'
           }`}
           onClick={() => onFileSelect(node.file!)}
         >
-          <FileText className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
-            isActive ? 'text-white' : 'text-muted-foreground'
-          }`} />
+          {isPdf ? (
+            <FileType className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+              isActive ? 'text-white' : 'text-red-500'
+            }`} />
+          ) : (
+            <FileText className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+              isActive ? 'text-white' : 'text-muted-foreground'
+            }`} />
+          )}
           <span className="truncate text-xs macos-text">{node.file.name}</span>
         </Button>
       </div>

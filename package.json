@@ -1,7 +1,7 @@
 {
   "name": "hyperread",
-  "version": "3.5.1",
-  "description": "HyperRead — Read smarter. Read faster. A beautiful macOS-style Markdown reader built with Electron",
+  "version": "3.6.0",
+  "description": "HyperRead — Read smarter. Read faster. A beautiful macOS-style Markdown and PDF reader built with Electron",
   "author": "thejoven",
   "license": "AGPL-3.0",
   "private": true,
@@ -32,6 +32,7 @@
     "lucide-react": "^0.542.0",
     "mermaid": "^11.10.1",
     "next-themes": "^0.4.6",
+    "pdfjs-dist": "^5.4.296",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
@@ -68,6 +69,12 @@
         "ext": "txt",
         "name": "Text Document",
         "description": "文本文档",
+        "icon": "logo/logo.png"
+      },
+      {
+        "ext": "pdf",
+        "name": "PDF Document",
+        "description": "PDF文档",
         "icon": "logo/logo.png"
       }
     ],
@@ -110,6 +117,15 @@
               "txt"
             ],
             "CFBundleTypeRole": "Editor",
+            "CFBundleTypeIconFile": "logo.png",
+            "LSHandlerRank": "Alternative"
+          },
+          {
+            "CFBundleTypeName": "PDF Document",
+            "CFBundleTypeExtensions": [
+              "pdf"
+            ],
+            "CFBundleTypeRole": "Viewer",
             "CFBundleTypeIconFile": "logo.png",
             "LSHandlerRank": "Alternative"
           }
@@ -161,7 +177,7 @@
           "GenericName": "Markdown Reader",
           "Keywords": "markdown;reader;document;text;",
           "StartupWMClass": "HyperRead",
-          "MimeType": "text/markdown;text/x-markdown;text/plain;"
+          "MimeType": "text/markdown;text/x-markdown;text/plain;application/pdf;"
         }
       }
     }
