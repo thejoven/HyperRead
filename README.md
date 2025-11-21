@@ -27,11 +27,11 @@ English | [简体中文](./README-zh.md)
 <tr>
 <td width="50%">
 
-- 🎨 **Native macOS Interface** - Perfect macOS design with blur effects
+- 🎨 **Native macOS Interface** - Perfect macOS design with blur effects and smooth animations
 - 📁 **Multi-Format Support** - Supports Markdown (.md/.markdown), PDF (.pdf), EPUB (.epub) files
+- 📖 **Professional EPUB Reader** - Apple Books-style reading experience with accurate pagination
 - 🌳 **File Tree Explorer** - Recursively scan and display all document files in directory structure with drag & drop
 - 🎯 **High Performance Rendering** - Support for Mermaid charts, code highlighting, math formulas (KaTeX)
-- 🖼️ **Image Preview & Zoom** - Click to zoom images with pan and drag controls
 
 </td>
 <td width="50%">
@@ -40,8 +40,8 @@ English | [简体中文](./README-zh.md)
 - 🤖 **AI Assistant** - Built-in AI assistant for document analysis and Q&A with conversation history
 - 🔍 **Advanced Search** - Full-text search with highlighting across all markdown elements
 - ⌨️ **Keyboard Shortcuts** - Customizable shortcuts system with double-press support
+- 🖼️ **Image Preview & Zoom** - Click to zoom images with pan and drag controls
 - 🌓 **Theme Toggle** - Support for automatic light/dark theme switching
-- 🌍 **Multi-language Support** - Support Chinese/English interface switching, English by default
 
 </td>
 </tr>
@@ -53,11 +53,11 @@ English | [简体中文](./README-zh.md)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%203.5.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%203.8.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. Download `HyperRead-3.5.0-arm64.dmg` installer
+1. Download `HyperRead-3.8.0-arm64.dmg` installer
 2. Double-click the DMG file
 3. Drag HyperRead to Applications folder
 4. First run may require permission in "System Preferences > Security & Privacy"
@@ -86,19 +86,19 @@ npm run start        # Production mode
 <td width="33%">
 
 **🖱️ Drag & Drop**
-Directly drag `.md` files or folders containing Markdown files to the application window
+Directly drag `.md`, `.pdf`, or `.epub` files, or folders to the application window
 
 </td>
 <td width="33%">
 
 **📂 Menu Method**
-Click "Open File" or "Open Folder" buttons at the top
+Click "Open File" or "Open Folder" buttons at the top to browse files
 
 </td>
 <td width="33%">
 
 **⌨️ Keyboard Shortcuts**
-Support for common file operation shortcuts
+Support for common file operations and navigation shortcuts
 
 </td>
 </tr>
@@ -106,6 +106,7 @@ Support for common file operation shortcuts
 
 ### Supported Features
 
+#### 📝 Markdown
 <table>
 <tr>
 <td width="50%">
@@ -124,6 +125,30 @@ Support for common file operation shortcuts
 </td>
 </tr>
 </table>
+
+#### 📖 EPUB Reader
+<table>
+<tr>
+<td width="50%">
+
+- ✅ **Apple Books Style** - Professional typography with justified text and hyphenation
+- ✅ **Accurate Pagination** - CFI-based location tracking for precise page numbers
+- ✅ **Keyboard Navigation** - Arrow keys and Page Up/Down for smooth navigation
+
+</td>
+<td width="50%">
+
+- ✅ **Responsive Layout** - Optimized padding and margins for comfortable reading
+- ✅ **Theme Integration** - Seamless light/dark theme switching
+- ✅ **Interactive Content** - Support for EPUB with embedded scripts and media
+
+</td>
+</tr>
+</table>
+
+#### 📄 PDF Viewer
+- ✅ **High-Quality Rendering** - Powered by PDF.js for accurate document display
+- ✅ **Page Navigation** - Easy navigation with page controls and keyboard shortcuts
 
 ## 🛠️ Development
 
@@ -145,7 +170,9 @@ Support for common file operation shortcuts
 <td width="50%">
 
 **📝 Content Rendering**
-- react-markdown + remark/rehype
+- react-markdown + remark/rehype (Markdown)
+- epub.js (EPUB rendering)
+- PDF.js (PDF rendering)
 - Mermaid (Charts)
 - KaTeX (Math formulas)
 - highlight.js (Code highlighting)
@@ -231,6 +258,22 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 </div>
 
 ## 📝 What's New
+
+### 🎉 Version 3.8.0 (Latest)
+
+**Major Updates:**
+- 📖 **Complete EPUB Reader** - Professional e-book reading experience with Apple Books-style typography
+- 📊 **Accurate Pagination** - CFI-based location tracking for precise page numbers (1600 chars/page standard)
+- 🎨 **Enhanced Typography** - Justified text, automatic hyphenation, paragraph indentation, and optimized spacing
+- ⌨️ **Keyboard Navigation** - Full support for arrow keys and Page Up/Down navigation
+- 🔧 **React 19 Compatible** - Fixed rendering timing issues with overlay-based loading states
+
+**Technical Improvements:**
+- Integrated epub.js library for EPUB parsing and rendering
+- Support for both base64 and blob URL data sources
+- Asynchronous DOM readiness waiting mechanism
+- Optimized loading indicators with pagination generation status
+- Enhanced error handling and debugging information
 
 👀 **[View Full Changelog](./CHANGELOG.md)** - Detailed release notes and version history
 

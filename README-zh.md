@@ -24,20 +24,21 @@
 <tr>
 <td width="50%">
 
-- 🎨 **macOS 原生界面** - 完美符合 macOS 设计风格，支持毛玻璃效果
+- 🎨 **macOS 原生界面** - 完美符合 macOS 设计风格，支持毛玻璃效果和流畅动画
 - 📁 **多格式支持** - 支持 Markdown (.md/.markdown)、PDF (.pdf)、EPUB (.epub) 文件
+- 📖 **专业 EPUB 阅读器** - Apple Books 风格的阅读体验，支持精确分页
 - 🌳 **文件树浏览** - 递归扫描并展示目录结构中的所有文档文件，支持拖拽加载
 - 🎯 **高性能渲染** - 支持 Mermaid 图表、代码高亮、数学公式 (KaTeX)
-- 🖼️ **图片预览缩放** - 点击图片可放大预览，支持平移和拖拽控制
 
 </td>
 <td width="50%">
 
-- ⚙️ **设置中心** - 集中管理字体大小、多语言等阅读偏好设置
+- ⚙️ **设置中心** - 集中管理字体大小、多语言、AI 助手和快捷键等设置
+- 🤖 **AI 助手** - 内置 AI 助手，支持文档分析和问答，保存对话历史
+- 🔍 **高级搜索** - 全文搜索，支持高亮显示和所有 Markdown 元素
+- ⌨️ **快捷键系统** - 可自定义快捷键系统，支持双击触发
+- 🖼️ **图片预览缩放** - 点击图片可放大预览，支持平移和拖拽控制
 - 🌓 **主题切换** - 支持明暗主题自动切换
-- 🌍 **多语言支持** - 支持中文/英文界面切换，默认英文
-- ⚡ **纯本地运行** - 不依赖开发服务器，启动更快
-- 🔗 **内链跳转** - 支持本地 Markdown 文件链接，自动解析相对路径
 
 </td>
 </tr>
@@ -49,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%203.5.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%203.8.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-3.5.0-arm64.dmg` 安装包
+1. 下载 `HyperRead-3.8.0-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -82,19 +83,19 @@ npm run start        # 生产模式
 <td width="33%">
 
 **🖱️ 拖拽方式**
-直接将 `.md` 文件或包含 Markdown 文件的文件夹拖拽到应用窗口
+直接将 `.md`、`.pdf` 或 `.epub` 文件，或文件夹拖拽到应用窗口
 
 </td>
 <td width="33%">
 
 **📂 菜单方式**
-点击顶部的"打开文件"或"打开文件夹"按钮
+点击顶部的"打开文件"或"打开文件夹"按钮浏览文件
 
 </td>
 <td width="33%">
 
 **⌨️ 快捷键**
-支持常用的文件操作快捷键
+支持常用的文件操作和导航快捷键
 
 </td>
 </tr>
@@ -102,6 +103,7 @@ npm run start        # 生产模式
 
 ### 支持的功能
 
+#### 📝 Markdown
 <table>
 <tr>
 <td width="50%">
@@ -120,6 +122,30 @@ npm run start        # 生产模式
 </td>
 </tr>
 </table>
+
+#### 📖 EPUB 阅读器
+<table>
+<tr>
+<td width="50%">
+
+- ✅ **Apple Books 风格** - 专业的排版，支持两端对齐和自动连字符
+- ✅ **精确分页** - 基于 CFI 的位置追踪，实现精确页码显示
+- ✅ **键盘导航** - 支持方向键和 Page Up/Down 进行流畅翻页
+
+</td>
+<td width="50%">
+
+- ✅ **响应式布局** - 优化的内边距和边距，舒适的阅读体验
+- ✅ **主题集成** - 无缝的明暗主题切换
+- ✅ **交互内容** - 支持带有嵌入式脚本和媒体的 EPUB
+
+</td>
+</tr>
+</table>
+
+#### 📄 PDF 查看器
+- ✅ **高质量渲染** - 基于 PDF.js，精确显示文档内容
+- ✅ **页面导航** - 便捷的页面控制和键盘快捷键
 
 ## 🛠️ 开发
 
@@ -141,7 +167,9 @@ npm run start        # 生产模式
 <td width="50%">
 
 **📝 内容渲染**
-- react-markdown + remark/rehype
+- react-markdown + remark/rehype (Markdown)
+- epub.js (EPUB 渲染)
+- PDF.js (PDF 渲染)
 - Mermaid (图表)
 - KaTeX (数学公式)
 - highlight.js (代码高亮)
@@ -227,6 +255,22 @@ npm run lint              # ESLint 检查
 </div>
 
 ## 📝 最新更新
+
+### 🎉 版本 3.8.0（最新）
+
+**主要更新：**
+- 📖 **完整的 EPUB 阅读器** - 专业的电子书阅读体验，采用 Apple Books 风格排版
+- 📊 **精确分页系统** - 基于 CFI 的位置追踪，精确页码显示（每页 1600 字符标准）
+- 🎨 **优化的排版** - 两端对齐、自动连字符、段落缩进和优化的间距
+- ⌨️ **键盘导航** - 完整支持方向键和 Page Up/Down 翻页
+- 🔧 **React 19 兼容** - 修复渲染时机问题，采用覆盖层加载状态
+
+**技术改进：**
+- 集成 epub.js 库进行 EPUB 解析和渲染
+- 支持 base64 和 blob URL 两种数据源
+- 实现异步 DOM 就绪等待机制
+- 优化加载提示，显示分页生成状态
+- 增强错误处理和调试信息
 
 👀 **[查看完整更新日志](./CHANGELOG.md)** - 详细的发布说明和版本历史
 
