@@ -13,8 +13,12 @@ export default function PdfViewerSimple({ data, fileName, filePath, className }:
   const [pdfUrl, setPdfUrl] = useState<string>('')
 
   useEffect(() => {
-    // 创建 file:// URL
-    if (data.startsWith('/') || data.match(/^[A-Z]:\\/)) {
+    // Check if it's a blob URL (from drag-drop) or file path
+    if (data.startsWith('blob:')) {
+      console.log('PDF blob URL:', data)
+      setPdfUrl(data)
+    } else if (data.startsWith('/') || data.match(/^[A-Z]:\\/)) {
+      // 创建 file:// URL
       const fileUrl = `file://${data.replace(/\\/g, '/')}`
       console.log('PDF file URL:', fileUrl)
       setPdfUrl(fileUrl)

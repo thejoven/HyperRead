@@ -1,7 +1,7 @@
 {
   "name": "hyperread",
-  "version": "3.6.0",
-  "description": "HyperRead — Read smarter. Read faster. A beautiful macOS-style Markdown and PDF reader built with Electron",
+  "version": "3.8.0",
+  "description": "HyperRead — Read smarter. Read faster. A beautiful macOS-style Markdown, PDF, and EPUB reader built with Electron",
   "author": "thejoven",
   "license": "AGPL-3.0",
   "private": true,
@@ -28,6 +28,7 @@
     "@vercel/analytics": "^1.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "epubjs": "^0.3.93",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.542.0",
     "mermaid": "^11.10.1",
@@ -75,6 +76,12 @@
         "ext": "pdf",
         "name": "PDF Document",
         "description": "PDF文档",
+        "icon": "logo/logo.png"
+      },
+      {
+        "ext": "epub",
+        "name": "EPUB Document",
+        "description": "EPUB电子书",
         "icon": "logo/logo.png"
       }
     ],
@@ -128,6 +135,15 @@
             "CFBundleTypeRole": "Viewer",
             "CFBundleTypeIconFile": "logo.png",
             "LSHandlerRank": "Alternative"
+          },
+          {
+            "CFBundleTypeName": "EPUB Document",
+            "CFBundleTypeExtensions": [
+              "epub"
+            ],
+            "CFBundleTypeRole": "Viewer",
+            "CFBundleTypeIconFile": "logo.png",
+            "LSHandlerRank": "Alternative"
           }
         ]
       }
@@ -177,7 +193,7 @@
           "GenericName": "Markdown Reader",
           "Keywords": "markdown;reader;document;text;",
           "StartupWMClass": "HyperRead",
-          "MimeType": "text/markdown;text/x-markdown;text/plain;application/pdf;"
+          "MimeType": "text/markdown;text/x-markdown;text/plain;application/pdf;application/epub+zip;"
         }
       }
     }

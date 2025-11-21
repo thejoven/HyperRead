@@ -6,9 +6,9 @@
 
 **Read smarter. Read faster.**
 
-一个美观的 macOS 风格 Markdown 阅读器，基于 Electron 构建。
+一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-3.8.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -25,8 +25,8 @@
 <td width="50%">
 
 - 🎨 **macOS 原生界面** - 完美符合 macOS 设计风格，支持毛玻璃效果
-- 📁 **拖拽支持** - 支持拖拽单个 Markdown 文件或整个文件夹，支持实时刷新检测文件变化
-- 🌳 **文件树浏览** - 递归扫描并展示目录结构中的所有 Markdown 文件
+- 📁 **多格式支持** - 支持 Markdown (.md/.markdown)、PDF (.pdf)、EPUB (.epub) 文件
+- 🌳 **文件树浏览** - 递归扫描并展示目录结构中的所有文档文件，支持拖拽加载
 - 🎯 **高性能渲染** - 支持 Mermaid 图表、代码高亮、数学公式 (KaTeX)
 - 🖼️ **图片预览缩放** - 点击图片可放大预览，支持平移和拖拽控制
 

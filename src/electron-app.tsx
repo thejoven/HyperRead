@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import DocumentViewer from '@/components/DocumentViewer'
 import MarkdownContentWrapper from '@/components/MarkdownContentWrapper'
 import PdfViewerSimple from '@/components/PdfViewerSimple'
+import EpubViewer from '@/components/EpubViewer'
 import FileList from '@/components/FileList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import SettingsModal from '@/components/SettingsModal'
@@ -28,7 +29,7 @@ interface FileInfo {
   fullPath: string
   relativePath: string
   directory: string
-  fileType?: 'markdown' | 'pdf'
+  fileType?: 'markdown' | 'pdf' | 'epub'
 }
 
 interface DirectoryData {
@@ -803,25 +804,43 @@ export default function ElectronApp() {
       e.dataTransfer!.dropEffect = 'copy'
     }
 
+    // Helper function to check if file is supported
+    const isSupportedFile = (fileName: string): boolean => {
+      const lowerName = fileName.toLowerCase()
+      return lowerName.endsWith('.md') ||
+             lowerName.endsWith('.markdown') ||
+             lowerName.endsWith('.pdf') ||
+             lowerName.endsWith('.epub')
+    }
+
+    // Helper function to get file type
+    const getFileType = (fileName: string): 'markdown' | 'pdf' | 'epub' | 'text' => {
+      const lowerName = fileName.toLowerCase()
+      if (lowerName.endsWith('.pdf')) return 'pdf'
+      if (lowerName.endsWith('.epub')) return 'epub'
+      if (lowerName.endsWith('.md') || lowerName.endsWith('.markdown')) return 'markdown'
+      return 'text'
+    }
+
     const handleDrop = async (e: DragEvent) => {
       console.log('React: drop event triggered - processing with webkitGetAsEntry')
       e.preventDefault()
       e.stopPropagation()
       setIsDragOver(false)
-      
+
       try {
         const items = [...(e.dataTransfer?.items || [])]
         console.log(`React: Processing ${items.length} dropped items`)
-        
-        const allFiles: Array<{file: File, fullPath: string, name: string}> = []
+
+        const allFiles: Array<{file: File, fullPath: string, name: string, fileType?: 'markdown' | 'pdf' | 'epub'}> = []
         const directories: string[] = []
         const directoryEntries: FileSystemDirectoryEntry[] = []
-        
+
         // Process each item using webkitGetAsEntry API
         for (const item of items) {
           if (item.kind === 'file') {
             const entry = (item as any).webkitGetAsEntry()
-            
+
             if (entry) {
               if (entry.isDirectory) {
                 console.log('React: Processing directory:', entry.name)
@@ -829,30 +848,33 @@ export default function ElectronApp() {
                 directoryEntries.push(entry) // 保存目录条目以支持刷新
                 const dirFiles = await processDirectoryEntry(entry, 0, false) // 初始拖拽，不强制刷新
                 allFiles.push(...dirFiles)
-                console.log(`React: Found ${dirFiles.length} markdown files in directory: ${entry.name}`)
-              } else if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                console.log(`React: Found ${dirFiles.length} supported files in directory: ${entry.name}`)
+              } else if (entry.isFile && isSupportedFile(entry.name)) {
                 const file = await new Promise<File>((resolve, reject) => {
                   entry.file(resolve, reject)
                 })
                 allFiles.push({
                   file: file,
                   fullPath: entry.fullPath,
-                  name: entry.name
+                  name: entry.name,
+                  fileType: getFileType(entry.name)
                 })
+                console.log(`React: Added file: ${entry.name} (type: ${getFileType(entry.name)})`)
               }
             }
           }
         }
-        
-        console.log(`React: Found ${allFiles.length} markdown files in ${directories.length} directories`)
-        console.log('React: Raw file data:', allFiles.map(f => ({ 
-          name: f.name, 
+
+        console.log(`React: Found ${allFiles.length} supported files in ${directories.length} directories`)
+        console.log('React: Raw file data:', allFiles.map(f => ({
+          name: f.name,
           fullPath: f.fullPath,
+          fileType: f.fileType,
           file: f.file ? f.file.name : 'no file'
         })))
-        
+
         if (allFiles.length === 0) {
-          toast.error('未找到 Markdown 文件。请拖拽 .md 或 .markdown 文件，或包含这些文件的文件夹。')
+          toast.error('未找到支持的文件。请拖拽 Markdown (.md/.markdown)、PDF (.pdf) 或 EPUB (.epub) 文件，或包含这些文件的文件夹。')
           return
         }
         
@@ -860,14 +882,27 @@ export default function ElectronApp() {
         if (allFiles.length === 1 && directories.length === 0) {
           // Single file
           const fileData = allFiles[0]
-          const content = await readFileContent(fileData.file)
+          const fileType = getFileType(fileData.name)
+
+          // For PDF and EPUB, pass the file path; for Markdown, read content
+          let content: string
+          if (fileType === 'pdf' || fileType === 'epub') {
+            // Create a local file URL using createObjectURL
+            content = URL.createObjectURL(fileData.file)
+            console.log(`React: Created object URL for ${fileType}:`, content)
+          } else {
+            content = await readFileContent(fileData.file)
+          }
+
           setFileData({
             content: content,
-            fileName: fileData.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
-            filePath: fileData.fullPath
+            fileName: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
+            filePath: fileData.fullPath,
+            fileType: fileType
           })
           setIsDirectoryMode(false)
           setIsEnhancedDragMode(false)
+          console.log(`React: Loaded single ${fileType} file:`, fileData.name)
         } else {
           // Multiple files or directory mode
           console.log('React: Setting up directory mode with enhanced caching')
@@ -875,33 +910,46 @@ export default function ElectronApp() {
           // Create file infos
           const fileInfos = allFiles.map(fileData => {
             const relativePath = fileData.fullPath.replace(/^\//, '')
-            const directory = relativePath.includes('/') ? 
+            const directory = relativePath.includes('/') ?
               relativePath.substring(0, relativePath.lastIndexOf('/')) : '.'
-              
+            const fileType = getFileType(fileData.name)
+
             return {
-              name: fileData.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+              name: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
               fileName: fileData.name,
               fullPath: fileData.fullPath,
               relativePath: relativePath,
-              directory: directory
+              directory: directory,
+              fileType: fileType
             }
           })
-          
+
           console.log('React: Processed fileInfos:', fileInfos.map(f => ({
             name: f.name,
             fileName: f.fileName,
             fullPath: f.fullPath,
+            fileType: f.fileType,
             relativePath: f.relativePath,
             directory: f.directory
           })))
-          
+
           // Cache all file contents
           const fileContentsCache = new Map<string, string>()
           for (const fileData of allFiles) {
             try {
-              const content = await readFileContent(fileData.file)
+              const fileType = getFileType(fileData.name)
+              let content: string
+
+              // For PDF and EPUB, use createObjectURL; for Markdown, read content
+              if (fileType === 'pdf' || fileType === 'epub') {
+                content = URL.createObjectURL(fileData.file)
+                console.log(`React: Created object URL for ${fileType}: ${fileData.name}`)
+              } else {
+                content = await readFileContent(fileData.file)
+                console.log(`React: Cached content for file: ${fileData.name}`)
+              }
+
               fileContentsCache.set(fileData.fullPath, content)
-              console.log(`React: Cached content for file: ${fileData.name}`)
             } catch (error) {
               console.error(`React: Failed to read content for ${fileData.name}:`, error)
             }
@@ -927,13 +975,16 @@ export default function ElectronApp() {
             const firstFile = allFiles[0]
             const content = fileContentsCache.get(firstFile.fullPath)
             if (content) {
+              const fileType = getFileType(firstFile.name)
               const opened = {
                 content: content,
-                fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
-                filePath: firstFile.fullPath
+                fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
+                filePath: firstFile.fullPath,
+                fileType: fileType
               }
               openTabWithData(opened)
               setFileData(opened)
+              console.log(`React: Loaded first ${fileType} file in directory mode:`, firstFile.name)
             }
           }
           
@@ -970,9 +1021,10 @@ export default function ElectronApp() {
 
               try {
                 for (const entry of allEntries) {
-                  if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                  if (entry.isFile && isSupportedFile(entry.name)) {
                     try {
-                      console.log(`${indent}📄 React: Reading file: ${entry.name}`)
+                      const fileType = getFileType(entry.name)
+                      console.log(`${indent}📄 React: Reading ${fileType} file: ${entry.name}`)
                       const file = await new Promise<File>((resolve, reject) => {
                         entry.file((f: File) => {
                           console.log(`${indent}✅ React: File object created for ${entry.name}, lastModified: ${new Date(f.lastModified).toLocaleString()}`)
@@ -1053,7 +1105,13 @@ export default function ElectronApp() {
     try {
       console.log('React: calling electronAPI.readFile with:', filePath)
       const data = await window.electronAPI.readFile(filePath)
-      console.log('React: file loaded successfully:', data.fileName)
+      console.log('React: file loaded successfully:', {
+        fileName: data.fileName,
+        fileType: data.fileType,
+        contentType: typeof data.content,
+        contentPreview: data.content?.substring?.(0, 100) || data.content,
+        filePath: data.filePath
+      })
       openTabWithData(data)
       setFileData(data)
     } catch (error) {
@@ -1218,9 +1276,10 @@ export default function ElectronApp() {
 
                 // 处理所有entries
                 for (const entry of allEntries) {
-                  if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                  if (entry.isFile && isSupportedFile(entry.name)) {
                     try {
-                      console.log(`${indent}📄 React: Processing file: ${entry.name} (${forceRefresh ? 'FORCE REFRESH' : 'normal'}, attempt ${retryCount + 1})`)
+                      const fileType = getFileType(entry.name)
+                      console.log(`${indent}📄 React: Processing ${fileType} file: ${entry.name} (${forceRefresh ? 'FORCE REFRESH' : 'normal'}, attempt ${retryCount + 1})`)
 
                       // 根据模式选择文件处理方式
                       const file = forceRefresh ?
@@ -1229,9 +1288,13 @@ export default function ElectronApp() {
                           entry.file(resolve, reject)
                         })
 
-                      // 验证文件是否可读
-                      const testRead = await file.text()
-                      console.log(`${indent}✅ React: File "${entry.name}" is readable, size: ${testRead.length} chars, lastModified: ${new Date(file.lastModified).toLocaleString()}`)
+                      // 验证文件是否可读（仅对文本文件验证）
+                      if (fileType === 'markdown') {
+                        const testRead = await file.text()
+                        console.log(`${indent}✅ React: File "${entry.name}" is readable, size: ${testRead.length} chars, lastModified: ${new Date(file.lastModified).toLocaleString()}`)
+                      } else {
+                        console.log(`${indent}✅ React: ${fileType.toUpperCase()} file "${entry.name}" loaded, size: ${file.size} bytes, lastModified: ${new Date(file.lastModified).toLocaleString()}`)
+                      }
 
                       files.push({ file, fullPath: entry.fullPath, name: entry.name })
                     } catch (error) {
@@ -1734,6 +1797,13 @@ export default function ElectronApp() {
                       filePath={fileData.filePath}
                       className="h-full"
                     />
+                  ) : fileData.fileType === 'epub' ? (
+                    <EpubViewer
+                      data={fileData.content}
+                      fileName={fileData.fileName}
+                      filePath={fileData.filePath}
+                      className="h-full"
+                    />
                   ) : (
                     <>
                       {/* Search Panel - positioned above content */}
@@ -1788,6 +1858,13 @@ export default function ElectronApp() {
             {/* PDF 查看器 */}
             {fileData.fileType === 'pdf' ? (
               <PdfViewerSimple
+                data={fileData.content}
+                fileName={fileData.fileName}
+                filePath={fileData.filePath}
+                className="h-full"
+              />
+            ) : fileData.fileType === 'epub' ? (
+              <EpubViewer
                 data={fileData.content}
                 fileName={fileData.fileName}
                 filePath={fileData.filePath}

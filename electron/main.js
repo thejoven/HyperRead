@@ -399,17 +399,23 @@ function scanDirectory(dirPath) {
             scanRecursive(fullPath)
           }
         } else if (entry.isFile()) {
-          // 检查是否是 Markdown 或 PDF 文件
+          // 检查是否是 Markdown、PDF 或 EPUB 文件
           const ext = path.extname(entry.name).toLowerCase()
-          if (ext === '.md' || ext === '.markdown' || ext === '.pdf') {
+          if (ext === '.md' || ext === '.markdown' || ext === '.pdf' || ext === '.epub') {
             const relativePath = path.relative(dirPath, fullPath)
+            let fileType = 'markdown'
+            if (ext === '.pdf') {
+              fileType = 'pdf'
+            } else if (ext === '.epub') {
+              fileType = 'epub'
+            }
             documentFiles.push({
               name: path.basename(entry.name, path.extname(entry.name)),
               fileName: entry.name,
               fullPath: fullPath,
               relativePath: relativePath,
               directory: path.dirname(relativePath) || '.',
-              fileType: ext === '.pdf' ? 'pdf' : 'markdown'
+              fileType: fileType
             })
           }
         }
@@ -442,6 +448,20 @@ ipcMain.handle('read-file', async (event, filePath) => {
         fileName,
         filePath,
         fileType: 'pdf'
+      }
+    }
+
+    // 处理EPUB文件 - 读取文件并返回base64数据
+    if (ext === '.epub') {
+      console.log('Main: Reading EPUB file:', filePath)
+      const epubData = fs.readFileSync(filePath)
+      const base64Data = epubData.toString('base64')
+      console.log('Main: EPUB file read successfully, size:', epubData.length, 'bytes')
+      return {
+        content: base64Data, // 返回base64数据
+        fileName,
+        filePath,
+        fileType: 'epub'
       }
     }
 
@@ -486,9 +506,10 @@ ipcMain.handle('open-file-dialog', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
     filters: [
-      { name: 'Documents', extensions: ['md', 'markdown', 'pdf'] },
+      { name: 'Documents', extensions: ['md', 'markdown', 'pdf', 'epub'] },
       { name: 'Markdown Files', extensions: ['md', 'markdown'] },
-      { name: 'PDF Files', extensions: ['pdf'] }
+      { name: 'PDF Files', extensions: ['pdf'] },
+      { name: 'EPUB Files', extensions: ['epub'] }
     ]
   })
 
@@ -504,6 +525,19 @@ ipcMain.handle('open-file-dialog', async () => {
         fileName,
         filePath,
         fileType: 'pdf'
+      }
+    }
+
+    // 处理EPUB文件 - 读取文件并返回base64数据
+    if (ext === '.epub') {
+      const epubData = fs.readFileSync(filePath)
+      const base64Data = epubData.toString('base64')
+      console.log('Main: EPUB file read from dialog, size:', epubData.length, 'bytes')
+      return {
+        content: base64Data, // 返回base64数据
+        fileName,
+        filePath,
+        fileType: 'epub'
       }
     }
 
@@ -708,7 +742,7 @@ function getFileFromArgs(argv) {
   // 过滤掉electron本身的参数，查找文件路径
   const args = argv.slice(1) // 跳过第一个参数（electron可执行文件路径）
   for (const arg of args) {
-    if (arg && !arg.startsWith('-') && (arg.endsWith('.md') || arg.endsWith('.markdown') || arg.endsWith('.txt') || arg.endsWith('.pdf'))) {
+    if (arg && !arg.startsWith('-') && (arg.endsWith('.md') || arg.endsWith('.markdown') || arg.endsWith('.txt') || arg.endsWith('.pdf') || arg.endsWith('.epub'))) {
       if (fs.existsSync(arg)) {
         return arg
       }
@@ -733,6 +767,12 @@ function openFileInRenderer(filePath) {
       if (ext === '.pdf') {
         content = filePath // 直接传递路径
         fileType = 'pdf'
+      } else if (ext === '.epub') {
+        // 读取EPUB文件并转换为base64
+        const epubData = fs.readFileSync(filePath)
+        content = epubData.toString('base64')
+        fileType = 'epub'
+        console.log('Main: EPUB file read for association, size:', epubData.length, 'bytes')
       } else {
         content = fs.readFileSync(filePath, 'utf8')
         fileType = ext === '.md' || ext === '.markdown' ? 'markdown' : 'text'

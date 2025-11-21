@@ -18,7 +18,7 @@ function debounce<T extends (...args: any[]) => any>(
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw, FileType } from 'lucide-react'
+import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw, FileType, BookOpen } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 
 interface FileInfo {
@@ -27,7 +27,7 @@ interface FileInfo {
   fullPath: string
   relativePath: string
   directory: string
-  fileType?: 'markdown' | 'pdf'
+  fileType?: 'markdown' | 'pdf' | 'epub'
 }
 
 interface FileListProps {
@@ -190,6 +190,7 @@ const TreeNodeComponent = memo(({
   if (node.type === 'file' && node.file) {
     const isActive = currentFile === node.file.fullPath
     const isPdf = node.file.fileType === 'pdf' || node.file.fileName.toLowerCase().endsWith('.pdf')
+    const isEpub = node.file.fileType === 'epub' || node.file.fileName.toLowerCase().endsWith('.epub')
 
     return (
       <div className="flex items-center group">
@@ -207,6 +208,10 @@ const TreeNodeComponent = memo(({
           {isPdf ? (
             <FileType className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
               isActive ? 'text-white' : 'text-red-500'
+            }`} />
+          ) : isEpub ? (
+            <BookOpen className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+              isActive ? 'text-white' : 'text-blue-500'
             }`} />
           ) : (
             <FileText className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${

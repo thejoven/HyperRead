@@ -6,12 +6,12 @@
 
 **Read smarter. Read faster.**
 
-A beautiful macOS-style Markdown reader built with Electron.
+A beautiful macOS-style document reader supporting Markdown, PDF, and EPUB, built with Electron.
 
 
 <a href="https://www.producthunt.com/products/hyperread?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-hyperread" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1032883&theme=light&t=1761980700711" alt="HyperRead - HyperRead&#0032;Read&#0032;smarter&#0046;&#0032;Read&#0032;faster&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-3.8.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -28,8 +28,8 @@ English | [简体中文](./README-zh.md)
 <td width="50%">
 
 - 🎨 **Native macOS Interface** - Perfect macOS design with blur effects
-- 📁 **Drag & Drop Support** - Support dragging single Markdown files or entire folders with live refresh detection
-- 🌳 **File Tree Explorer** - Recursively scan and display all Markdown files in directory structure
+- 📁 **Multi-Format Support** - Supports Markdown (.md/.markdown), PDF (.pdf), EPUB (.epub) files
+- 🌳 **File Tree Explorer** - Recursively scan and display all document files in directory structure with drag & drop
 - 🎯 **High Performance Rendering** - Support for Mermaid charts, code highlighting, math formulas (KaTeX)
 - 🖼️ **Image Preview & Zoom** - Click to zoom images with pan and drag controls
 
