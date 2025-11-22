@@ -110,7 +110,7 @@ export default function ElectronApp() {
     const tab = openTabs.find(t => t.filePath === filePath)
     const cached = fileContentCache.get(filePath)
     if (cached && tab) {
-      setFileData({ content: cached, fileName: tab.fileName, filePath })
+      setFileData({ content: cached, fileName: tab.fileName, filePath, fileType: tab.fileType })
     } else if (window.electronAPI?.readFile) {
       const data = await window.electronAPI.readFile(filePath)
       setFileData(data)
@@ -1651,7 +1651,7 @@ export default function ElectronApp() {
                   const tab = openTabs.find(t => t.filePath === fp)
                   const cached = fileContentCache.get(fp)
                   if (cached && tab) {
-                    setFileData({ content: cached, fileName: tab.fileName, filePath: fp })
+                    setFileData({ content: cached, fileName: tab.fileName, filePath: fp, fileType: tab.fileType })
                   } else if (window.electronAPI?.readFile) {
                     const data = await window.electronAPI.readFile(fp)
                     setFileData(data)

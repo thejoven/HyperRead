@@ -5,6 +5,7 @@ import type { FileData } from '@/types/file'
 export interface TabInfo {
   filePath: string
   fileName: string
+  fileType?: 'markdown' | 'pdf' | 'epub' | 'text'
 }
 
 export function useTabs() {
@@ -16,7 +17,7 @@ export function useTabs() {
     setActiveTab(data.filePath)
     setOpenTabs((prev) => (prev.some((t) => t.filePath === data.filePath)
       ? prev
-      : [...prev, { filePath: data.filePath, fileName: data.fileName }]))
+      : [...prev, { filePath: data.filePath, fileName: data.fileName, fileType: data.fileType }]))
     setCache((prev) => {
       const next = new Map(prev)
       next.set(data.filePath, data.content)
