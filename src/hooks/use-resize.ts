@@ -41,9 +41,11 @@ export function useResize({
   useEffect(() => {
     return () => {
       cancelAnimationFrame()
-      // 恢复 body 样式
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
+      // 清理可能残留的遮罩层
+      const overlayElement = document.getElementById('resize-overlay')
+      if (overlayElement) {
+        overlayElement.remove()
+      }
     }
   }, [cancelAnimationFrame])
 
@@ -72,10 +74,6 @@ export function useResize({
       background: transparent;
     `
     document.body.appendChild(overlay)
-
-    // 设置拖动状态
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
 
     // 为元素添加优化提示
     if (elementRef.current) {
@@ -116,10 +114,6 @@ export function useResize({
 
       // 清理动画帧
       cancelAnimationFrame()
-
-      // 恢复样式
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
 
       if (elementRef.current) {
         elementRef.current.style.willChange = 'auto'
