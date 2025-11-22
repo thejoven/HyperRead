@@ -11,7 +11,7 @@ A beautiful macOS-style document reader supporting Markdown, PDF, and EPUB, buil
 
 <a href="https://www.producthunt.com/products/hyperread?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-hyperread" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1032883&theme=light&t=1761980700711" alt="HyperRead - HyperRead&#0032;Read&#0032;smarter&#0046;&#0032;Read&#0032;faster&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-[![Version](https://img.shields.io/badge/version-3.8.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -53,11 +53,11 @@ English | [简体中文](./README-zh.md)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%203.8.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%204.0.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. Download `HyperRead-3.8.0-arm64.dmg` installer
+1. Download `HyperRead-4.0.0-arm64.dmg` installer
 2. Double-click the DMG file
 3. Drag HyperRead to Applications folder
 4. First run may require permission in "System Preferences > Security & Privacy"
@@ -259,21 +259,21 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 
 ## 📝 What's New
 
-### 🎉 Version 3.8.0 (Latest)
+### 🎉 Version 4.0.0 (Latest)
 
 **Major Updates:**
-- 📖 **Complete EPUB Reader** - Professional e-book reading experience with Apple Books-style typography
-- 📊 **Accurate Pagination** - CFI-based location tracking for precise page numbers (1600 chars/page standard)
-- 🎨 **Enhanced Typography** - Justified text, automatic hyphenation, paragraph indentation, and optimized spacing
-- ⌨️ **Keyboard Navigation** - Full support for arrow keys and Page Up/Down navigation
-- 🔧 **React 19 Compatible** - Fixed rendering timing issues with overlay-based loading states
+- 🚀 **Sidebar Drag Performance** - Optimized sidebar dragging with requestAnimationFrame and direct DOM manipulation
+- 🎯 **PDF/EPUB Drag Fix** - Fixed sidebar dragging issues in PDF and EPUB viewers with overlay solution
+- 📚 **Built-in Help System** - Comprehensive user guide with bilingual support (Chinese/English)
+- 🎨 **UI Improvements** - Refined help dialog design with cleaner layout and better readability
+- ⚡ **Performance Boost** - 99% reduction in React re-renders during sidebar drag operations
 
 **Technical Improvements:**
-- Integrated epub.js library for EPUB parsing and rendering
-- Support for both base64 and blob URL data sources
-- Asynchronous DOM readiness waiting mechanism
-- Optimized loading indicators with pagination generation status
-- Enhanced error handling and debugging information
+- Implemented high-performance resize hook with RAF optimization
+- Added full-screen transparent overlay to intercept iframe events
+- Created HelpDialog component with 6 detailed help sections
+- Enhanced i18n support with complete help documentation translations
+- Improved text selection preservation during drag operations
 
 👀 **[View Full Changelog](./CHANGELOG.md)** - Detailed release notes and version history
 

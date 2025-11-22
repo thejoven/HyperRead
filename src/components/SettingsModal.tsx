@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard, UserCog, Edit2, Save, ChevronRight, ChevronDown, Settings2, Info, Github, Copy, Check as CheckIcon, X as XIcon } from 'lucide-react'
+import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard, UserCog, Edit2, Save, ChevronRight, ChevronDown, Settings2, Info, Github, Copy, Check as CheckIcon, X as XIcon, HelpCircle } from 'lucide-react'
 import packageJson from '../../package.json'
 import { useTranslation } from '@/lib/i18n'
 import { conversationStorage } from '@/lib/conversation-storage'
 import { toast } from "sonner"
 import ShortcutSettings from './ShortcutSettings'
+import HelpDialog from './HelpDialog'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -48,6 +49,7 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
   const { t, currentLanguage, languages, changeLanguage } = useTranslation()
   const [activeCategory, setActiveCategory] = useState('reading')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['general']))
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false)
 
   // AI 配置状态
   const [aiConfig, setAiConfig] = useState({
@@ -988,15 +990,17 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 macos-fade-in p-4"
-      onClick={handleBackdropClick}
-    >
-      <Card className="w-[800px] h-[600px] glass-effect border border-border/30 shadow-2xl macos-scale-in overflow-hidden flex flex-col">
-        {/* 主体内容区 - 固定高度，横向布局 */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* 左侧导航栏 - 灰色背景，增加宽度以支持二级分类 */}
-          <div className="w-48 bg-muted/30 border-r border-border/20 flex-shrink-0 overflow-y-auto">
+    <>
+      <HelpDialog isOpen={isHelpDialogOpen} onClose={() => setIsHelpDialogOpen(false)} />
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 macos-fade-in p-4"
+        onClick={handleBackdropClick}
+      >
+        <Card className="w-[800px] h-[600px] glass-effect border border-border/30 shadow-2xl macos-scale-in overflow-hidden flex flex-col">
+          {/* 主体内容区 - 固定高度，横向布局 */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* 左侧导航栏 - 灰色背景，增加宽度以支持二级分类 */}
+            <div className="w-48 bg-muted/30 border-r border-border/20 flex-shrink-0 overflow-y-auto flex flex-col">
             <div className="p-3">
               <nav className="space-y-1">
                 {settingsCategories.map((category) => (
@@ -1052,6 +1056,18 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
                 ))}
               </nav>
             </div>
+            {/* 左下角帮助按钮 */}
+            <div className="mt-auto p-3 border-t border-border/20">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsHelpDialogOpen(true)}
+                className="w-full h-9 macos-button justify-start"
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                <span className="text-sm">{t('help.buttonText')}</span>
+              </Button>
+            </div>
           </div>
 
           {/* 右侧内容区 - 白色背景，可滚动 */}
@@ -1063,5 +1079,6 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         </div>
       </Card>
     </div>
+    </>
   )
 }
