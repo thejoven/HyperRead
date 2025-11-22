@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-3.8.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -50,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%203.8.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%204.0.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-3.8.0-arm64.dmg` 安装包
+1. 下载 `HyperRead-4.0.0-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -256,21 +256,21 @@ npm run lint              # ESLint 检查
 
 ## 📝 最新更新
 
-### 🎉 版本 3.8.0（最新）
+### 🎉 版本 4.0.0（最新）
 
 **主要更新：**
-- 📖 **完整的 EPUB 阅读器** - 专业的电子书阅读体验，采用 Apple Books 风格排版
-- 📊 **精确分页系统** - 基于 CFI 的位置追踪，精确页码显示（每页 1600 字符标准）
-- 🎨 **优化的排版** - 两端对齐、自动连字符、段落缩进和优化的间距
-- ⌨️ **键盘导航** - 完整支持方向键和 Page Up/Down 翻页
-- 🔧 **React 19 兼容** - 修复渲染时机问题，采用覆盖层加载状态
+- 🚀 **侧边栏拖动性能优化** - 使用 requestAnimationFrame 和直接 DOM 操作优化拖动性能
+- 🎯 **修复 PDF/EPUB 拖动问题** - 通过全屏遮罩层解决 PDF 和 EPUB 查看器中的侧边栏拖动问题
+- 📚 **内置帮助系统** - 完整的使用指南，支持中英文双语
+- 🎨 **UI 改进** - 优化帮助对话框设计，提供更清晰的布局和更好的可读性
+- ⚡ **性能提升** - 侧边栏拖动期间减少 99% 的 React 重渲染
 
 **技术改进：**
-- 集成 epub.js 库进行 EPUB 解析和渲染
-- 支持 base64 和 blob URL 两种数据源
-- 实现异步 DOM 就绪等待机制
-- 优化加载提示，显示分页生成状态
-- 增强错误处理和调试信息
+- 实现高性能的 resize hook，使用 RAF 优化
+- 添加全屏透明遮罩层以拦截 iframe 事件
+- 创建 HelpDialog 组件，包含 6 个详细的帮助章节
+- 增强 i18n 支持，完整的帮助文档翻译
+- 改进拖动操作期间的文本选择保留
 
 👀 **[查看完整更新日志](./CHANGELOG.md)** - 详细的发布说明和版本历史
 
