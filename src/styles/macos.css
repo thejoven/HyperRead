@@ -134,6 +134,10 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid rgba(0, 0, 0, 0.08);
+  /* 硬件加速优化 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: auto;
 }
 
 .dark .macos-sidebar {
@@ -226,15 +230,34 @@
   }
 }
 
-/* 拖动条样式 */
+/* 拖动条样式 - 增强版 */
 .resize-handle {
-  position: relative;
-  width: 4px;
+  position: relative; /* 保持相对定位以维持 flex 布局 */
+  width: 8px; /* 增加到 8px 提升可点击性 */
   height: 100%;
-  cursor: col-resize;
+  cursor: col-resize !important;
   flex-shrink: 0;
   background: transparent;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s ease;
+  z-index: 100; /* 超高 z-index 确保在 PDF/EPUB 上层 */
+  pointer-events: auto !important;
+  /* 硬件加速优化 */
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* 确保不被遮挡 */
+  isolation: isolate;
+}
+
+/* 扩大可点击区域 - 使用伪元素 */
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -4px; /* 向左扩展 4px */
+  right: -4px; /* 向右扩展 4px */
+  height: 100%;
+  cursor: col-resize;
   z-index: 1;
   pointer-events: auto;
 }
@@ -246,45 +269,91 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 1px;
+  width: 2px; /* 默认稍微粗一点 */
   height: 100%;
-  background: rgba(0, 0, 0, 0.1);
-  transition: all 0.15s ease;
+  background: rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  border-radius: 1px;
+  z-index: 2;
+  pointer-events: none; /* 视觉元素不捕获事件 */
 }
 
 .dark .resize-handle::after {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* Hover 效果 */
+/* Hover 效果 - 更明显 */
+.resize-handle:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.dark .resize-handle:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .resize-handle:hover::after {
-  width: 3px;
-  background: rgba(0, 0, 0, 0.2);
+  width: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
 .dark .resize-handle:hover::after {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
-/* 拖动时的效果 */
+/* 拖动时的效果 - 更明显的视觉反馈 */
+.resize-handle:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.dark .resize-handle:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .resize-handle:active::after {
   width: 4px;
-  background: hsl(var(--primary) / 0.5);
+  background: hsl(var(--primary) / 0.8);
+  box-shadow:
+    0 0 12px hsl(var(--primary) / 0.5),
+    0 0 4px hsl(var(--primary) / 0.8);
 }
 
 .dark .resize-handle:active::after {
-  background: hsl(var(--primary) / 0.6);
+  background: hsl(var(--primary) / 0.9);
+  box-shadow:
+    0 0 12px hsl(var(--primary) / 0.6),
+    0 0 4px hsl(var(--primary) / 0.9);
 }
 
-/* 左侧拖动条样式 (用于右侧侧边栏) */
+/* 左侧拖动条样式 (用于右侧侧边栏) - 增强版 */
 .resize-handle-left {
-  position: relative;
-  width: 4px;
+  position: relative; /* 保持相对定位以维持 flex 布局 */
+  width: 8px; /* 增加到 8px 提升可点击性 */
   height: 100%;
-  cursor: col-resize;
+  cursor: col-resize !important;
   flex-shrink: 0;
   background: transparent;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s ease;
+  z-index: 100; /* 超高 z-index 确保在 PDF/EPUB 上层 */
+  pointer-events: auto !important;
+  /* 硬件加速优化 */
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* 确保不被遮挡 */
+  isolation: isolate;
+}
+
+/* 扩大可点击区域 - 使用伪元素 */
+.resize-handle-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -4px; /* 向左扩展 4px */
+  right: -4px; /* 向右扩展 4px */
+  height: 100%;
+  cursor: col-resize;
   z-index: 1;
   pointer-events: auto;
 }
@@ -296,32 +365,59 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 1px;
+  width: 2px; /* 默认稍微粗一点 */
   height: 100%;
-  background: rgba(0, 0, 0, 0.1);
-  transition: all 0.15s ease;
+  background: rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  border-radius: 1px;
+  z-index: 2;
+  pointer-events: none; /* 视觉元素不捕获事件 */
 }
 
 .dark .resize-handle-left::after {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* Hover 效果 */
+/* Hover 效果 - 更明显 */
+.resize-handle-left:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.dark .resize-handle-left:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .resize-handle-left:hover::after {
-  width: 3px;
-  background: rgba(0, 0, 0, 0.2);
+  width: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
 .dark .resize-handle-left:hover::after {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
-/* 拖动时的效果 */
+/* 拖动时的效果 - 更明显的视觉反馈 */
+.resize-handle-left:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.dark .resize-handle-left:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .resize-handle-left:active::after {
   width: 4px;
-  background: hsl(var(--primary) / 0.5);
+  background: hsl(var(--primary) / 0.8);
+  box-shadow:
+    0 0 12px hsl(var(--primary) / 0.5),
+    0 0 4px hsl(var(--primary) / 0.8);
 }
 
 .dark .resize-handle-left:active::after {
-  background: hsl(var(--primary) / 0.6);
+  background: hsl(var(--primary) / 0.9);
+  box-shadow:
+    0 0 12px hsl(var(--primary) / 0.6),
+    0 0 4px hsl(var(--primary) / 0.9);
 }

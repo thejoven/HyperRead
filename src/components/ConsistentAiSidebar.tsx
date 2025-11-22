@@ -1,20 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-
-// 防抖函数
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout | null = null
-  return (...args: Parameters<T>) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-    }
-    timeoutId = setTimeout(() => func(...args), wait)
-  }
-}
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { X, Send, Bot, User, Settings, Copy, Check, Trash2, FileText, MessageSquare, Layers, Clock, History, UserCog, ChevronDown } from 'lucide-react'
@@ -22,6 +8,7 @@ import { createAiService } from '@/lib/ai-service'
 import { conversationStorage } from '@/lib/conversation-storage'
 import { toast } from "sonner"
 import { useT } from '@/lib/i18n'
+import { useResize } from '@/hooks/use-resize'
 
 interface ConsistentAiSidebarProps {
   isOpen: boolean
@@ -78,72 +65,14 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
   const inputRef = useRef<HTMLInputElement>(null)
   const previousDocumentRef = useRef<typeof currentDocument>(null)
 
-  // 使用 useRef 存储防抖函数实例
-  const debouncedWidthChangeRef = useRef<((width: number) => void) | null>(null)
-
-  // 初始化防抖函数
-  useEffect(() => {
-    if (onWidthChange) {
-      debouncedWidthChangeRef.current = debounce(onWidthChange, 16) // 约60fps
-    }
-  }, [onWidthChange])
-
-  // Handle resizer drag (左侧拖动条，向左拖动增加宽度) - 优化版本
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!onWidthChange) return
-
-    e.preventDefault()
-    e.stopPropagation()
-
-    const startX = e.clientX
-    const startWidth = width
-    let lastWidth = width
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const deltaX = startX - e.clientX // 反向计算：向左移动是正值
-      const newWidth = Math.min(Math.max(startWidth + deltaX, 288), 800)
-
-      // 只有当宽度实际变化时才更新
-      if (newWidth !== lastWidth) {
-        lastWidth = newWidth
-
-        // 立即更新本地状态用于视觉反馈
-        if (debouncedWidthChangeRef.current) {
-          debouncedWidthChangeRef.current(newWidth)
-        } else {
-          onWidthChange(newWidth)
-        }
-      }
-    }
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-      // 恢复默认样式
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-
-      // 确保最终宽度被正确设置
-      if (lastWidth !== width && onWidthChange) {
-        onWidthChange(lastWidth)
-      }
-    }
-
-    // 立即设置拖动状态
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [width, onWidthChange])
-
-  // 确保组件卸载时恢复文本选择
-  useEffect(() => {
-    return () => {
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-  }, [])
+  // 使用优化的拖动 Hook
+  const { elementRef, handleMouseDown } = useResize({
+    minWidth: 288,
+    maxWidth: 800,
+    initialWidth: width,
+    onWidthChange,
+    direction: 'left'
+  })
 
   // 加载 AI 配置
   useEffect(() => {
@@ -344,6 +273,7 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
 
   return (
     <div
+      ref={elementRef}
       className={`fixed top-14 right-0 h-[calc(100vh-56px)] z-40 macos-sidebar flex border-l border-border transition-transform duration-300 ease-in-out overflow-hidden ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
@@ -354,7 +284,6 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
         <div
           className="resize-handle-left"
           onMouseDown={handleMouseDown}
-          style={{ cursor: 'col-resize' }}
         />
       )}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

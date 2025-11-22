@@ -1,25 +1,12 @@
 'use client'
 
-import { useState, useMemo, memo, useRef, useCallback, useEffect } from 'react'
-
-// 防抖函数
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout | null = null
-  return (...args: Parameters<T>) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-    }
-    timeoutId = setTimeout(() => func(...args), wait)
-  }
-}
+import { useState, useMemo, memo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw, FileType, BookOpen } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import { useResize } from '@/hooks/use-resize'
 
 interface FileInfo {
   name: string
@@ -299,81 +286,23 @@ export default function FileList({
     }
   }, [searchTerm])
 
-  // 使用 useRef 存储防抖函数实例
-  const debouncedWidthChangeRef = useRef<((width: number) => void) | null>(null)
-
-  // 初始化防抖函数
-  useEffect(() => {
-    if (onWidthChange) {
-      debouncedWidthChangeRef.current = debounce(onWidthChange, 16) // 约60fps
-    }
-  }, [onWidthChange])
-
-  // Handle resizer drag - 优化版本
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!onWidthChange) return
-
-    e.preventDefault()
-    e.stopPropagation()
-
-    const startX = e.clientX
-    const startWidth = width
-    let lastWidth = width
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - startX
-      const newWidth = Math.min(Math.max(startWidth + deltaX, 200), 600)
-
-      // 只有当宽度实际变化时才更新
-      if (newWidth !== lastWidth) {
-        lastWidth = newWidth
-
-        // 立即更新本地状态用于视觉反馈
-        if (debouncedWidthChangeRef.current) {
-          debouncedWidthChangeRef.current(newWidth)
-        } else {
-          onWidthChange(newWidth)
-        }
-      }
-    }
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-      // 恢复默认样式
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-
-      // 确保最终宽度被正确设置
-      if (lastWidth !== width && onWidthChange) {
-        onWidthChange(lastWidth)
-      }
-    }
-
-    // 立即设置拖动状态
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [width, onWidthChange])
-
-  // 确保组件卸载时恢复文本选择
-  useEffect(() => {
-    return () => {
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-  }, [])
+  // 使用优化的拖动 Hook
+  const { elementRef, handleMouseDown } = useResize({
+    minWidth: 200,
+    maxWidth: 600,
+    initialWidth: width,
+    onWidthChange,
+    direction: 'right'
+  })
 
 
 
   if (files.length === 0) {
     return (
       <div className="relative h-full macos-sidebar border-r border-border flex">
-        <div className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
+        <div ref={elementRef} className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
           {/* 搜索栏区域 - 融入目录栏设计 */}
-          <div className="px-3 py-3 border-b border-r border-border/50 bg-background/40 backdrop-blur-sm">
+          <div className="px-3 py-3 border-b border-border/50 bg-background/40 backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
@@ -409,7 +338,6 @@ export default function FileList({
           <div
             className="resize-handle"
             onMouseDown={handleMouseDown}
-            style={{ cursor: 'col-resize' }}
           />
         )}
       </div>
@@ -418,9 +346,9 @@ export default function FileList({
 
   return (
     <div className="relative h-full macos-sidebar border-r border-border flex">
-      <div className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
+      <div ref={elementRef} className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
         {/* 搜索栏区域 - 融入目录栏设计 */}
-        <div className="px-3 py-3 border-b border-r border-border/50 flex-shrink-0 bg-background/40 backdrop-blur-sm">
+        <div className="px-3 py-3 border-b border-border/50 flex-shrink-0 bg-background/40 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
@@ -478,7 +406,6 @@ export default function FileList({
         <div
           className="resize-handle"
           onMouseDown={handleMouseDown}
-          style={{ cursor: 'col-resize' }}
         />
       )}
     </div>
