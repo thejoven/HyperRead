@@ -57,6 +57,22 @@ export function useResize({
     const startWidth = currentWidthRef.current
     isDraggingRef.current = true
 
+    // 创建全屏遮罩层，阻止 iframe 捕获事件
+    const overlay = document.createElement('div')
+    overlay.id = 'resize-overlay'
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9999;
+      cursor: col-resize;
+      user-select: none;
+      background: transparent;
+    `
+    document.body.appendChild(overlay)
+
     // 设置拖动状态
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
@@ -91,6 +107,12 @@ export function useResize({
 
     const handleMouseUp = () => {
       isDraggingRef.current = false
+
+      // 移除遮罩层
+      const overlayElement = document.getElementById('resize-overlay')
+      if (overlayElement) {
+        overlayElement.remove()
+      }
 
       // 清理动画帧
       cancelAnimationFrame()
