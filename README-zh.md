@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -50,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%204.0.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.0.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-4.0.0-arm64.dmg` 安装包
+1. 下载 `HyperRead-5.0.0-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -130,7 +130,8 @@ npm run start        # 生产模式
 
 - ✅ **Apple Books 风格** - 专业的排版，支持两端对齐和自动连字符
 - ✅ **精确分页** - 基于 CFI 的位置追踪，实现精确页码显示
-- ✅ **键盘导航** - 支持方向键和 Page Up/Down 进行流畅翻页
+- ✅ **阅读进度记忆** - 自动保存阅读位置，重新打开时弹窗询问是否继续
+- ✅ **键盘导航** - 支持方向键、J/K、空格、Page Up/Down 流畅翻页
 
 </td>
 <td width="50%">
@@ -138,6 +139,7 @@ npm run start        # 生产模式
 - ✅ **响应式布局** - 优化的内边距和边距，舒适的阅读体验
 - ✅ **主题集成** - 无缝的明暗主题切换
 - ✅ **交互内容** - 支持带有嵌入式脚本和媒体的 EPUB
+- ✅ **iframe 内快捷键** - 点击内容区域后快捷键依然有效
 
 </td>
 </tr>
@@ -256,21 +258,27 @@ npm run lint              # ESLint 检查
 
 ## 📝 最新更新
 
-### 🎉 版本 4.0.0（最新）
+### 🎉 版本 5.0.0（最新）
 
 **主要更新：**
-- 🚀 **侧边栏拖动性能优化** - 使用 requestAnimationFrame 和直接 DOM 操作优化拖动性能
-- 🎯 **修复 PDF/EPUB 拖动问题** - 通过全屏遮罩层解决 PDF 和 EPUB 查看器中的侧边栏拖动问题
-- 📚 **内置帮助系统** - 完整的使用指南，支持中英文双语
-- 🎨 **UI 改进** - 优化帮助对话框设计，提供更清晰的布局和更好的可读性
-- ⚡ **性能提升** - 侧边栏拖动期间减少 99% 的 React 重渲染
+- 📖 **EPUB 阅读进度记忆** - 自动保存阅读位置，重新打开书籍时显示优雅的恢复对话框
+- ⌨️ **增强 EPUB 快捷键** - 点击 EPUB 内容区域后键盘导航依然流畅工作
+- 🏗️ **重大代码重构** - electron-app.tsx 从 2065 行减少到 475 行（减少 77%）
+- 🎨 **模块化架构** - 新增 hooks（use-settings、use-directory、use-drag-drop）和组件，提高可维护性
+- 🔧 **改进类型安全** - 增强 TypeScript 类型定义和更好的代码组织
+
+**EPUB 阅读器改进：**
+- 阅读进度自动保存，包含 CFI、页码和百分比
+- 恢复阅读对话框显示上次位置、进度条和距上次阅读的时间
+- 键盘快捷键（←→、J/K、空格、PageUp/Down、Home/End）在 iframe 内也能工作
+- 修复事件处理器中的闭包问题，确保快捷键检测可靠
 
 **技术改进：**
-- 实现高性能的 resize hook，使用 RAF 优化
-- 添加全屏透明遮罩层以拦截 iframe 事件
-- 创建 HelpDialog 组件，包含 6 个详细的帮助章节
-- 增强 i18n 支持，完整的帮助文档翻译
-- 改进拖动操作期间的文本选择保留
+- 创建 `epub-reading-progress.ts` 服务用于持久化阅读状态
+- 添加 `ResumeReadingDialog` 组件，支持中英文双语
+- 通过 `rendition.on('keydown')` 实现 iframe 内键盘事件处理
+- 使用 ref 避免事件回调中的闭包陷阱
+- 从单体组件中提取可复用的 hooks 和工具函数
 
 👀 **[查看完整更新日志](./CHANGELOG.md)** - 详细的发布说明和版本历史
 

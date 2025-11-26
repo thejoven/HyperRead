@@ -11,7 +11,7 @@ A beautiful macOS-style document reader supporting Markdown, PDF, and EPUB, buil
 
 <a href="https://www.producthunt.com/products/hyperread?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-hyperread" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1032883&theme=light&t=1761980700711" alt="HyperRead - HyperRead&#0032;Read&#0032;smarter&#0046;&#0032;Read&#0032;faster&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -53,11 +53,11 @@ English | [简体中文](./README-zh.md)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%204.0.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.0.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. Download `HyperRead-4.0.0-arm64.dmg` installer
+1. Download `HyperRead-5.0.0-arm64.dmg` installer
 2. Double-click the DMG file
 3. Drag HyperRead to Applications folder
 4. First run may require permission in "System Preferences > Security & Privacy"
@@ -133,7 +133,8 @@ Support for common file operations and navigation shortcuts
 
 - ✅ **Apple Books Style** - Professional typography with justified text and hyphenation
 - ✅ **Accurate Pagination** - CFI-based location tracking for precise page numbers
-- ✅ **Keyboard Navigation** - Arrow keys and Page Up/Down for smooth navigation
+- ✅ **Reading Progress Memory** - Auto-save reading position with resume dialog on reopen
+- ✅ **Keyboard Navigation** - Arrow keys, J/K, Space, Page Up/Down for smooth navigation
 
 </td>
 <td width="50%">
@@ -141,6 +142,7 @@ Support for common file operations and navigation shortcuts
 - ✅ **Responsive Layout** - Optimized padding and margins for comfortable reading
 - ✅ **Theme Integration** - Seamless light/dark theme switching
 - ✅ **Interactive Content** - Support for EPUB with embedded scripts and media
+- ✅ **In-iframe Shortcuts** - Keyboard shortcuts work even after clicking content
 
 </td>
 </tr>
@@ -259,21 +261,27 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 
 ## 📝 What's New
 
-### 🎉 Version 4.0.0 (Latest)
+### 🎉 Version 5.0.0 (Latest)
 
 **Major Updates:**
-- 🚀 **Sidebar Drag Performance** - Optimized sidebar dragging with requestAnimationFrame and direct DOM manipulation
-- 🎯 **PDF/EPUB Drag Fix** - Fixed sidebar dragging issues in PDF and EPUB viewers with overlay solution
-- 📚 **Built-in Help System** - Comprehensive user guide with bilingual support (Chinese/English)
-- 🎨 **UI Improvements** - Refined help dialog design with cleaner layout and better readability
-- ⚡ **Performance Boost** - 99% reduction in React re-renders during sidebar drag operations
+- 📖 **EPUB Reading Progress Memory** - Auto-save reading position with elegant resume dialog when reopening books
+- ⌨️ **Enhanced EPUB Shortcuts** - Keyboard navigation now works seamlessly even after clicking inside EPUB content
+- 🏗️ **Major Code Refactoring** - electron-app.tsx reduced from 2065 lines to 475 lines (77% reduction)
+- 🎨 **Modular Architecture** - New hooks (use-settings, use-directory, use-drag-drop) and components for better maintainability
+- 🔧 **Improved Type Safety** - Enhanced TypeScript definitions and better code organization
+
+**EPUB Reader Improvements:**
+- Reading progress automatically saved with CFI, page number, and percentage
+- Resume reading dialog shows last position, progress bar, and time since last read
+- Keyboard shortcuts (←→, J/K, Space, PageUp/Down, Home/End) work inside iframe
+- Fixed closure issues in event handlers for reliable shortcut detection
 
 **Technical Improvements:**
-- Implemented high-performance resize hook with RAF optimization
-- Added full-screen transparent overlay to intercept iframe events
-- Created HelpDialog component with 6 detailed help sections
-- Enhanced i18n support with complete help documentation translations
-- Improved text selection preservation during drag operations
+- Created `epub-reading-progress.ts` service for persistent reading state
+- Added `ResumeReadingDialog` component with bilingual support
+- Implemented iframe keyboard event handling via `rendition.on('keydown')`
+- Used refs to avoid stale closure values in event callbacks
+- Extracted reusable hooks and utilities from monolithic component
 
 👀 **[View Full Changelog](./CHANGELOG.md)** - Detailed release notes and version history
 

@@ -59,7 +59,8 @@ export default function ShortcutSettings() {
     { id: 'navigation', label: t('shortcuts.categories.navigation') },
     { id: 'editor', label: t('shortcuts.categories.editor') },
     { id: 'search', label: t('shortcuts.categories.search') },
-    { id: 'view', label: t('shortcuts.categories.view') }
+    { id: 'view', label: t('shortcuts.categories.view') },
+    { id: 'reading', label: t('shortcuts.categories.reading') }
   ]
 
   // 过滤和搜索快捷键
@@ -91,7 +92,8 @@ export default function ShortcutSettings() {
       navigation: [],
       editor: [],
       search: [],
-      view: []
+      view: [],
+      reading: []
     }
 
     filteredShortcuts.forEach(shortcut => {

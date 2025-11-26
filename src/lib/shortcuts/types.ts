@@ -65,6 +65,7 @@ export type ShortcutCategory =
   | 'window'         // Window management
   | 'system'         // System operations (settings, about, quit)
   | 'ai'             // AI assistant features
+  | 'reading'        // Reading mode (EPUB/PDF page navigation)
 
 /**
  * Scope where a shortcut is active

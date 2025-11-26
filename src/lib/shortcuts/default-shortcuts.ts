@@ -336,6 +336,109 @@ const windowShortcuts: DefaultShortcut[] = [
 ]
 
 /**
+ * Reading shortcuts (EPUB/PDF navigation)
+ */
+const readingShortcuts: DefaultShortcut[] = [
+  {
+    id: 'reading.prevPage',
+    name: 'Previous Page',
+    description: 'Go to previous page (EPUB/PDF)',
+    category: 'reading',
+    defaultKeys: {
+      type: 'simple',
+      key: 'ArrowLeft',
+    },
+    priority: 8,
+    customizable: false,
+  },
+  {
+    id: 'reading.nextPage',
+    name: 'Next Page',
+    description: 'Go to next page (EPUB/PDF)',
+    category: 'reading',
+    defaultKeys: {
+      type: 'simple',
+      key: 'ArrowRight',
+    },
+    priority: 8,
+    customizable: false,
+  },
+  {
+    id: 'reading.prevPageAlt',
+    name: 'Previous Page (K)',
+    description: 'Go to previous page using Vim-style key',
+    category: 'reading',
+    defaultKeys: {
+      type: 'simple',
+      key: 'K',
+    },
+    priority: 7,
+    customizable: false,
+  },
+  {
+    id: 'reading.nextPageAlt',
+    name: 'Next Page (J)',
+    description: 'Go to next page using Vim-style key',
+    category: 'reading',
+    defaultKeys: {
+      type: 'simple',
+      key: 'J',
+    },
+    priority: 7,
+    customizable: false,
+  },
+  {
+    id: 'reading.nextPageSpace',
+    name: 'Next Page (Space)',
+    description: 'Go to next page using Space',
+    category: 'reading',
+    defaultKeys: {
+      type: 'simple',
+      key: 'Space',
+    },
+    priority: 7,
+    customizable: false,
+  },
+  {
+    id: 'reading.prevPageSpace',
+    name: 'Previous Page (Shift+Space)',
+    description: 'Go to previous page using Shift+Space',
+    category: 'reading',
+    defaultKeys: {
+      type: 'combo',
+      modifiers: ['Shift'],
+      key: 'Space',
+    },
+    priority: 7,
+    customizable: false,
+  },
+  {
+    id: 'reading.firstPage',
+    name: 'First Page',
+    description: 'Go to first page (EPUB)',
+    category: 'reading',
+    defaultKeys: {
+      type: 'simple',
+      key: 'Home',
+    },
+    priority: 6,
+    customizable: false,
+  },
+  {
+    id: 'reading.lastPage',
+    name: 'Last Page',
+    description: 'Go to last page (EPUB)',
+    category: 'reading',
+    defaultKeys: {
+      type: 'simple',
+      key: 'End',
+    },
+    priority: 6,
+    customizable: false,
+  },
+]
+
+/**
  * All default shortcuts combined
  */
 export const DEFAULT_SHORTCUTS: DefaultShortcut[] = [
@@ -345,6 +448,7 @@ export const DEFAULT_SHORTCUTS: DefaultShortcut[] = [
   ...systemShortcuts,
   ...aiShortcuts,
   ...windowShortcuts,
+  ...readingShortcuts,
 ]
 
 /**
@@ -383,6 +487,7 @@ export function getCategories(): Array<{
     'search',
     'navigation',
     'view',
+    'reading',
     'system',
     'ai',
     'window',

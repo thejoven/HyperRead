@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 
 // 快捷键类别
-export type ShortcutCategory = 'search' | 'view' | 'general' | 'navigation' | 'editor'
+export type ShortcutCategory = 'search' | 'view' | 'general' | 'navigation' | 'editor' | 'reading'
 
 // 单个快捷键配置
 export interface ShortcutConfig {
@@ -79,6 +79,71 @@ const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
     description: 'shortcuts.actions.toggleSidebar',
     defaultKeys: ['cmd+.', 'ctrl+.'],
     keys: ['cmd+.', 'ctrl+.'],
+    enabled: true
+  },
+  // Reading shortcuts (EPUB/PDF)
+  {
+    id: 'reading-prev-page',
+    category: 'reading',
+    description: 'shortcuts.actions.prevPage',
+    defaultKeys: ['arrowleft', 'pageup'],
+    keys: ['arrowleft', 'pageup'],
+    enabled: true
+  },
+  {
+    id: 'reading-next-page',
+    category: 'reading',
+    description: 'shortcuts.actions.nextPage',
+    defaultKeys: ['arrowright', 'pagedown'],
+    keys: ['arrowright', 'pagedown'],
+    enabled: true
+  },
+  {
+    id: 'reading-prev-page-vim',
+    category: 'reading',
+    description: 'shortcuts.actions.prevPageK',
+    defaultKeys: ['k'],
+    keys: ['k'],
+    enabled: true
+  },
+  {
+    id: 'reading-next-page-vim',
+    category: 'reading',
+    description: 'shortcuts.actions.nextPageJ',
+    defaultKeys: ['j'],
+    keys: ['j'],
+    enabled: true
+  },
+  {
+    id: 'reading-next-page-space',
+    category: 'reading',
+    description: 'shortcuts.actions.nextPageSpace',
+    defaultKeys: ['space'],
+    keys: ['space'],
+    enabled: true
+  },
+  {
+    id: 'reading-prev-page-space',
+    category: 'reading',
+    description: 'shortcuts.actions.prevPageSpace',
+    defaultKeys: ['shift+space'],
+    keys: ['shift+space'],
+    enabled: true
+  },
+  {
+    id: 'reading-first-page',
+    category: 'reading',
+    description: 'shortcuts.actions.firstPage',
+    defaultKeys: ['home'],
+    keys: ['home'],
+    enabled: true
+  },
+  {
+    id: 'reading-last-page',
+    category: 'reading',
+    description: 'shortcuts.actions.lastPage',
+    defaultKeys: ['end'],
+    keys: ['end'],
     enabled: true
   }
 ]

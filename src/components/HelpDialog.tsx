@@ -224,31 +224,66 @@ export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
               <p className="text-sm text-muted-foreground">{t('help.shortcuts.description')}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                { key: ['⌘/Ctrl', 'O'], desc: t('help.shortcuts.list.openFile') },
-                { key: ['⌘/Ctrl', 'F'], desc: t('help.shortcuts.list.search') },
-                { key: ['⌘/Ctrl', 'K'], desc: t('help.shortcuts.list.aiAssistant') },
-                { key: ['⌘/Ctrl', ','], desc: t('help.shortcuts.list.settings') },
-                { key: ['⌘/Ctrl', 'B'], desc: t('help.shortcuts.list.toggleSidebar') },
-                { key: ['⌘/Ctrl', '+'], desc: t('help.shortcuts.list.increaseFontSize') },
-                { key: ['⌘/Ctrl', '-'], desc: t('help.shortcuts.list.decreaseFontSize') },
-                { key: ['⌘/Ctrl', '0'], desc: t('help.shortcuts.list.resetFontSize') }
-              ].map((shortcut, index) => (
-                <div key={index} className="p-2.5 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                  <div className="flex items-center gap-1 mb-1.5">
-                    {shortcut.key.map((k, i) => (
-                      <span key={i} className="inline-flex items-center">
-                        <kbd className="inline-flex items-center px-1.5 py-0.5 bg-background/80 border border-border/60 rounded text-xs font-mono">
-                          {k}
-                        </kbd>
-                        {i < shortcut.key.length - 1 && <span className="mx-0.5 text-muted-foreground text-xs">+</span>}
-                      </span>
-                    ))}
+            {/* General Shortcuts */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-foreground/80">{t('help.shortcuts.general') || '通用快捷键'}</h4>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { key: ['⌘/Ctrl', 'O'], desc: t('help.shortcuts.list.openFile') },
+                  { key: ['⌘/Ctrl', 'F'], desc: t('help.shortcuts.list.search') },
+                  { key: ['⌘/Ctrl', 'K'], desc: t('help.shortcuts.list.aiAssistant') },
+                  { key: ['⌘/Ctrl', ','], desc: t('help.shortcuts.list.settings') },
+                  { key: ['⌘/Ctrl', 'B'], desc: t('help.shortcuts.list.toggleSidebar') },
+                  { key: ['⌘/Ctrl', '+'], desc: t('help.shortcuts.list.increaseFontSize') },
+                  { key: ['⌘/Ctrl', '-'], desc: t('help.shortcuts.list.decreaseFontSize') },
+                  { key: ['⌘/Ctrl', '0'], desc: t('help.shortcuts.list.resetFontSize') }
+                ].map((shortcut, index) => (
+                  <div key={index} className="p-2.5 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      {shortcut.key.map((k, i) => (
+                        <span key={i} className="inline-flex items-center">
+                          <kbd className="inline-flex items-center px-1.5 py-0.5 bg-background/80 border border-border/60 rounded text-xs font-mono">
+                            {k}
+                          </kbd>
+                          {i < shortcut.key.length - 1 && <span className="mx-0.5 text-muted-foreground text-xs">+</span>}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{shortcut.desc}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{shortcut.desc}</p>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+
+            {/* EPUB Reading Shortcuts */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-foreground/80">{t('help.shortcuts.epubReading') || 'EPUB 阅读快捷键'}</h4>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { key: ['←'], desc: t('help.shortcuts.list.prevPage') || '上一页' },
+                  { key: ['→'], desc: t('help.shortcuts.list.nextPage') || '下一页' },
+                  { key: ['K'], desc: t('help.shortcuts.list.prevPageVim') || '上一页 (Vim)' },
+                  { key: ['J'], desc: t('help.shortcuts.list.nextPageVim') || '下一页 (Vim)' },
+                  { key: ['Space'], desc: t('help.shortcuts.list.nextPageSpace') || '下一页' },
+                  { key: ['Shift', 'Space'], desc: t('help.shortcuts.list.prevPageSpace') || '上一页' },
+                  { key: ['Home'], desc: t('help.shortcuts.list.firstPage') || '跳到首页' },
+                  { key: ['End'], desc: t('help.shortcuts.list.lastPage') || '跳到末页' }
+                ].map((shortcut, index) => (
+                  <div key={index} className="p-2.5 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      {shortcut.key.map((k, i) => (
+                        <span key={i} className="inline-flex items-center">
+                          <kbd className="inline-flex items-center px-1.5 py-0.5 bg-background/80 border border-border/60 rounded text-xs font-mono">
+                            {k}
+                          </kbd>
+                          {i < shortcut.key.length - 1 && <span className="mx-0.5 text-muted-foreground text-xs">+</span>}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{shortcut.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )

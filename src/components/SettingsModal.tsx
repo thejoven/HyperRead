@@ -897,8 +897,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="text-center md:text-left space-y-3">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center mx-auto md:mx-0 shadow-lg overflow-hidden">
-              <img src="./logo.png" alt="HyperRead Logo" className="w-16 h-16 object-contain"
+            <div className="w-20 h-20 flex items-center justify-center mx-auto md:mx-0">
+              <img src="./logo.png" alt="HyperRead Logo" className="w-20 h-20 object-contain"
                 onError={(e) => { const t=e.target as HTMLImageElement; t.style.display='none'; t.parentElement!.innerHTML='<span class="text-3xl">📚</span>' }} />
             </div>
             <div>

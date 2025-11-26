@@ -326,6 +326,17 @@ export interface Translations {
       conflictDetected: string
     }
   }
+  epub: {
+    resumeReading: {
+      title: string
+      subtitle: string
+      message: string
+      continue: string
+      startOver: string
+      pages: string
+      progress: string
+    }
+  }
 }
 
 // 语言上下文接口

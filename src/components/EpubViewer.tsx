@@ -1,18 +1,23 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import ePub, { Book, Rendition } from 'epubjs'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+import { useShortcuts } from '@/contexts/ShortcutContext'
+import { epubReadingProgress, ReadingProgress } from '@/lib/epub-reading-progress'
+import ResumeReadingDialog from './ResumeReadingDialog'
 
 interface EpubViewerProps {
   data: string  // EPUB file path or blob URL
   fileName: string
   filePath: string
   className?: string
+  fontSize?: number
+  contentWidth?: 'narrow' | 'medium' | 'wide' | 'full'
 }
 
-export default function EpubViewer({ data, fileName, filePath, className }: EpubViewerProps) {
+export default function EpubViewer({ data, fileName, filePath, className, fontSize = 16, contentWidth = 'medium' }: EpubViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null)
   const [book, setBook] = useState<Book | null>(null)
   const [rendition, setRendition] = useState<Rendition | null>(null)
@@ -20,6 +25,17 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [totalPages, setTotalPages] = useState<number>(0)
+
+  // Resume reading dialog state
+  const [showResumeDialog, setShowResumeDialog] = useState<boolean>(false)
+  const [savedProgress, setSavedProgress] = useState<ReadingProgress | null>(null)
+  const pendingCfiRef = useRef<string | null>(null) // 保存待跳转的 CFI
+  const showResumeDialogRef = useRef<boolean>(false) // Ref to track dialog state for closures
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    showResumeDialogRef.current = showResumeDialog
+  }, [showResumeDialog])
 
   // Debug: Log props on mount
   useEffect(() => {
@@ -129,14 +145,30 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
         setRendition(newRendition)
 
         // Apply Apple Books-like theme before displaying
+        // Calculate content padding based on contentWidth setting
+        const getContentPadding = () => {
+          switch (contentWidth) {
+            case 'narrow':
+              return '2rem 4rem' // More padding for narrow content (672px)
+            case 'medium':
+              return '2rem 3rem' // Default padding (896px)
+            case 'wide':
+              return '2rem 2rem' // Less padding for wide content (1152px)
+            case 'full':
+              return '2rem 1.5rem' // Minimal padding for full width
+            default:
+              return '2rem 3rem'
+          }
+        }
+
         newRendition.themes.default({
           body: {
             'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important',
-            'font-size': '1.1em !important',
+            'font-size': `${fontSize}px !important`,
             'line-height': '1.7 !important',
             'color': 'var(--foreground) !important',
             'background': 'var(--background) !important',
-            'padding': '2rem 3rem !important',
+            'padding': `${getContentPadding()} !important`,
             'text-align': 'justify !important',
             'hyphens': 'auto !important',
             'word-spacing': '0.05em !important'
@@ -186,6 +218,15 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
 
         if (!isMounted) return
 
+        // Check for saved reading progress before showing content
+        const savedReadingProgress = epubReadingProgress.getProgress(filePath)
+        if (savedReadingProgress && savedReadingProgress.cfi) {
+          console.log('EpubViewer: Found saved progress:', savedReadingProgress)
+          setSavedProgress(savedReadingProgress)
+          pendingCfiRef.current = savedReadingProgress.cfi
+          setShowResumeDialog(true)
+        }
+
         setIsLoading(false)
 
         // Listen to location changes
@@ -201,6 +242,18 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
             console.log('EpubViewer: Location-based page:', currentPage, '/', totalPages)
             setCurrentPage(currentPage || 1)
             setTotalPages(totalPages)
+
+            // Save reading progress (only if dialog is not showing)
+            if (!showResumeDialogRef.current && currentLocation) {
+              epubReadingProgress.saveProgress(
+                filePath,
+                fileName,
+                currentLocation,
+                currentPage || 1,
+                totalPages
+              )
+              console.log('EpubViewer: Progress saved at CFI:', currentLocation)
+            }
           } else {
             // Fallback to displayed page numbers if locations not available
             const current = location.start.displayed.page || 1
@@ -222,6 +275,57 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
 
         newRendition.on('displayed', () => {
           console.log('EpubViewer: Page displayed')
+        })
+
+        // Add keyboard event listener to iframe content
+        // This handles keyboard events when focus is inside the EPUB iframe
+        newRendition.on('keydown', (e: KeyboardEvent) => {
+          console.log('EpubViewer: Keydown in iframe:', e.key)
+
+          // Skip if resume dialog is showing
+          if (showResumeDialogRef.current) return
+
+          // Handle arrow keys and other navigation
+          const key = e.key
+          const noModifiers = !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey
+
+          // Previous page
+          if ((key === 'ArrowLeft' || key === 'PageUp' || key === 'k') && noModifiers) {
+            e.preventDefault()
+            newRendition.prev()
+            return
+          }
+
+          // Next page
+          if ((key === 'ArrowRight' || key === 'PageDown' || key === 'j' || key === ' ') && noModifiers) {
+            e.preventDefault()
+            newRendition.next()
+            return
+          }
+
+          // Previous page with Shift+Space
+          if (key === ' ' && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault()
+            newRendition.prev()
+            return
+          }
+
+          // First page
+          if (key === 'Home' && noModifiers) {
+            e.preventDefault()
+            newRendition.display(0)
+            return
+          }
+
+          // Last page
+          if (key === 'End' && noModifiers) {
+            e.preventDefault()
+            const spine = newBook.spine as any
+            if (spine && spine.last) {
+              newRendition.display(spine.last().href)
+            }
+            return
+          }
         })
 
         console.log('EpubViewer: Setup complete')
@@ -272,6 +376,40 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
     }
   }, [data])
 
+  // Re-apply theme when fontSize or contentWidth changes
+  useEffect(() => {
+    if (!rendition) return
+
+    const getContentPadding = () => {
+      switch (contentWidth) {
+        case 'narrow':
+          return '2rem 4rem' // More padding for narrow content (672px)
+        case 'medium':
+          return '2rem 3rem' // Default padding (896px)
+        case 'wide':
+          return '2rem 2rem' // Less padding for wide content (1152px)
+        case 'full':
+          return '2rem 1.5rem' // Minimal padding for full width
+        default:
+          return '2rem 3rem'
+      }
+    }
+
+    rendition.themes.default({
+      body: {
+        'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important',
+        'font-size': `${fontSize}px !important`,
+        'line-height': '1.7 !important',
+        'color': 'var(--foreground) !important',
+        'background': 'var(--background) !important',
+        'padding': `${getContentPadding()} !important`,
+        'text-align': 'justify !important',
+        'hyphens': 'auto !important',
+        'word-spacing': '0.05em !important'
+      }
+    })
+  }, [fontSize, contentWidth, rendition])
+
   const goToPrev = async () => {
     if (rendition) {
       try {
@@ -294,23 +432,163 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
     }
   }
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return
+  // Go to first page
+  const goToFirst = async () => {
+    if (rendition && book) {
+      try {
+        await rendition.display(0)
+        console.log('EpubViewer: Moved to first page')
+      } catch (err) {
+        console.error('EpubViewer: Error going to first page:', err)
+      }
+    }
+  }
 
-      if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+  // Go to last page
+  const goToLast = async () => {
+    if (rendition && book) {
+      try {
+        const spine = book.spine as any
+        if (spine && spine.last) {
+          await rendition.display(spine.last().href)
+          console.log('EpubViewer: Moved to last page')
+        }
+      } catch (err) {
+        console.error('EpubViewer: Error going to last page:', err)
+      }
+    }
+  }
+
+  // Get shortcuts from context
+  const { shortcuts } = useShortcuts()
+
+  // Helper function to check if a key event matches a shortcut key
+  const matchesKey = useCallback((e: KeyboardEvent, shortcutKey: string): boolean => {
+    const key = e.key.toLowerCase()
+    const shortcutKeyLower = shortcutKey.toLowerCase()
+
+    // Handle modifier combinations like "shift+space"
+    if (shortcutKeyLower.includes('+')) {
+      const parts = shortcutKeyLower.split('+')
+      const mainKey = parts[parts.length - 1]
+      const modifiers = parts.slice(0, -1)
+
+      const hasShift = modifiers.includes('shift')
+      const hasCtrl = modifiers.includes('ctrl') || modifiers.includes('cmd')
+      const hasAlt = modifiers.includes('alt')
+
+      // Check main key
+      let keyMatches = false
+      if (mainKey === 'space') keyMatches = e.key === ' '
+      else keyMatches = key === mainKey
+
+      // Check modifiers
+      const modifiersMatch =
+        (hasShift === e.shiftKey) &&
+        (hasCtrl === (e.ctrlKey || e.metaKey)) &&
+        (hasAlt === e.altKey)
+
+      return keyMatches && modifiersMatch
+    }
+
+    // Handle simple keys (without modifiers)
+    const noModifiers = !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey
+    if (shortcutKeyLower === 'space') return e.key === ' ' && noModifiers
+    if (shortcutKeyLower === 'arrowleft') return e.key === 'ArrowLeft' && noModifiers
+    if (shortcutKeyLower === 'arrowright') return e.key === 'ArrowRight' && noModifiers
+    if (shortcutKeyLower === 'pageup') return e.key === 'PageUp' && noModifiers
+    if (shortcutKeyLower === 'pagedown') return e.key === 'PageDown' && noModifiers
+    if (shortcutKeyLower === 'home') return e.key === 'Home' && noModifiers
+    if (shortcutKeyLower === 'end') return e.key === 'End' && noModifiers
+
+    return key === shortcutKeyLower && noModifiers
+  }, [])
+
+  // Check if event matches any of the shortcut's keys
+  const matchesShortcut = useCallback((e: KeyboardEvent, shortcutId: string): boolean => {
+    const shortcut = shortcuts.find(s => s.id === shortcutId)
+    if (!shortcut || !shortcut.enabled) return false
+    return shortcut.keys.some(key => matchesKey(e, key))
+  }, [shortcuts, matchesKey])
+
+  // Keyboard navigation with configurable shortcuts
+  useEffect(() => {
+    if (!rendition) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      // Skip if resume dialog is showing
+      if (showResumeDialog) return
+
+      // Previous page shortcuts
+      if (
+        matchesShortcut(e, 'reading-prev-page') ||
+        matchesShortcut(e, 'reading-prev-page-vim') ||
+        matchesShortcut(e, 'reading-prev-page-space')
+      ) {
         e.preventDefault()
-        goToPrev()
-      } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        rendition.prev()
+        return
+      }
+
+      // Next page shortcuts
+      if (
+        matchesShortcut(e, 'reading-next-page') ||
+        matchesShortcut(e, 'reading-next-page-vim') ||
+        matchesShortcut(e, 'reading-next-page-space')
+      ) {
         e.preventDefault()
-        goToNext()
+        rendition.next()
+        return
+      }
+
+      // First page
+      if (matchesShortcut(e, 'reading-first-page')) {
+        e.preventDefault()
+        rendition.display(0)
+        return
+      }
+
+      // Last page
+      if (matchesShortcut(e, 'reading-last-page') && book) {
+        e.preventDefault()
+        const spine = book.spine as any
+        if (spine && spine.last) {
+          rendition.display(spine.last().href)
+        }
+        return
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [rendition, book, matchesShortcut, showResumeDialog])
+
+  // Handle resume reading - jump to saved position
+  const handleResumeReading = useCallback(async () => {
+    if (rendition && pendingCfiRef.current) {
+      try {
+        console.log('EpubViewer: Resuming reading at CFI:', pendingCfiRef.current)
+        await rendition.display(pendingCfiRef.current)
+        console.log('EpubViewer: Successfully jumped to saved position')
+      } catch (err) {
+        console.error('EpubViewer: Error jumping to saved position:', err)
+      }
+    }
+    setShowResumeDialog(false)
+    setSavedProgress(null)
+    pendingCfiRef.current = null
   }, [rendition])
+
+  // Handle start over - stay at beginning
+  const handleStartOver = useCallback(() => {
+    console.log('EpubViewer: Starting from beginning')
+    setShowResumeDialog(false)
+    setSavedProgress(null)
+    pendingCfiRef.current = null
+  }, [])
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
@@ -321,7 +599,7 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
           size="sm"
           onClick={goToPrev}
           className="h-7 w-7 p-0"
-          title="上一页 (← / PageUp)"
+          title="上一页 (← / PageUp / K / Shift+Space)"
           disabled={isLoading || !!error}
         >
           <ChevronLeft className="h-4 w-4" />
@@ -343,7 +621,7 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
           size="sm"
           onClick={goToNext}
           className="h-7 w-7 p-0"
-          title="下一页 (→ / PageDown)"
+          title="下一页 (→ / PageDown / J / Space)"
           disabled={isLoading || !!error}
         >
           <ChevronRight className="h-4 w-4" />
@@ -408,6 +686,14 @@ export default function EpubViewer({ data, fileName, filePath, className }: Epub
           </div>
         )}
       </div>
+
+      {/* Resume Reading Dialog */}
+      <ResumeReadingDialog
+        isOpen={showResumeDialog}
+        onResume={handleResumeReading}
+        onStartOver={handleStartOver}
+        progress={savedProgress}
+      />
     </div>
   )
 }
