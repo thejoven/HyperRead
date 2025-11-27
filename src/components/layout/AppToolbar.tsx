@@ -21,6 +21,7 @@ interface AppToolbarProps {
   onToggleAiAssistant: () => void
   onOpenSettings: () => void
   loading: boolean
+  isDirectoryMode: boolean // Show sidebar toggle only in directory mode
 }
 
 export default function AppToolbar({
@@ -36,7 +37,8 @@ export default function AppToolbar({
   showAiAssistant,
   onToggleAiAssistant,
   onOpenSettings,
-  loading
+  loading,
+  isDirectoryMode
 }: AppToolbarProps) {
   const t = useT()
 
@@ -50,18 +52,20 @@ export default function AppToolbar({
           <div className="w-2 flex-shrink-0" />
         )}
 
-        {/* Sidebar toggle button - placed right of traffic lights */}
-        <div className="no-drag">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleSidebar}
-            className={`h-7 w-7 p-0 macos-button ml-2 ${isSidebarCollapsed ? 'bg-primary/10 text-primary' : ''}`}
-            title={isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
-          >
-            <PanelLeft className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        {/* Sidebar toggle button - only show in directory mode */}
+        {isDirectoryMode && (
+          <div className="no-drag">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleSidebar}
+              className={`h-7 w-7 p-0 macos-button ml-2 ${isSidebarCollapsed ? 'bg-primary/10 text-primary' : ''}`}
+              title={isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
+            >
+              <PanelLeft className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
 
         {/* Tabs area */}
         <div className="w-2 flex-shrink-0"></div>

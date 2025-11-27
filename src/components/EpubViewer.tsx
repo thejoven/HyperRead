@@ -25,6 +25,26 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [totalPages, setTotalPages] = useState<number>(0)
+  const [isResizing, setIsResizing] = useState<boolean>(false)
+
+  // Track if initial load is complete to avoid unnecessary resize
+  const isInitialLoadRef = useRef<boolean>(true)
+
+  // Get max width value based on contentWidth setting
+  const getMaxWidth = (width: 'narrow' | 'medium' | 'wide' | 'full'): string => {
+    switch (width) {
+      case 'narrow':
+        return '672px'  // max-w-2xl
+      case 'medium':
+        return '896px'  // max-w-4xl
+      case 'wide':
+        return '1152px' // max-w-6xl
+      case 'full':
+        return '100%'   // max-w-none
+      default:
+        return '896px'
+    }
+  }
 
   // Resume reading dialog state
   const [showResumeDialog, setShowResumeDialog] = useState<boolean>(false)
@@ -71,6 +91,7 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
         console.log('EpubViewer: Starting to load EPUB from:', data?.substring?.(0, 50) || data)
         setIsLoading(true)
         setError(null)
+        isInitialLoadRef.current = true // Reset for new EPUB file
 
         // Fetch the EPUB file
         let epubData: ArrayBuffer
@@ -146,18 +167,19 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
 
         // Apply Apple Books-like theme before displaying
         // Calculate content padding based on contentWidth setting
+        // With maxWidth already applied to container, we use consistent padding
         const getContentPadding = () => {
           switch (contentWidth) {
             case 'narrow':
-              return '2rem 4rem' // More padding for narrow content (672px)
+              return '2rem 3rem' // Comfortable padding for narrow content
             case 'medium':
-              return '2rem 3rem' // Default padding (896px)
+              return '2rem 2.5rem' // Default padding
             case 'wide':
-              return '2rem 2rem' // Less padding for wide content (1152px)
+              return '2rem 2rem' // Standard padding for wide content
             case 'full':
-              return '2rem 1.5rem' // Minimal padding for full width
+              return '2rem 2rem' // Consistent padding for full width
             default:
-              return '2rem 3rem'
+              return '2rem 2.5rem'
           }
         }
 
@@ -228,6 +250,7 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
         }
 
         setIsLoading(false)
+        isInitialLoadRef.current = false // Mark initial load as complete
 
         // Listen to location changes
         newRendition.on('relocated', (location: any) => {
@@ -279,6 +302,8 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
 
         // Add keyboard event listener to iframe content
         // This handles keyboard events when focus is inside the EPUB iframe
+        // Note: We don't call preventDefault here as it's a passive event listener
+        // The window-level listener (with passive: false) will handle preventDefault
         newRendition.on('keydown', (e: KeyboardEvent) => {
           console.log('EpubViewer: Keydown in iframe:', e.key)
 
@@ -291,35 +316,35 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
 
           // Previous page
           if ((key === 'ArrowLeft' || key === 'PageUp' || key === 'k') && noModifiers) {
-            e.preventDefault()
+            // Don't call preventDefault here - let the window listener handle it
             newRendition.prev()
             return
           }
 
           // Next page
           if ((key === 'ArrowRight' || key === 'PageDown' || key === 'j' || key === ' ') && noModifiers) {
-            e.preventDefault()
+            // Don't call preventDefault here - let the window listener handle it
             newRendition.next()
             return
           }
 
           // Previous page with Shift+Space
           if (key === ' ' && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            e.preventDefault()
+            // Don't call preventDefault here - let the window listener handle it
             newRendition.prev()
             return
           }
 
           // First page
           if (key === 'Home' && noModifiers) {
-            e.preventDefault()
+            // Don't call preventDefault here - let the window listener handle it
             newRendition.display(0)
             return
           }
 
           // Last page
           if (key === 'End' && noModifiers) {
-            e.preventDefault()
+            // Don't call preventDefault here - let the window listener handle it
             const spine = newBook.spine as any
             if (spine && spine.last) {
               newRendition.display(spine.last().href)
@@ -376,22 +401,22 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
     }
   }, [data])
 
-  // Re-apply theme when fontSize or contentWidth changes
+  // Re-apply theme when fontSize changes
   useEffect(() => {
     if (!rendition) return
 
     const getContentPadding = () => {
       switch (contentWidth) {
         case 'narrow':
-          return '2rem 4rem' // More padding for narrow content (672px)
+          return '2rem 3rem' // Comfortable padding for narrow content
         case 'medium':
-          return '2rem 3rem' // Default padding (896px)
+          return '2rem 2.5rem' // Default padding
         case 'wide':
-          return '2rem 2rem' // Less padding for wide content (1152px)
+          return '2rem 2rem' // Standard padding for wide content
         case 'full':
-          return '2rem 1.5rem' // Minimal padding for full width
+          return '2rem 2rem' // Consistent padding for full width
         default:
-          return '2rem 3rem'
+          return '2rem 2.5rem'
       }
     }
 
@@ -409,6 +434,54 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
       }
     })
   }, [fontSize, contentWidth, rendition])
+
+  // Handle contentWidth and fontSize changes - resize rendition and regenerate locations
+  useEffect(() => {
+    if (!rendition || !book) return
+
+    // Skip resize on initial load (it's already sized correctly)
+    if (isInitialLoadRef.current) {
+      console.log('EpubViewer: Skipping resize for initial load')
+      return
+    }
+
+    const handleResize = async () => {
+      try {
+        console.log('EpubViewer: Settings changed (width/fontSize), resizing rendition')
+        setIsResizing(true)
+
+        // Save current reading position (CFI)
+        const currentLocation = rendition.currentLocation()
+        const currentCfi = currentLocation?.start?.cfi
+
+        console.log('EpubViewer: Current CFI before resize:', currentCfi)
+
+        // Resize the rendition to fit new container width
+        rendition.resize()
+
+        // Wait a bit for resize to take effect
+        await new Promise(resolve => setTimeout(resolve, 150))
+
+        // Regenerate locations for accurate pagination with new width/fontSize
+        console.log('EpubViewer: Regenerating locations after resize...')
+        await book.locations.generate(1600)
+        console.log('EpubViewer: Locations regenerated:', book.locations.total)
+
+        // Restore reading position if we had one
+        if (currentCfi) {
+          console.log('EpubViewer: Restoring position to CFI:', currentCfi)
+          await rendition.display(currentCfi)
+        }
+
+        setIsResizing(false)
+      } catch (error) {
+        console.error('EpubViewer: Error during resize:', error)
+        setIsResizing(false)
+      }
+    }
+
+    handleResize()
+  }, [contentWidth, fontSize, rendition, book])
 
   const goToPrev = async () => {
     if (rendition) {
@@ -562,7 +635,8 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    // Add event listener with passive: false to allow preventDefault
+    window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [rendition, book, matchesShortcut, showResumeDialog])
 
@@ -629,16 +703,18 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
       </div>
 
       {/* EPUB content container - always rendered */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden flex justify-center">
         <div
           ref={viewerRef}
-          className="w-full h-full overflow-hidden"
+          className="h-full overflow-hidden"
           style={{
             position: 'relative',
             background: 'var(--background)',
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: getMaxWidth(contentWidth)
           }}
         />
 
@@ -655,6 +731,16 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
               <div className="text-xs text-muted-foreground/70 italic">
                 正在生成精确页码，大型书籍可能需要几秒钟
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Resizing overlay */}
+        {isResizing && !isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-40">
+            <div className="text-center p-6">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary mb-3"></div>
+              <div className="text-muted-foreground text-sm">正在调整布局...</div>
             </div>
           </div>
         )}

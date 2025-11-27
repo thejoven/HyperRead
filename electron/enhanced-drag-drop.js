@@ -3,12 +3,29 @@
 
 function setupEnhancedDragDrop() {
   console.log('Setting up enhanced drag and drop handlers with webkitGetAsEntry')
-  
+
+  // 检查是否是支持的文件类型
+  function isSupportedFile(fileName) {
+    const lowerName = fileName.toLowerCase()
+    return lowerName.endsWith('.md') ||
+           lowerName.endsWith('.markdown') ||
+           lowerName.endsWith('.pdf') ||
+           lowerName.endsWith('.epub')
+  }
+
+  // 获取文件类型
+  function getFileType(fileName) {
+    const lowerName = fileName.toLowerCase()
+    if (lowerName.endsWith('.pdf')) return 'pdf'
+    if (lowerName.endsWith('.epub')) return 'epub'
+    return 'markdown'
+  }
+
   // 递归读取目录条目
   async function readDirectoryEntry(directoryEntry) {
     const files = []
     const reader = directoryEntry.createReader()
-    
+
     return new Promise((resolve, reject) => {
       const readEntries = () => {
         reader.readEntries(async (entries) => {
@@ -16,11 +33,11 @@ function setupEnhancedDragDrop() {
             resolve(files)
             return
           }
-          
+
           for (const entry of entries) {
             if (entry.isFile) {
-              // 检查是否是 Markdown 文件
-              if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
+              // 检查是否是支持的文件类型
+              if (isSupportedFile(entry.name)) {
                 try {
                   const file = await new Promise((resolve, reject) => {
                     entry.file(resolve, reject)
@@ -29,6 +46,7 @@ function setupEnhancedDragDrop() {
                     file: file,
                     fullPath: entry.fullPath,
                     name: entry.name,
+                    fileType: getFileType(entry.name),
                     isDirectory: false
                   })
                 } catch (error) {
@@ -47,11 +65,11 @@ function setupEnhancedDragDrop() {
               }
             }
           }
-          
+
           readEntries() // 继续读取剩余条目
         }, reject)
       }
-      
+
       readEntries()
     })
   }
@@ -60,15 +78,15 @@ function setupEnhancedDragDrop() {
   async function processDroppedItems(items) {
     const allFiles = []
     const directories = []
-    
+
     for (const item of items) {
       if (item.kind === 'file') {
         const entry = item.webkitGetAsEntry()
-        
+
         if (entry) {
           if (entry.isFile) {
             // 单个文件
-            if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
+            if (isSupportedFile(entry.name)) {
               try {
                 const file = await new Promise((resolve, reject) => {
                   entry.file(resolve, reject)
@@ -77,6 +95,7 @@ function setupEnhancedDragDrop() {
                   file: file,
                   fullPath: entry.fullPath,
                   name: entry.name,
+                  fileType: getFileType(entry.name),
                   isDirectory: false
                 })
               } catch (error) {
@@ -87,11 +106,11 @@ function setupEnhancedDragDrop() {
             // 目录
             console.log('Processing directory:', entry.name)
             directories.push(entry.name)
-            
+
             try {
               const dirFiles = await readDirectoryEntry(entry)
               allFiles.push(...dirFiles)
-              console.log(`Found ${dirFiles.length} markdown files in directory: ${entry.name}`)
+              console.log(`Found ${dirFiles.length} supported files in directory: ${entry.name}`)
             } catch (error) {
               console.error('Failed to read directory:', entry.fullPath, error)
             }
@@ -99,12 +118,18 @@ function setupEnhancedDragDrop() {
         }
       }
     }
-    
+
     return { allFiles, directories }
   }
   
   // 读取文件内容
-  async function readFileContent(file) {
+  async function readFileContent(file, fileType) {
+    // 对于PDF和EPUB文件，返回blob URL而不是文本内容
+    if (fileType === 'pdf' || fileType === 'epub') {
+      return URL.createObjectURL(file)
+    }
+
+    // 对于Markdown文件，读取文本内容
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = (event) => resolve(event.target.result)
@@ -152,25 +177,26 @@ function setupEnhancedDragDrop() {
     try {
       const { allFiles, directories } = await processDroppedItems(items)
       
-      console.log(`Found ${allFiles.length} markdown files in ${directories.length} directories`)
-      console.log('All files found:', allFiles.map(f => ({ name: f.name, fullPath: f.fullPath })))
+      console.log(`Found ${allFiles.length} supported files in ${directories.length} directories`)
+      console.log('All files found:', allFiles.map(f => ({ name: f.name, fullPath: f.fullPath, fileType: f.fileType })))
       console.log('Directories found:', directories)
-      
+
       if (allFiles.length === 0) {
-        alert('未找到 Markdown 文件。请拖拽 .md 或 .markdown 文件，或包含这些文件的文件夹。')
+        alert('未找到支持的文件。请拖拽 Markdown (.md/.markdown)、PDF (.pdf) 或 EPUB (.epub) 文件，或包含这些文件的文件夹。')
         return
       }
-      
+
       if (allFiles.length === 1 && directories.length === 0) {
         // 单个文件（非文件夹拖拽）
         const fileData = allFiles[0]
-        const content = await readFileContent(fileData.file)
+        const content = await readFileContent(fileData.file, fileData.fileType)
         
         if (window.electronAPI?.handleFileContent) {
           window.electronAPI.handleFileContent({
             content: content,
-            fileName: fileData.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+            fileName: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
             originalName: fileData.name,
+            fileType: fileData.fileType,
             isDirectory: false
           })
         }
@@ -178,12 +204,13 @@ function setupEnhancedDragDrop() {
         // 多个文件或目录模式（包括只有一个文件的文件夹）
         console.log('Creating file infos for directory mode...')
         const fileInfos = allFiles.map(fileData => ({
-          name: fileData.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+          name: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
           fileName: fileData.name,
           fullPath: fileData.fullPath,
           relativePath: fileData.fullPath.replace(/^\//, ''),
-          directory: fileData.fullPath.includes('/') ? 
-            fileData.fullPath.substring(0, fileData.fullPath.lastIndexOf('/')) : '.'
+          directory: fileData.fullPath.includes('/') ?
+            fileData.fullPath.substring(0, fileData.fullPath.lastIndexOf('/')) : '.',
+          fileType: fileData.fileType
         }))
         
         console.log('File infos created:', fileInfos)
@@ -201,13 +228,13 @@ function setupEnhancedDragDrop() {
         // 读取并缓存所有文件的内容
         if (allFiles.length > 0) {
           console.log(`Reading content for ${allFiles.length} files`)
-          
+
           // Read all file contents
           for (const fileData of allFiles) {
             try {
-              const content = await readFileContent(fileData.file)
-              fileContentsCache[fileData.name] = content
-              console.log(`Cached content for file: ${fileData.name}`)
+              const content = await readFileContent(fileData.file, fileData.fileType)
+              fileContentsCache[fileData.fullPath] = content
+              console.log(`Cached content for file: ${fileData.name} (type: ${fileData.fileType})`)
             } catch (error) {
               console.error(`Failed to read content for ${fileData.name}:`, error)
             }
@@ -235,12 +262,13 @@ function setupEnhancedDragDrop() {
           // Load the first file's content as the initial view
           if (allFiles.length > 0) {
             const firstFile = allFiles[0]
-            if (fileContentsCache[firstFile.name]) {
+            if (fileContentsCache[firstFile.fullPath]) {
               console.log('Loading first file content for display:', firstFile.name)
               window.reactDirectHandlers.handleFileContentDirect({
-                content: fileContentsCache[firstFile.name],
-                fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+                content: fileContentsCache[firstFile.fullPath],
+                fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
                 originalName: firstFile.name,
+                fileType: firstFile.fileType,
                 isDirectory: true
               })
             }
@@ -277,12 +305,13 @@ function setupEnhancedDragDrop() {
           // Load the first file's content as the initial view
           if (allFiles.length > 0) {
             const firstFile = allFiles[0]
-            if (fileContentsCache[firstFile.name] && window.electronAPI?.handleFileContent) {
+            if (fileContentsCache[firstFile.fullPath] && window.electronAPI?.handleFileContent) {
               console.log('Loading first file content for display:', firstFile.name)
               window.electronAPI.handleFileContent({
-                content: fileContentsCache[firstFile.name],
-                fileName: firstFile.name.replace(/\.md$/, '').replace(/\.markdown$/, ''),
+                content: fileContentsCache[firstFile.fullPath],
+                fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
                 originalName: firstFile.name,
+                fileType: firstFile.fileType,
                 isDirectory: true
               })
             }

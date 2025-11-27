@@ -218,7 +218,7 @@ export default function ElectronApp() {
         }
       }
 
-      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('keydown', handleKeyDown, { passive: false })
       return () => {
         window.removeEventListener('keydown', handleKeyDown)
         if (shiftTimer) clearTimeout(shiftTimer)
@@ -242,7 +242,7 @@ export default function ElectronApp() {
         }
       }
 
-      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('keydown', handleKeyDown, { passive: false })
       return () => window.removeEventListener('keydown', handleKeyDown)
     }
   }, [fileData, shortcuts])
@@ -257,7 +257,7 @@ export default function ElectronApp() {
         settings.toggleSidebar()
       }
     }
-    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [settings])
 
@@ -306,6 +306,7 @@ export default function ElectronApp() {
         onToggleAiAssistant={() => setShowAiAssistant(!showAiAssistant)}
         onOpenSettings={() => setShowSettings(true)}
         loading={loading}
+        isDirectoryMode={directory.isDirectoryMode}
       />
 
       {/* Main Content */}
