@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.1.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -50,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.0.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.1.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-5.0.0-arm64.dmg` 安装包
+1. 下载 `HyperRead-5.1.0-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -258,7 +258,33 @@ npm run lint              # ESLint 检查
 
 ## 📝 最新更新
 
-### 🎉 版本 5.0.0（最新）
+### 🎉 版本 5.1.0（最新）
+
+**主要更新：**
+- 📚 **EPUB 拖拽支持** - 直接拖拽 EPUB 和 PDF 文件到应用即可即时查看
+- 📏 **自适应 EPUB 宽度** - EPUB 内容现在支持响应内容宽度设置（窄/中等/宽/全宽）
+- ⌨️ **修复键盘快捷键** - 解决 EPUB 阅读器中的 passive 事件监听器警告
+- 🔄 **智能布局重排** - 修改宽度或字体大小时 EPUB 自动调整布局并保持阅读位置
+
+**EPUB 阅读器增强：**
+- 内容宽度设置现在应用于 EPUB 文件，具有正确的容器尺寸
+- 基于 CFI 的位置恢复，自动重新计算布局
+- 布局调整期间显示加载指示器，提升用户体验
+- 根据内容宽度优化内边距，实现舒适阅读
+
+**文件处理改进：**
+- 增强 drag-drop.js 以支持 EPUB (.epub) 和 PDF (.pdf) 文件
+- 为二进制文件（PDF/EPUB）生成 Blob URL 用于拖拽操作
+- 正确的文件类型检测和所有支持格式的缓存
+- 修复多文件场景下的文件路径处理
+
+**技术改进：**
+- 为键盘事件监听器添加 `{ passive: false }` 以启用 preventDefault
+- 从 passive 的 epub.js iframe 监听器中移除 preventDefault
+- 实现带初始加载检测的智能 resize 逻辑
+- 在宽度/字体大小改变期间使用 CFI 保持位置
+
+### 版本 5.0.0
 
 **主要更新：**
 - 📖 **EPUB 阅读进度记忆** - 自动保存阅读位置，重新打开书籍时显示优雅的恢复对话框
@@ -266,19 +292,6 @@ npm run lint              # ESLint 检查
 - 🏗️ **重大代码重构** - electron-app.tsx 从 2065 行减少到 475 行（减少 77%）
 - 🎨 **模块化架构** - 新增 hooks（use-settings、use-directory、use-drag-drop）和组件，提高可维护性
 - 🔧 **改进类型安全** - 增强 TypeScript 类型定义和更好的代码组织
-
-**EPUB 阅读器改进：**
-- 阅读进度自动保存，包含 CFI、页码和百分比
-- 恢复阅读对话框显示上次位置、进度条和距上次阅读的时间
-- 键盘快捷键（←→、J/K、空格、PageUp/Down、Home/End）在 iframe 内也能工作
-- 修复事件处理器中的闭包问题，确保快捷键检测可靠
-
-**技术改进：**
-- 创建 `epub-reading-progress.ts` 服务用于持久化阅读状态
-- 添加 `ResumeReadingDialog` 组件，支持中英文双语
-- 通过 `rendition.on('keydown')` 实现 iframe 内键盘事件处理
-- 使用 ref 避免事件回调中的闭包陷阱
-- 从单体组件中提取可复用的 hooks 和工具函数
 
 👀 **[查看完整更新日志](./CHANGELOG.md)** - 详细的发布说明和版本历史
 
