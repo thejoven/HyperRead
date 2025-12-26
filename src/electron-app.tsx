@@ -63,30 +63,36 @@ export default function ElectronApp() {
     openTabWithData: tabs.openTabWithData
   })
 
+  // === Drag Drop Handlers ===
+  const handleSingleFileDrop = useCallback((data: FileData) => {
+    tabs.openTabWithData(data)
+    setFileData(data)
+    directory.setIsDirectoryMode(false)
+    directory.setIsEnhancedDragMode(false)
+  }, [tabs, directory])
+
+  const handleDirectoryDrop = useCallback((dirData: DirectoryData, fileContentsCache: Record<string, string>, directoryEntries: FileSystemDirectoryEntry[], directoryNames: string[], allFiles: any[], firstFileData: FileData | null) => {
+    tabs.clearTabs()
+    tabs.setCacheBulk(fileContentsCache)
+    directory.setDirectoryData(dirData)
+    directory.setActualRootPath(null)
+    directory.setDraggedDirectoryEntries(directoryEntries)
+    directory.setDraggedDirectoryNames(directoryNames)
+    directory.setLastDraggedFiles(allFiles)
+    directory.setShowRefreshHint(false)
+    directory.setIsDirectoryMode(true)
+    directory.setIsEnhancedDragMode(true)
+
+    if (firstFileData) {
+      tabs.openTabWithData(firstFileData)
+      setFileData(firstFileData)
+    }
+  }, [tabs, directory])
+
   // === Drag Drop Hook ===
   const { isDragOver } = useDragDrop({
-    onSingleFileDrop: (data) => {
-      tabs.openTabWithData(data)
-      setFileData(data)
-      directory.setIsDirectoryMode(false)
-      directory.setIsEnhancedDragMode(false)
-    },
-    onDirectoryDrop: (dirData, fileContentsCache, directoryEntries, directoryNames, allFiles, firstFileData) => {
-      tabs.setCacheBulk(fileContentsCache)
-      directory.setDirectoryData(dirData)
-      directory.setActualRootPath(null)
-      directory.setDraggedDirectoryEntries(directoryEntries)
-      directory.setDraggedDirectoryNames(directoryNames)
-      directory.setLastDraggedFiles(allFiles)
-      directory.setShowRefreshHint(false)
-      directory.setIsDirectoryMode(true)
-      directory.setIsEnhancedDragMode(true)
-
-      if (firstFileData) {
-        tabs.openTabWithData(firstFileData)
-        setFileData(firstFileData)
-      }
-    }
+    onSingleFileDrop: handleSingleFileDrop,
+    onDirectoryDrop: handleDirectoryDrop
   })
 
   // === Tab Handlers ===
@@ -156,6 +162,7 @@ export default function ElectronApp() {
     try {
       const data = await window.electronAPI.openDirectoryDialog()
       if (data && data.files.length > 0) {
+        tabs.clearTabs()
         directory.setDirectoryData(data)
         directory.setActualRootPath(data.rootPath)
         directory.setDraggedDirectoryEntries([])

@@ -131,12 +131,14 @@ async function processDirectoryEntry(
 
 export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOptions): UseDragDropReturn {
   const [isDragOver, setIsDragOver] = useState(false)
+  const dragCounter = useRef(0)
 
   const handleDrop = useCallback(async (e: DragEvent) => {
     console.log('React: drop event triggered - processing with webkitGetAsEntry')
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(false)
+    dragCounter.current = 0
 
     try {
       const items = [...(e.dataTransfer?.items || [])]
@@ -285,16 +287,28 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
 
   useEffect(() => {
     const handleDragEnter = (e: DragEvent) => {
-      console.log('React: dragenter for styling', e.dataTransfer?.types)
+      // Check if the drag event contains files
       if (e.dataTransfer?.types.includes('Files')) {
-        console.log('React: Files detected, setting isDragOver to true')
-        setIsDragOver(true)
+        dragCounter.current += 1
+        console.log('React: dragenter, counter:', dragCounter.current)
+        
+        if (dragCounter.current === 1) {
+          console.log('React: Files detected, setting isDragOver to true')
+          setIsDragOver(true)
+        }
       }
     }
 
     const handleDragLeave = (e: DragEvent) => {
-      console.log('React: dragleave for styling')
-      if (!e.relatedTarget || !document.body.contains(e.relatedTarget as Node)) {
+      dragCounter.current -= 1
+      console.log('React: dragleave, counter:', dragCounter.current)
+      
+      // Safety check to prevent negative counter
+      if (dragCounter.current < 0) {
+        dragCounter.current = 0
+      }
+
+      if (dragCounter.current === 0) {
         setIsDragOver(false)
       }
     }

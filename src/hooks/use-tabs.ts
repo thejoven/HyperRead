@@ -75,6 +75,12 @@ export function useTabs() {
     setCache(new Map(Object.entries(entries)))
   }
 
+  const clearTabs = () => {
+    setOpenTabs([])
+    setActiveTab(null)
+    setCache(new Map())
+  }
+
   return {
     openTabs,
     activeTab,
@@ -82,6 +88,7 @@ export function useTabs() {
     openTabWithData,
     activateTab,
     closeTab,
+    clearTabs,
     setCacheEntry,
     setCacheBulk,
     setActiveTab,
