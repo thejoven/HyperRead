@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import type { FileInfo, DirectoryData } from '@/types/directory'
 import type { FileData } from '@/types/file'

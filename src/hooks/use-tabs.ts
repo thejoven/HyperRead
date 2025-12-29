@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import type { FileData } from '@/types/file'
 
@@ -13,7 +13,7 @@ export function useTabs() {
   const [activeTab, setActiveTab] = useState<string | null>(null)
   const [cache, setCache] = useState<Map<string, string>>(new Map())
 
-  const openTabWithData = (data: FileData) => {
+  const openTabWithData = useCallback((data: FileData) => {
     setActiveTab(data.filePath)
     setOpenTabs((prev) => (prev.some((t) => t.filePath === data.filePath)
       ? prev
@@ -23,9 +23,26 @@ export function useTabs() {
       next.set(data.filePath, data.content)
       return next
     })
-  }
+  }, [])
 
-  const activateTab = async (filePath: string) => {
+  const replaceTabWithData = useCallback((data: FileData) => {
+    setActiveTab(data.filePath)
+    setOpenTabs([{ filePath: data.filePath, fileName: data.fileName, fileType: data.fileType }])
+    setCache(new Map([[data.filePath, data.content]]))
+  }, [])
+
+  const resetTabsWithCache = useCallback((data: FileData | null, cacheEntries: Record<string, string>) => {
+    if (data) {
+      setActiveTab(data.filePath)
+      setOpenTabs([{ filePath: data.filePath, fileName: data.fileName, fileType: data.fileType }])
+    } else {
+      setActiveTab(null)
+      setOpenTabs([])
+    }
+    setCache(new Map(Object.entries(cacheEntries)))
+  }, [])
+
+  const activateTab = useCallback(async (filePath: string) => {
     try {
       setActiveTab(filePath)
       const tab = openTabs.find((t) => t.filePath === filePath)
@@ -40,9 +57,9 @@ export function useTabs() {
       console.error('Failed to activate tab:', e)
       toast.error('切换标签失败')
     }
-  }
+  }, [openTabs, cache, openTabWithData])
 
-  const closeTab = (filePath: string, onActivateData?: (path: string) => void) => {
+  const closeTab = useCallback((filePath: string, onActivateData?: (path: string) => void) => {
     setOpenTabs((prev) => {
       const next = prev.filter((t) => t.filePath !== filePath)
       if (activeTab === filePath) {
@@ -61,31 +78,33 @@ export function useTabs() {
       next.delete(filePath)
       return next
     })
-  }
+  }, [activeTab])
 
-  const setCacheEntry = (filePath: string, content: string) => {
+  const setCacheEntry = useCallback((filePath: string, content: string) => {
     setCache((prev) => {
       const next = new Map(prev)
       next.set(filePath, content)
       return next
     })
-  }
+  }, [])
 
-  const setCacheBulk = (entries: Record<string, string>) => {
+  const setCacheBulk = useCallback((entries: Record<string, string>) => {
     setCache(new Map(Object.entries(entries)))
-  }
+  }, [])
 
-  const clearTabs = () => {
+  const clearTabs = useCallback(() => {
     setOpenTabs([])
     setActiveTab(null)
     setCache(new Map())
-  }
+  }, [])
 
   return {
     openTabs,
     activeTab,
     cache,
     openTabWithData,
+    replaceTabWithData,
+    resetTabsWithCache,
     activateTab,
     closeTab,
     clearTabs,

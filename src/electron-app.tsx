@@ -65,15 +65,17 @@ export default function ElectronApp() {
 
   // === Drag Drop Handlers ===
   const handleSingleFileDrop = useCallback((data: FileData) => {
-    tabs.openTabWithData(data)
+    tabs.replaceTabWithData(data)
     setFileData(data)
     directory.setIsDirectoryMode(false)
     directory.setIsEnhancedDragMode(false)
   }, [tabs, directory])
 
   const handleDirectoryDrop = useCallback((dirData: DirectoryData, fileContentsCache: Record<string, string>, directoryEntries: FileSystemDirectoryEntry[], directoryNames: string[], allFiles: any[], firstFileData: FileData | null) => {
-    tabs.clearTabs()
-    tabs.setCacheBulk(fileContentsCache)
+    // Use resetTabsWithCache to atomically set the initial tab and populate the full cache
+    // This prevents old tabs from persisting and ensures the cache is ready for the new files
+    tabs.resetTabsWithCache(firstFileData, fileContentsCache)
+    
     directory.setDirectoryData(dirData)
     directory.setActualRootPath(null)
     directory.setDraggedDirectoryEntries(directoryEntries)
@@ -84,7 +86,6 @@ export default function ElectronApp() {
     directory.setIsEnhancedDragMode(true)
 
     if (firstFileData) {
-      tabs.openTabWithData(firstFileData)
       setFileData(firstFileData)
     }
   }, [tabs, directory])
@@ -143,7 +144,7 @@ export default function ElectronApp() {
     try {
       const data = await window.electronAPI.openFileDialog()
       if (data) {
-        tabs.openTabWithData(data)
+        tabs.replaceTabWithData(data)
         setFileData(data)
         directory.setIsDirectoryMode(false)
         directory.setDirectoryData(null)
@@ -162,7 +163,10 @@ export default function ElectronApp() {
     try {
       const data = await window.electronAPI.openDirectoryDialog()
       if (data && data.files.length > 0) {
+        // Use clearTabs to explicitly clear everything first (though replaceTabWithData would also set state, 
+        // clearTabs ensures a clean slate for the UI immediately)
         tabs.clearTabs()
+        
         directory.setDirectoryData(data)
         directory.setActualRootPath(data.rootPath)
         directory.setDraggedDirectoryEntries([])
@@ -171,9 +175,19 @@ export default function ElectronApp() {
         directory.setShowRefreshHint(false)
         directory.setIsEnhancedDragMode(false)
         directory.setIsDirectoryMode(true)
+        
         // Auto select first file
         const firstFile = data.files[0]
-        await loadFileFromDirectory(firstFile)
+        
+        // Use directory.loadFileFromDirectory directly to pass replaceTabWithData
+        // This ensures the first file replaces any potential lingering state (or just sets the initial state cleanly)
+        await directory.loadFileFromDirectory(
+          firstFile,
+          tabs.cache,
+          setFileData,
+          tabs.replaceTabWithData, 
+          setLoading
+        )
       } else if (data && data.files.length === 0) {
         toast.error('该文件夹中没有找到 Markdown 文件')
       }
@@ -183,7 +197,7 @@ export default function ElectronApp() {
     } finally {
       setLoading(false)
     }
-  }, [directory])
+  }, [tabs, directory])
 
   const loadFileFromDirectory = useCallback(async (fileInfo: FileInfo) => {
     await directory.loadFileFromDirectory(
