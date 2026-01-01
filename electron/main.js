@@ -768,11 +768,10 @@ function openFileInRenderer(filePath) {
         content = filePath // 直接传递路径
         fileType = 'pdf'
       } else if (ext === '.epub') {
-        // 读取EPUB文件并转换为base64
-        const epubData = fs.readFileSync(filePath)
-        content = epubData.toString('base64')
+        // 处理EPUB文件 - 直接传递文件路径，由前端加载
+        content = filePath
         fileType = 'epub'
-        console.log('Main: EPUB file read for association, size:', epubData.length, 'bytes')
+        console.log('Main: EPUB file path sent for association:', filePath)
       } else {
         content = fs.readFileSync(filePath, 'utf8')
         fileType = ext === '.md' || ext === '.markdown' ? 'markdown' : 'text'

@@ -118,23 +118,29 @@ export function useDirectory(): UseDirectoryReturn {
   ) => {
     if (!window.electronAPI || isRefreshing) return
 
-    // In enhanced drag mode, show hint to re-drag
-    if (isEnhancedDragMode) {
-      setIsRefreshing(true)
-      try {
-        // For enhanced drag mode, we can't really refresh without re-dragging
-        // Show the refresh hint modal
-        console.log('React: Enhanced drag mode refresh - showing hint')
-        setShowRefreshHint(true)
-      } finally {
-        setIsRefreshing(false)
+    // Check if we have an actual path to refresh
+    let pathToRefresh = actualRootPath
+    if (!pathToRefresh && directoryData?.rootPath) {
+      if (!directoryData.rootPath.startsWith('Dropped ')) {
+        pathToRefresh = directoryData.rootPath
       }
-      return
     }
 
-    // Check if we have an actual path to refresh
-    const pathToRefresh = actualRootPath || directoryData?.rootPath
+    // In enhanced drag mode or if we don't have a valid path, show hint
     if (!pathToRefresh) {
+      if (isEnhancedDragMode || (directoryData?.rootPath && directoryData.rootPath.startsWith('Dropped '))) {
+        setIsRefreshing(true)
+        try {
+          // For enhanced drag mode without a system path, we can't refresh without re-dragging
+          // Show the refresh hint modal
+          console.log('React: Enhanced drag mode refresh - showing hint')
+          setShowRefreshHint(true)
+        } finally {
+          setIsRefreshing(false)
+        }
+        return
+      }
+      
       console.log('React: No path available for refresh')
       return
     }

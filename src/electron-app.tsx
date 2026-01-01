@@ -71,13 +71,13 @@ export default function ElectronApp() {
     directory.setIsEnhancedDragMode(false)
   }, [tabs, directory])
 
-  const handleDirectoryDrop = useCallback((dirData: DirectoryData, fileContentsCache: Record<string, string>, directoryEntries: FileSystemDirectoryEntry[], directoryNames: string[], allFiles: any[], firstFileData: FileData | null) => {
+  const handleDirectoryDrop = useCallback((dirData: DirectoryData, fileContentsCache: Record<string, string>, directoryEntries: FileSystemDirectoryEntry[], directoryNames: string[], allFiles: any[], firstFileData: FileData | null, systemRootPath?: string | null) => {
     // Use resetTabsWithCache to atomically set the initial tab and populate the full cache
     // This prevents old tabs from persisting and ensures the cache is ready for the new files
     tabs.resetTabsWithCache(firstFileData, fileContentsCache)
     
     directory.setDirectoryData(dirData)
-    directory.setActualRootPath(null)
+    directory.setActualRootPath(systemRootPath || null)
     directory.setDraggedDirectoryEntries(directoryEntries)
     directory.setDraggedDirectoryNames(directoryNames)
     directory.setLastDraggedFiles(allFiles)
@@ -281,6 +281,21 @@ export default function ElectronApp() {
     window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [settings])
+
+  // === File Association Listener ===
+  useEffect(() => {
+    const handleFileAssociation = (e: CustomEvent) => {
+      const data = e.detail
+      if (data) {
+        console.log('React: Received file via association:', data.fileName)
+        tabs.openTabWithData(data)
+        setFileData(data)
+      }
+    }
+
+    window.addEventListener('file-association-opened', handleFileAssociation as EventListener)
+    return () => window.removeEventListener('file-association-opened', handleFileAssociation as EventListener)
+  }, [tabs])
 
   // === Navigate to Line ===
   const handleNavigateToLine = useCallback((lineNumber: number) => {

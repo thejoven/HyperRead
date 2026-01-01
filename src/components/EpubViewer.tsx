@@ -100,6 +100,14 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
           console.log('EpubViewer: Fetching from blob URL')
           const response = await fetch(data)
           epubData = await response.arrayBuffer()
+        } else if (data.startsWith('/') || data.match(/^[A-Z]:\\/i)) {
+          // Handle local file path (from file association/Electron)
+          // Convert to file:// URL
+          const fileUrl = `file://${data.replace(/\\/g, '/')}`
+          console.log('EpubViewer: Fetching from local file:', fileUrl)
+          const response = await fetch(fileUrl)
+          if (!response.ok) throw new Error(`Failed to load file: ${response.statusText}`)
+          epubData = await response.arrayBuffer()
         } else {
           // Handle base64 data (from file dialog)
           console.log('EpubViewer: Converting base64 data to ArrayBuffer')
@@ -114,7 +122,14 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
             epubData = bytes.buffer
           } catch (decodeError) {
             console.error('EpubViewer: Failed to decode base64:', decodeError)
-            throw new Error('无法解码 EPUB 数据')
+            // Fallback: try treating as URL if base64 fails
+            try {
+               console.log('EpubViewer: Base64 decode failed, trying as URL')
+               const response = await fetch(data)
+               epubData = await response.arrayBuffer()
+            } catch (fetchError) {
+               throw new Error('无法解码 EPUB 数据或加载文件')
+            }
           }
         }
 

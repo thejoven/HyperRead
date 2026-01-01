@@ -10,6 +10,7 @@ interface DraggedFile {
   fullPath: string
   name: string
   fileType?: FileType
+  systemPath?: string
 }
 
 interface UseDragDropOptions {
@@ -20,7 +21,8 @@ interface UseDragDropOptions {
     directoryEntries: FileSystemDirectoryEntry[],
     directoryNames: string[],
     allFiles: DraggedFile[],
-    firstFileData: FileData | null
+    firstFileData: FileData | null,
+    systemRootPath?: string | null
   ) => void
 }
 
@@ -92,7 +94,8 @@ async function processDirectoryEntry(
                     file: file,
                     fullPath: entry.fullPath,
                     name: entry.name,
-                    fileType: fileType
+                    fileType: fileType,
+                    systemPath: 'path' in file ? (file as any).path : undefined
                   })
                 } catch (error) {
                   console.warn(`${indent}React: Failed to read file:`, entry.name, error)
@@ -169,7 +172,8 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
                 file: file,
                 fullPath: entry.fullPath,
                 name: entry.name,
-                fileType: getFileType(entry.name)
+                fileType: getFileType(entry.name),
+                systemPath: 'path' in file ? (file as any).path : undefined
               })
               console.log(`React: Added file: ${entry.name} (type: ${getFileType(entry.name)})`)
             }
@@ -211,21 +215,31 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
 
         // Create file infos
         const fileInfos: FileInfo[] = allFiles.map(fileData => {
+          // relativePath is based on the virtual path structure for display/tree
           const relativePath = fileData.fullPath.replace(/^\//, '')
           const directory = relativePath.includes('/') ?
             relativePath.substring(0, relativePath.lastIndexOf('/')) : '.'
 
+          // Use the system path if available (crucial for Electron to read the actual file)
+          // Otherwise fall back to virtual path (which might fail in Electron fs.readFile)
+          let actualPath = fileData.systemPath || fileData.fullPath
+          
+          // Normalize path separators to forward slashes for consistency
+          if (actualPath) {
+            actualPath = actualPath.replace(/\\/g, '/')
+          }
+
           return {
             name: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
             fileName: fileData.name,
-            fullPath: fileData.fullPath,
+            fullPath: actualPath,
             relativePath: relativePath,
             directory: directory,
             fileType: getFileType(fileData.name)
           }
         })
 
-        // Cache all file contents
+        // Cache all file contents using system path as key if available
         const fileContentsCache: Record<string, string> = {}
         for (const fileData of allFiles) {
           try {
@@ -239,10 +253,83 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
               content = await readFileContent(fileData.file)
               console.log(`React: Cached content for file: ${fileData.name}`)
             }
-
-            fileContentsCache[fileData.fullPath] = content
+            
+            // Use system path for cache key to match fileInfos
+            let cacheKey = fileData.systemPath || fileData.fullPath
+            if (cacheKey) cacheKey = cacheKey.replace(/\\/g, '/')
+            
+            fileContentsCache[cacheKey] = content
           } catch (error) {
             console.error(`React: Failed to read content for ${fileData.name}:`, error)
+          }
+        }
+
+        // Calculate system root path if possible
+        let systemRootPath: string | null = null
+
+        // Method 1: Check e.dataTransfer.files directly (works in Electron for dropped folders)
+        if (directories.length === 1 && e.dataTransfer?.files?.length) {
+          const droppedDirName = directories[0]
+          console.log(`React: Checking e.dataTransfer.files for system path of "${droppedDirName}"`)
+          
+          for (let i = 0; i < e.dataTransfer.files.length; i++) {
+            const file = e.dataTransfer.files[i]
+            // In Electron, File objects have a 'path' property
+            const filePath = (file as any).path
+            // Case insensitive name check
+            if (filePath && file.name.toLowerCase() === droppedDirName.toLowerCase()) {
+              systemRootPath = filePath
+              // Normalize path separators
+              systemRootPath = systemRootPath!.replace(/\\/g, '/')
+              console.log(`React: Found system root path in dataTransfer: ${systemRootPath}`)
+              break
+            }
+          }
+        }
+
+        // Method 2: Deduce from child files (Fallback)
+        if (!systemRootPath && directories.length === 1 && allFiles.length > 0) {
+          const droppedDirName = directories[0]
+          console.log(`React: Attempting to deduce system root path for dropped folder: "${droppedDirName}"`)
+
+          // Simple path helpers for browser environment
+          const getDirname = (p: string) => {
+            const separator = p.includes('\\') ? '\\' : '/'
+            return p.substring(0, p.lastIndexOf(separator))
+          }
+          const getBasename = (p: string) => {
+            const separator = p.includes('\\') ? '\\' : '/'
+            return p.substring(p.lastIndexOf(separator) + 1)
+          }
+
+          // Try to deduce root path from any file that has a system path
+          for (const file of allFiles) {
+            if (file.systemPath) {
+              let currentPath = file.systemPath
+              // Normalize before processing
+              currentPath = currentPath.replace(/\\/g, '/')
+              let found = false
+              
+              // Walk up at most 10 levels to prevent infinite loops
+              for (let i = 0; i < 10; i++) {
+                currentPath = getDirname(currentPath)
+                if (!currentPath || currentPath === file.systemPath) break // Reached root or no change
+                
+                const base = getBasename(currentPath)
+                if (base.toLowerCase() === droppedDirName.toLowerCase()) {
+                  systemRootPath = currentPath
+                  found = true
+                  console.log(`React: Found matching system path for "${droppedDirName}": ${systemRootPath}`)
+                  break
+                }
+              }
+              
+              if (found) break
+            }
+          }
+          
+          if (!systemRootPath) {
+            console.warn('React: Failed to deduce system root path. Refresh functionality may be limited.')
           }
         }
 
@@ -255,13 +342,17 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
         let firstFileData: FileData | null = null
         if (allFiles.length > 0) {
           const firstFile = allFiles[0]
-          const content = fileContentsCache[firstFile.fullPath]
+          // Construct the key used for cache
+          let cacheKey = firstFile.systemPath || firstFile.fullPath
+          if (cacheKey) cacheKey = cacheKey.replace(/\\/g, '/')
+            
+          const content = fileContentsCache[cacheKey]
           if (content) {
             const fileType = getFileType(firstFile.name)
             firstFileData = {
               content: content,
               fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
-              filePath: firstFile.fullPath,
+              filePath: cacheKey, // Use the system path (or virtual if system missing)
               fileType: fileType
             }
           }
@@ -273,7 +364,8 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
           directoryEntries,
           directories,
           allFiles,
-          firstFileData
+          firstFileData,
+          systemRootPath
         )
 
         console.log('React: Directory mode setup complete')
