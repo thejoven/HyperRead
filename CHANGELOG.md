@@ -5,6 +5,19 @@ All notable changes to HyperRead will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.1] - 2025-12-29
+
+### 🐛 Bug Fixes
+- 📁 **Enhanced Directory Refresh** - Fixed "Need to reload files" error by implementing robust system path deduction for dragged folders in Electron.
+- 📚 **EPUB Association Fix** - Resolved a main process crash when opening large EPUB files via system file association by passing file paths instead of full content.
+- 🎯 **Path Consistency** - Ensured absolute system paths are used throughout the application for reliable file reading and monitoring.
+
+## [5.1.0] - 2025-12-20
+
+### ✨ New Features
+- 🚀 **Major Version Update** - Optimized performance and stability for Markdown, PDF, and EPUB reading.
+- 🎨 **UI Refinements** - Further polished the macOS-style interface and transitions.
+
 ## [2.2.0] - 2025-09-30
 
 ### 🎨 UI/UX Major Improvements

@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-5.1.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.1.1-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -50,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.1.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.1.1-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-5.1.0-arm64.dmg` 安装包
+1. 下载 `HyperRead-5.1.1-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -258,33 +258,14 @@ npm run lint              # ESLint 检查
 
 ## 📝 最新更新
 
-### 🎉 版本 5.1.0（最新）
+### 🎉 版本 5.1.1（最新）
 
-**主要更新：**
-- 📚 **EPUB 拖拽支持** - 直接拖拽 EPUB 和 PDF 文件到应用即可即时查看
-- 📏 **自适应 EPUB 宽度** - EPUB 内容现在支持响应内容宽度设置（窄/中等/宽/全宽）
-- ⌨️ **修复键盘快捷键** - 解决 EPUB 阅读器中的 passive 事件监听器警告
-- 🔄 **智能布局重排** - 修改宽度或字体大小时 EPUB 自动调整布局并保持阅读位置
+**关键修复：**
+- 📁 **原生目录刷新** - 为拖拽的文件夹实现了健壮的系统路径追踪，支持原生"刷新"功能而无需重新拖拽。
+- 📚 **EPUB 关联崩溃修复** - 通过优化 IPC 数据传输，解决了通过"打开方式"打开大型 EPUB 文件时的主进程崩溃问题。
+- 🎯 **可靠的文件读取** - 在所有文件操作中一致使用绝对系统路径，确保在外部修改后能正确加载文档内容。
 
-**EPUB 阅读器增强：**
-- 内容宽度设置现在应用于 EPUB 文件，具有正确的容器尺寸
-- 基于 CFI 的位置恢复，自动重新计算布局
-- 布局调整期间显示加载指示器，提升用户体验
-- 根据内容宽度优化内边距，实现舒适阅读
-
-**文件处理改进：**
-- 增强 drag-drop.js 以支持 EPUB (.epub) 和 PDF (.pdf) 文件
-- 为二进制文件（PDF/EPUB）生成 Blob URL 用于拖拽操作
-- 正确的文件类型检测和所有支持格式的缓存
-- 修复多文件场景下的文件路径处理
-
-**技术改进：**
-- 为键盘事件监听器添加 `{ passive: false }` 以启用 preventDefault
-- 从 passive 的 epub.js iframe 监听器中移除 preventDefault
-- 实现带初始加载检测的智能 resize 逻辑
-- 在宽度/字体大小改变期间使用 CFI 保持位置
-
-### 版本 5.0.0
+### 版本 5.1.0
 
 **主要更新：**
 - 📖 **EPUB 阅读进度记忆** - 自动保存阅读位置，重新打开书籍时显示优雅的恢复对话框

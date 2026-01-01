@@ -11,7 +11,7 @@ A beautiful macOS-style document reader supporting Markdown, PDF, and EPUB, buil
 
 <a href="https://www.producthunt.com/products/hyperread?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-hyperread" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1032883&theme=light&t=1761980700711" alt="HyperRead - HyperRead&#0032;Read&#0032;smarter&#0046;&#0032;Read&#0032;faster&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-[![Version](https://img.shields.io/badge/version-5.1.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.1.1-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -53,11 +53,11 @@ English | [简体中文](./README-zh.md)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.1.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.1.1-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. Download `HyperRead-5.1.0-arm64.dmg` installer
+1. Download `HyperRead-5.1.1-arm64.dmg` installer
 2. Double-click the DMG file
 3. Drag HyperRead to Applications folder
 4. First run may require permission in "System Preferences > Security & Privacy"
@@ -261,33 +261,14 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 
 ## 📝 What's New
 
-### 🎉 Version 5.1.0 (Latest)
+### 🎉 Version 5.1.1 (Latest)
 
-**Major Updates:**
-- 📚 **EPUB Drag & Drop Support** - Drag EPUB and PDF files directly into the app for instant viewing
-- 📏 **Adaptive EPUB Width** - EPUB content now responds to content width settings (narrow/medium/wide/full)
-- ⌨️ **Fixed Keyboard Shortcuts** - Resolved passive event listener warnings in EPUB reader
-- 🔄 **Smart Layout Reflow** - EPUB automatically adjusts layout when changing width or font size while preserving reading position
+**Critical Fixes:**
+- 📁 **Native Directory Refresh** - Implemented robust system path tracking for dragged folders, enabling native "Refresh" functionality without re-dragging.
+- 📚 **EPUB Association Crash Fix** - Resolved a main process crash when opening large EPUB files via "Open With" by optimizing IPC data transfer.
+- 🎯 **Reliable File Reading** - Consistently use absolute system paths for all file operations to ensure document content loads correctly after external modifications.
 
-**EPUB Reader Enhancements:**
-- Content width settings now apply to EPUB files with proper container sizing
-- Automatic layout recalculation with CFI-based position restoration
-- Loading indicator during layout adjustments for better UX
-- Optimized padding based on content width for comfortable reading
-
-**File Handling Improvements:**
-- Enhanced drag-drop.js to support EPUB (.epub) and PDF (.pdf) files
-- Blob URL generation for binary files (PDF/EPUB) in drag operations
-- Proper file type detection and caching for all supported formats
-- Fixed file path handling in multi-file scenarios
-
-**Technical Improvements:**
-- Added `{ passive: false }` to keyboard event listeners to enable preventDefault
-- Removed preventDefault from passive epub.js iframe listeners
-- Implemented smart resize logic with initial load detection
-- Position preservation using CFI during width/fontSize changes
-
-### Version 5.0.0
+### Version 5.1.0
 
 **Major Updates:**
 - 📖 **EPUB Reading Progress Memory** - Auto-save reading position with elegant resume dialog when reopening books
