@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { List, X, ChevronRight, Search } from 'lucide-react'
+import { List, X, ChevronRight, Search, MoreVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -62,25 +62,18 @@ export default function TableOfContents({ content, className }: TableOfContentsP
   const t = useT()
 
   // 状态管理
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isPanelExpanded, setIsPanelExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [activeHeading, setActiveHeading] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
 
   // Refs
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const observerRef = useRef<IntersectionObserver | null>(null)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const collapseTimerRef = useRef<NodeJS.Timeout | null>(null)
   const lastScrollDirection = useRef<'up' | 'down'>('down')
   const lastScrollY = useRef(0)
 
   const headings = useMemo(() => extractHeadings(content), [content])
-
-  // 屏幕尺寸判断 - 更精确的响应式逻辑
-  const isCompactMode = useMemo(() => {
-    return viewportSize.width < 1200 || viewportSize.height < 700
-  }, [viewportSize])
 
   // 过滤标题
   const filteredHeadings = useMemo(() => {
@@ -89,24 +82,6 @@ export default function TableOfContents({ content, className }: TableOfContentsP
       heading.text.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [headings, searchTerm])
-
-  // 精确的屏幕尺寸检测
-  useEffect(() => {
-    const updateViewportSize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      setViewportSize({ width, height })
-
-      // 自动调整面板状态 - 只在小屏时收起，不自动展开
-      if (width < 1200 || height < 700) {
-        setIsPanelExpanded(false)
-      }
-    }
-
-    updateViewportSize()
-    window.addEventListener('resize', updateViewportSize)
-    return () => window.removeEventListener('resize', updateViewportSize)
-  }, [])
 
   // 高精度滚动检测和标题高亮
   const updateActiveHeading = useCallback(() => {
@@ -224,17 +199,30 @@ export default function TableOfContents({ content, className }: TableOfContentsP
       })
     }
 
-    // 关闭模态框
-    if (isCompactMode) {
-      setIsModalOpen(false)
-    }
-
     // 暂时设置为活跃状态以提供即时反馈
     setActiveHeading(headingId)
-  }, [isCompactMode])
+  }, [])
+
+  // 自动收起处理
+  const scheduleCollapse = useCallback(() => {
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current)
+    collapseTimerRef.current = setTimeout(() => {
+      setIsExpanded(false)
+    }, 500)
+  }, [])
+
+  const cancelCollapse = useCallback(() => {
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current)
+    }
+  }, [])
 
   // 渲染头部区域
-  const renderHeader = useCallback((isModal = false) => (
+  const renderHeader = useCallback(() => (
     <div className="flex items-center gap-2 p-3 bg-background/98 backdrop-blur-md border-b border-border/40">
       {/* Search */}
       <div className="relative flex-1">
@@ -262,7 +250,7 @@ export default function TableOfContents({ content, className }: TableOfContentsP
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => isModal ? setIsModalOpen(false) : setIsPanelExpanded(false)}
+        onClick={() => setIsExpanded(false)}
         className="h-8 w-8 p-0 hover:bg-muted/70 transition-colors flex-shrink-0"
         title={t('tableOfContents.collapse')}
       >
@@ -298,17 +286,17 @@ export default function TableOfContents({ content, className }: TableOfContentsP
 
         return (
           <div
+            key={`${heading.id}-${index}`}
             className="w-full flex"
             style={{ paddingLeft: `${8 + indentLevel}px` }}
           >
             <button
-              key={`${heading.id}-${index}`}
               onClick={() => scrollToHeading(heading.id)}
               className={cn(
                 "inline-flex items-center gap-2 text-left text-xs transition-all duration-200 rounded-md mb-0.5",
                 "hover:bg-muted/70 active:scale-[0.98]",
                 "border border-transparent hover:border-border/30",
-                "min-w-0 overflow-hidden px-2 py-1.5", // 内联宽度 + 内边距
+                "min-w-0 overflow-hidden px-2 py-1.5",
                 isActive && "bg-primary/10 text-primary font-medium border-primary/20 shadow-sm ring-1 ring-primary/10",
                 !isActive && "text-foreground/90 hover:text-foreground"
               )}
@@ -322,7 +310,7 @@ export default function TableOfContents({ content, className }: TableOfContentsP
             />
             <span className={cn(
               "truncate transition-colors leading-relaxed min-w-0 flex-1",
-              "break-all overflow-hidden", // 强制截断超长文本
+              "break-all overflow-hidden",
               heading.level === 1 && "font-semibold text-xs",
               heading.level === 2 && "font-medium text-xs",
               heading.level === 3 && "text-xs",
@@ -360,82 +348,45 @@ export default function TableOfContents({ content, className }: TableOfContentsP
     return null
   }
 
-  // 紧凑模式：显示按钮 + 模态框
-  if (isCompactMode) {
-    return (
-      <>
-        {/* 触发按钮 */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsModalOpen(true)}
-          className={cn(
-            "fixed bottom-4 right-4 z-40 shadow-lg bg-background/95 backdrop-blur-md border-border/60",
-            "hover:bg-muted/80 hover:border-border transition-all duration-300",
-            "h-10 w-10 p-0 rounded-full",
-            className
-          )}
-          title={`${t('tableOfContents.openToc')} (${t('tableOfContents.itemsCount', { count: filteredHeadings.length })})`}
-        >
-          <List className="h-4 w-4" />
-        </Button>
-
-        {/* 模态框 */}
-        {isModalOpen && (
-          <>
-            {/* 背景遮罩 */}
-            <div
-              className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm animate-in fade-in-0 duration-200"
-              onClick={() => setIsModalOpen(false)}
-            />
-
-            {/* 目录内容 */}
-            <div className="fixed inset-4 z-50 flex items-center justify-center animate-in zoom-in-95 duration-300">
-              <div className="w-full max-w-md max-h-[85vh] bg-background rounded-xl shadow-2xl border border-border/60 overflow-hidden">
-                {renderHeader(true)}
-                <CustomScrollArea className="flex-1 min-h-0 max-h-[calc(85vh-4rem)]">
-                  {renderHeadings()}
-                </CustomScrollArea>
-              </div>
-            </div>
-          </>
-        )}
-      </>
-    )
-  }
-
-  // 大屏模式：可折叠面板
-  if (!isPanelExpanded) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsPanelExpanded(true)}
-        className={cn(
-          "fixed bottom-4 right-4 z-40 shadow-lg bg-background/95 backdrop-blur-md border-border/60",
-          "hover:bg-muted/80 hover:border-border transition-all duration-300",
-          "h-10 w-10 p-0 rounded-full animate-in zoom-in-95 duration-200",
-          className
-        )}
-        title={`${t('tableOfContents.expandToc')} (${t('tableOfContents.itemsCount', { count: filteredHeadings.length })})`}
-      >
-        <List className="h-4 w-4" />
-      </Button>
-    )
-  }
-
-  // 大屏展开面板
   return (
-    <div className={cn(
-      "fixed bottom-4 right-4 z-40 bg-background/98 backdrop-blur-md border border-border/60 rounded-xl shadow-xl",
-      "w-64 max-h-[calc(100vh-6rem)] overflow-hidden",
-      "animate-in slide-in-from-bottom-4 duration-400",
-      className
-    )}>
-      {renderHeader(false)}
-      <CustomScrollArea className="flex-1 min-h-0 max-h-[calc(100vh-12rem)]">
-        {renderHeadings()}
-      </CustomScrollArea>
+    <div
+      className={cn("absolute right-0 top-1/2 -translate-y-1/2 z-40 flex items-center", className)}
+      onMouseEnter={cancelCollapse}
+      onMouseLeave={scheduleCollapse}
+    >
+      {/* 展开面板 */}
+      <div
+        className={cn(
+          "absolute right-6 top-1/2 -translate-y-1/2",
+          "bg-background/98 backdrop-blur-md border border-border/60 rounded-xl shadow-xl",
+          "w-60 max-h-[70vh] overflow-hidden",
+          "transition-all duration-300 ease-in-out origin-right",
+          isExpanded
+            ? "opacity-100 scale-x-100 pointer-events-auto"
+            : "opacity-0 scale-x-0 pointer-events-none"
+        )}
+      >
+        {renderHeader()}
+        <CustomScrollArea className="flex-1 min-h-0 max-h-[calc(70vh-4rem)]">
+          {renderHeadings()}
+        </CustomScrollArea>
+      </div>
+
+      {/* 省略号指示器胶囊 */}
+      <button
+        onClick={() => setIsExpanded(v => !v)}
+        onMouseEnter={() => { cancelCollapse(); setIsExpanded(true) }}
+        className={cn(
+          "flex flex-col items-center justify-center gap-0.5",
+          "w-5 h-16 rounded-l-md",
+          "bg-background/80 backdrop-blur-sm border border-r-0 border-border/40 shadow-md",
+          "transition-opacity duration-200",
+          isExpanded ? "opacity-80" : "opacity-30 hover:opacity-70"
+        )}
+        title={`${t('tableOfContents.openToc')} (${t('tableOfContents.itemsCount', { count: filteredHeadings.length })})`}
+      >
+        <MoreVertical className="h-3.5 w-3.5 text-foreground/70" />
+      </button>
     </div>
   )
 }

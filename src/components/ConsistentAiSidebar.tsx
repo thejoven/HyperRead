@@ -274,9 +274,7 @@ export default function ConsistentAiSidebar({ isOpen, onClose, currentDocument, 
   return (
     <div
       ref={elementRef}
-      className={`fixed top-14 right-0 h-[calc(100vh-56px)] z-40 macos-sidebar flex border-l border-border transition-transform duration-300 ease-in-out overflow-hidden ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}
+      className="fixed top-14 right-0 h-[calc(100vh-56px)] z-40 macos-sidebar flex border-l border-border overflow-hidden translate-x-0"
       style={{ width: `${width}px` }}
     >
       {/* Resize handle - 左侧拖动条 */}

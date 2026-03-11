@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, startTransition } from 'react'
+import { useState, useEffect, useCallback, startTransition, lazy, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import FileList from '@/components/FileList'
 import SettingsModal from '@/components/SettingsModal'
-import ConsistentAiSidebar from '@/components/ConsistentAiSidebar'
+const ConsistentAiSidebar = lazy(() => import('@/components/ConsistentAiSidebar'))
 import { Toaster } from '@/components/ui/sonner'
 import { FileText, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT } from '@/lib/i18n'
@@ -588,17 +588,21 @@ export default function ElectronApp() {
       />
 
       {/* AI Assistant Sidebar */}
-      <ConsistentAiSidebar
-        isOpen={showAiAssistant}
-        onClose={() => setShowAiAssistant(false)}
-        currentDocument={fileData ? {
-          fileName: fileData.fileName,
-          content: fileData.content,
-          filePath: fileData.filePath
-        } : undefined}
-        width={settings.aiSidebarWidth}
-        onWidthChange={settings.setAiSidebarWidth}
-      />
+      {showAiAssistant && (
+        <Suspense fallback={null}>
+          <ConsistentAiSidebar
+            isOpen={showAiAssistant}
+            onClose={() => setShowAiAssistant(false)}
+            currentDocument={fileData ? {
+              fileName: fileData.fileName,
+              content: fileData.content,
+              filePath: fileData.filePath
+            } : undefined}
+            width={settings.aiSidebarWidth}
+            onWidthChange={settings.setAiSidebarWidth}
+          />
+        </Suspense>
+      )}
 
       {/* Toast notifications */}
       <Toaster />
