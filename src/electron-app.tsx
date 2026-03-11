@@ -77,15 +77,14 @@ export default function ElectronApp() {
   })
 
   // === Drag Drop Handlers ===
-  const handleSingleFileDrop = useCallback((data: FileData) => {
-    tabs.replaceTabWithData(data)
+  const handleFileDrop = useCallback((data: FileData) => {
+    tabs.resetTabsWithData(data)
     startTransition(() => {
       setFileData(data)
     })
     directory.setIsDirectoryMode(false)
     directory.setIsEnhancedDragMode(false)
-    addRecentItem({ type: 'file', filePath: data.filePath, fileName: data.fileName, fileType: data.fileType })
-  }, [tabs, directory, addRecentItem])
+  }, [tabs, directory])
 
   const handleDirectoryDrop = useCallback((dirData: DirectoryData, fileContentsCache: Record<string, string>, directoryEntries: FileSystemDirectoryEntry[], directoryNames: string[], allFiles: any[], firstFileData: FileData | null, systemRootPath?: string | null) => {
     // Use resetTabsWithCache to atomically set the initial tab and populate the full cache
