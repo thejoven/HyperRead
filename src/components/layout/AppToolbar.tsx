@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import DocumentTabs from '@/components/DocumentTabs'
-import { FileText, Folder, Settings, MessageSquare, PanelLeft } from 'lucide-react'
+import { FileText, Folder, Settings, MessageSquare, PanelLeft, Home } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import type { TabInfo } from '@/hooks/use-tabs'
 
@@ -22,6 +22,7 @@ interface AppToolbarProps {
   onOpenSettings: () => void
   loading: boolean
   isDirectoryMode: boolean // Show sidebar toggle only in directory mode
+  onGoHome: () => void
 }
 
 export default function AppToolbar({
@@ -38,7 +39,8 @@ export default function AppToolbar({
   onToggleAiAssistant,
   onOpenSettings,
   loading,
-  isDirectoryMode
+  isDirectoryMode,
+  onGoHome
 }: AppToolbarProps) {
   const t = useT()
 
@@ -51,6 +53,19 @@ export default function AppToolbar({
         ) : (
           <div className="w-2 flex-shrink-0" />
         )}
+
+        {/* Home button - always visible */}
+        <div className="no-drag">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGoHome}
+            className="h-7 w-7 p-0 macos-button ml-1"
+            title={t('ui.buttons.home')}
+          >
+            <Home className="h-3.5 w-3.5" />
+          </Button>
+        </div>
 
         {/* Sidebar toggle button - only show in directory mode */}
         {isDirectoryMode && (

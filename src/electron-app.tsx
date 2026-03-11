@@ -32,6 +32,7 @@ import RefreshHintModal from '@/components/screens/RefreshHintModal'
 import type { FileData } from '@/types/file'
 import type { FileInfo, DirectoryData } from '@/types/directory'
 import '@/types/electron' // Import for global declaration
+import { recentItemsService, type RecentItem } from '@/lib/recent-items'
 
 export default function ElectronApp() {
   const t = useT()
@@ -42,6 +43,18 @@ export default function ElectronApp() {
   const isFullScreen = useFullscreen()
   const directory = useDirectory()
   const tabs = useTabs()
+
+  // === Recent Items State ===
+  const [recentItems, setRecentItems] = useState<RecentItem[]>(() => recentItemsService.getAll())
+
+  const refreshRecentItems = useCallback(() => {
+    setRecentItems(recentItemsService.getAll())
+  }, [])
+
+  const addRecentItem = useCallback((item: Omit<RecentItem, 'openedAt'>) => {
+    recentItemsService.add(item)
+    refreshRecentItems()
+  }, [refreshRecentItems])
 
   // === Local State ===
   const [fileData, setFileData] = useState<FileData | null>(null)
@@ -71,7 +84,8 @@ export default function ElectronApp() {
     })
     directory.setIsDirectoryMode(false)
     directory.setIsEnhancedDragMode(false)
-  }, [tabs, directory])
+    addRecentItem({ type: 'file', filePath: data.filePath, fileName: data.fileName, fileType: data.fileType })
+  }, [tabs, directory, addRecentItem])
 
   const handleDirectoryDrop = useCallback((dirData: DirectoryData, fileContentsCache: Record<string, string>, directoryEntries: FileSystemDirectoryEntry[], directoryNames: string[], allFiles: any[], firstFileData: FileData | null, systemRootPath?: string | null) => {
     // Use resetTabsWithCache to atomically set the initial tab and populate the full cache
@@ -92,7 +106,11 @@ export default function ElectronApp() {
         setFileData(firstFileData)
       })
     }
-  }, [tabs, directory])
+    if (systemRootPath) {
+      const dirName = systemRootPath.split('/').filter(Boolean).pop() || systemRootPath
+      addRecentItem({ type: 'directory', filePath: systemRootPath, fileName: dirName })
+    }
+  }, [tabs, directory, addRecentItem])
 
   // === Drag Drop Hook ===
   const { isDragOver } = useDragDrop({
@@ -144,13 +162,14 @@ export default function ElectronApp() {
       startTransition(() => {
         setFileData(data)
       })
+      addRecentItem({ type: 'file', filePath: data.filePath, fileName: data.fileName, fileType: data.fileType })
     } catch (error) {
       console.error('Failed to load file:', error)
       toast.error('文件加载失败: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
-  }, [tabs])
+  }, [tabs, addRecentItem])
 
   const handleOpenFile = useCallback(async () => {
     if (!window.electronAPI) return
@@ -164,6 +183,7 @@ export default function ElectronApp() {
         })
         directory.setIsDirectoryMode(false)
         directory.setDirectoryData(null)
+        addRecentItem({ type: 'file', filePath: data.filePath, fileName: data.fileName, fileType: data.fileType })
       }
     } catch (error) {
       console.error('Failed to open file:', error)
@@ -171,7 +191,7 @@ export default function ElectronApp() {
     } finally {
       setLoading(false)
     }
-  }, [tabs, directory])
+  }, [tabs, directory, addRecentItem])
 
   const handleOpenDirectory = useCallback(async () => {
     if (!window.electronAPI) return
@@ -191,19 +211,22 @@ export default function ElectronApp() {
         directory.setShowRefreshHint(false)
         directory.setIsEnhancedDragMode(false)
         directory.setIsDirectoryMode(true)
-        
+
         // Auto select first file
         const firstFile = data.files[0]
-        
+
         // Use directory.loadFileFromDirectory directly to pass replaceTabWithData
         // This ensures the first file replaces any potential lingering state (or just sets the initial state cleanly)
         await directory.loadFileFromDirectory(
           firstFile,
           tabs.cache,
           setFileData,
-          tabs.replaceTabWithData, 
+          tabs.replaceTabWithData,
           setLoading
         )
+
+        const dirName = data.rootPath.split('/').filter(Boolean).pop() || data.rootPath
+        addRecentItem({ type: 'directory', filePath: data.rootPath, fileName: dirName })
       } else if (data && data.files.length === 0) {
         toast.error('该文件夹中没有找到 Markdown 文件')
       }
@@ -213,7 +236,7 @@ export default function ElectronApp() {
     } finally {
       setLoading(false)
     }
-  }, [tabs, directory])
+  }, [tabs, directory, addRecentItem])
 
   const loadFileFromDirectory = useCallback(async (fileInfo: FileInfo) => {
     const setFileDataTransition = (data: FileData) => startTransition(() => setFileData(data))
@@ -229,6 +252,54 @@ export default function ElectronApp() {
   const handleRefresh = useCallback(async () => {
     await directory.handleRefresh(tabs.cache, tabs.setCacheBulk)
   }, [directory, tabs])
+
+  // === Home Handler ===
+  const handleGoHome = useCallback(() => {
+    setFileData(null)
+    directory.setIsDirectoryMode(false)
+    directory.setDirectoryData(null)
+  }, [directory])
+
+  // === Open Recent Handler ===
+  const handleOpenRecent = useCallback(async (item: RecentItem) => {
+    if (item.type === 'file') {
+      try {
+        await loadFile(item.filePath)
+      } catch {
+        toast.error(t('ui.messages.openFailed'))
+        recentItemsService.remove(item.filePath)
+        refreshRecentItems()
+      }
+    } else {
+      if (!window.electronAPI?.scanDirectory) return
+      setLoading(true)
+      try {
+        const data = await window.electronAPI.scanDirectory(item.filePath)
+        if (data && data.files.length > 0) {
+          tabs.clearTabs()
+          directory.setDirectoryData(data)
+          directory.setActualRootPath(data.rootPath)
+          directory.setDraggedDirectoryEntries([])
+          directory.setDraggedDirectoryNames([])
+          directory.setLastDraggedFiles([])
+          directory.setShowRefreshHint(false)
+          directory.setIsEnhancedDragMode(false)
+          directory.setIsDirectoryMode(true)
+          const firstFile = data.files[0]
+          await directory.loadFileFromDirectory(firstFile, tabs.cache, setFileData, tabs.replaceTabWithData, setLoading)
+          addRecentItem({ type: 'directory', filePath: item.filePath, fileName: item.fileName })
+        } else {
+          toast.error(t('ui.messages.openFailed'))
+        }
+      } catch {
+        toast.error(t('ui.messages.openFailed'))
+        recentItemsService.remove(item.filePath)
+        refreshRecentItems()
+      } finally {
+        setLoading(false)
+      }
+    }
+  }, [loadFile, tabs, directory, addRecentItem, refreshRecentItems, t])
 
   // === Search Shortcuts ===
   useEffect(() => {
@@ -362,6 +433,7 @@ export default function ElectronApp() {
         onOpenSettings={() => setShowSettings(true)}
         loading={loading}
         isDirectoryMode={directory.isDirectoryMode}
+        onGoHome={handleGoHome}
       />
 
       {/* Main Content */}
@@ -491,6 +563,9 @@ export default function ElectronApp() {
             isDragOver={isDragOver}
             onOpenFile={handleOpenFile}
             onOpenDirectory={handleOpenDirectory}
+            recentItems={recentItems}
+            onOpenRecent={handleOpenRecent}
+            onClearRecent={() => { recentItemsService.clear(); refreshRecentItems() }}
           />
         )}
 

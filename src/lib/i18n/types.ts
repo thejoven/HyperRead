@@ -29,6 +29,7 @@ export interface Translations {
       collapseSidebar: string
       toggleTheme: string
       refreshFiles: string
+      home: string
     }
     messages: {
       selectFile: string
@@ -44,6 +45,10 @@ export interface Translations {
       noMatchingFiles: string
       processing: string
       cannotRefreshDragMode: string
+      recentItems: string
+      noRecentItems: string
+      clearRecent: string
+      openFailed: string
     }
     placeholders: {
       searchFiles: string
