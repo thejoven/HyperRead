@@ -1,11 +1,21 @@
 'use client'
 
-import PdfViewerSimple from '@/components/PdfViewerSimple'
-import EpubViewer from '@/components/EpubViewer'
+import React, { Suspense } from 'react'
 import MarkdownContentWrapper from '@/components/MarkdownContentWrapper'
 import SearchPanel from '@/components/SearchPanel'
 import type { FileData } from '@/types/file'
 import type { ContentWidth } from '@/hooks/use-settings'
+
+const PdfViewerSimple = React.lazy(() => import('@/components/PdfViewerSimple'))
+const EpubViewer = React.lazy(() => import('@/components/EpubViewer'))
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  )
+}
 
 export interface SearchOptions {
   caseSensitive: boolean
@@ -45,26 +55,30 @@ export default function DocumentContent({
   // PDF Viewer
   if (fileData.fileType === 'pdf') {
     return (
-      <PdfViewerSimple
-        data={fileData.content}
-        fileName={fileData.fileName}
-        filePath={fileData.filePath}
-        className={`h-full ${className}`}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <PdfViewerSimple
+          data={fileData.content}
+          fileName={fileData.fileName}
+          filePath={fileData.filePath}
+          className={`h-full ${className}`}
+        />
+      </Suspense>
     )
   }
 
   // EPUB Viewer
   if (fileData.fileType === 'epub') {
     return (
-      <EpubViewer
-        data={fileData.content}
-        fileName={fileData.fileName}
-        filePath={fileData.filePath}
-        className={`h-full ${className}`}
-        fontSize={fontSize}
-        contentWidth={contentWidth}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <EpubViewer
+          data={fileData.content}
+          fileName={fileData.fileName}
+          filePath={fileData.filePath}
+          className={`h-full ${className}`}
+          fontSize={fontSize}
+          contentWidth={contentWidth}
+        />
+      </Suspense>
     )
   }
 

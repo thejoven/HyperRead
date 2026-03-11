@@ -42,51 +42,43 @@ const DEFAULTS = {
 } as const
 
 export function useSettings(): UseSettingsReturn {
-  const [fontSize, setFontSizeState] = useState<number>(DEFAULTS.fontSize)
-  const [contentWidth, setContentWidthState] = useState<ContentWidth>(DEFAULTS.contentWidth)
-  const [primaryColor, setPrimaryColorState] = useState<PrimaryColor>(DEFAULTS.primaryColor)
-  const [isSidebarCollapsed, setIsSidebarCollapsedState] = useState<boolean>(DEFAULTS.sidebarCollapsed)
-  const [sidebarWidth, setSidebarWidthState] = useState<number>(DEFAULTS.sidebarWidth)
-  const [aiSidebarWidth, setAiSidebarWidthState] = useState<number>(DEFAULTS.aiSidebarWidth)
+  const [fontSize, setFontSizeState] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.fontSize)
+    return saved ? parseInt(saved, 10) : DEFAULTS.fontSize
+  })
 
-  // Load settings from localStorage on mount
-  useEffect(() => {
-    const savedFontSize = localStorage.getItem(STORAGE_KEYS.fontSize)
-    if (savedFontSize) {
-      setFontSizeState(parseInt(savedFontSize, 10))
-    }
+  const [contentWidth, setContentWidthState] = useState<ContentWidth>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.contentWidth)
+    return saved ? (saved as ContentWidth) : DEFAULTS.contentWidth
+  })
 
-    const savedContentWidth = localStorage.getItem(STORAGE_KEYS.contentWidth)
-    if (savedContentWidth) {
-      setContentWidthState(savedContentWidth as ContentWidth)
-    }
+  const [primaryColor, setPrimaryColorState] = useState<PrimaryColor>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.primaryColor)
+    return saved ? (saved as PrimaryColor) : DEFAULTS.primaryColor
+  })
 
-    const savedPrimaryColor = localStorage.getItem(STORAGE_KEYS.primaryColor)
-    if (savedPrimaryColor) {
-      setPrimaryColorState(savedPrimaryColor as PrimaryColor)
-    }
+  const [isSidebarCollapsed, setIsSidebarCollapsedState] = useState<boolean>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.sidebarCollapsed)
+    return saved ? JSON.parse(saved) : DEFAULTS.sidebarCollapsed
+  })
 
-    const savedSidebarState = localStorage.getItem(STORAGE_KEYS.sidebarCollapsed)
-    if (savedSidebarState) {
-      setIsSidebarCollapsedState(JSON.parse(savedSidebarState))
+  const [sidebarWidth, setSidebarWidthState] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.sidebarWidth)
+    if (saved) {
+      const width = parseInt(saved, 10)
+      if (width >= 200 && width <= 600) return width
     }
+    return DEFAULTS.sidebarWidth
+  })
 
-    const savedSidebarWidth = localStorage.getItem(STORAGE_KEYS.sidebarWidth)
-    if (savedSidebarWidth) {
-      const width = parseInt(savedSidebarWidth, 10)
-      if (width >= 200 && width <= 600) {
-        setSidebarWidthState(width)
-      }
+  const [aiSidebarWidth, setAiSidebarWidthState] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.aiSidebarWidth)
+    if (saved) {
+      const width = parseInt(saved, 10)
+      if (width >= 288 && width <= 800) return width
     }
-
-    const savedAiSidebarWidth = localStorage.getItem(STORAGE_KEYS.aiSidebarWidth)
-    if (savedAiSidebarWidth) {
-      const width = parseInt(savedAiSidebarWidth, 10)
-      if (width >= 288 && width <= 800) {
-        setAiSidebarWidthState(width)
-      }
-    }
-  }, [])
+    return DEFAULTS.aiSidebarWidth
+  })
 
   // Save and apply font size
   const setFontSize = (size: number) => {

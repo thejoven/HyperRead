@@ -69,6 +69,15 @@ const windowStateKeeper = {
   }
 }
 
+// 防抖工具函数
+function debounce(fn, delay) {
+  let timer = null
+  return function (...args) {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
+
 function createWindow() {
   // 加载窗口状态
   windowStateKeeper.load()
@@ -83,24 +92,9 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
-      // 性能优化配置
-      experimentalFeatures: true,
-      backgroundThrottling: false,
-      offscreen: false,
+      backgroundThrottling: true,
       spellcheck: false,
-      // 内存优化
-      additionalArguments: [
-        '--no-sandbox',
-        '--disable-web-security',
-        '--disable-dev-shm-usage',
-        '--disable-gpu-sandbox',
-        '--disable-software-rasterizer',
-        '--disable-extensions',
-        '--disable-default-apps',
-        '--disable-component-extensions-with-background-pages',
-      ]
     },
     titleBarStyle: 'hiddenInset',
     show: false,
@@ -114,7 +108,7 @@ function createWindow() {
 
   // 始终加载静态文件，不依赖开发服务器
   const isDev = process.env.NODE_ENV === 'development'
-  
+
   // 修复打包后的路径问题
   let indexPath
   if (isDev) {
@@ -125,16 +119,16 @@ function createWindow() {
     // 在ASAR包中，__dirname指向app.asar内的electron目录
     // 需要查找dist目录
     indexPath = path.join(__dirname, '../dist/index.html')
-    
+
     // 如果文件不存在，尝试其他可能的路径
     if (!require('fs').existsSync(indexPath)) {
       // 尝试从resources目录
       indexPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'dist', 'index.html')
-      
+
       if (!require('fs').existsSync(indexPath)) {
         // 尝试从app目录
         indexPath = path.join(process.resourcesPath, 'app', 'dist', 'index.html')
-        
+
         if (!require('fs').existsSync(indexPath)) {
           // 最后尝试当前目录
           indexPath = path.join(__dirname, 'dist', 'index.html')
@@ -142,10 +136,10 @@ function createWindow() {
       }
     }
   }
-  
+
   console.log('Loading index.html from:', indexPath)
   mainWindow.loadFile(indexPath)
-  
+
   if (isDev) {
     mainWindow.webContents.openDevTools()
   }
@@ -167,11 +161,12 @@ function createWindow() {
   mainWindow.on('enter-full-screen', () => sendFullScreen(true))
   mainWindow.on('leave-full-screen', () => sendFullScreen(false))
 
-  // 监听窗口状态变化并保存
+  // 监听窗口状态变化并保存（resize/move 使用防抖）
   const saveWindowState = () => windowStateKeeper.save(mainWindow)
+  const debouncedSaveWindowState = debounce(saveWindowState, 300)
 
-  mainWindow.on('resize', saveWindowState)
-  mainWindow.on('move', saveWindowState)
+  mainWindow.on('resize', debouncedSaveWindowState)
+  mainWindow.on('move', debouncedSaveWindowState)
   mainWindow.on('maximize', saveWindowState)
   mainWindow.on('unmaximize', saveWindowState)
 
@@ -180,29 +175,18 @@ function createWindow() {
     windowStateKeeper.save(mainWindow)
   })
 
-  // 处理文件拖拽 - 使用 Electron 原生事件
-  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl)
-    
-    if (parsedUrl.protocol === 'file:') {
-      // 可能是拖拽的文件
-      event.preventDefault()
-    }
-  })
-
-  // 使用主进程拦截拖拽事件来获取真实路径
-  mainWindow.webContents.on('will-navigate', (event, url) => {
+  // 处理文件拖拽和导航拦截（合并的 will-navigate 监听器）
+  mainWindow.webContents.on('will-navigate', async (event, url) => {
     if (url.startsWith('file://')) {
       event.preventDefault()
       const filePath = decodeURIComponent(url.replace('file://', ''))
       console.log('Main: intercepted file drag:', filePath)
-      
-      // 检查是否是目录
+
       try {
-        const stat = fs.statSync(filePath)
+        const stat = await fs.promises.stat(filePath)
         if (stat.isDirectory()) {
           console.log('Main: directory detected via URL:', filePath)
-          const files = scanDirectory(filePath)
+          const files = await scanDirectory(filePath)
           mainWindow.webContents.executeJavaScript(`
             if (window.electronAPI?.handleDirectoryContent) {
               window.electronAPI.handleDirectoryContent({
@@ -213,7 +197,7 @@ function createWindow() {
           `)
         } else if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
           console.log('Main: markdown file detected via URL:', filePath)
-          const content = fs.readFileSync(filePath, 'utf-8')
+          const content = await fs.promises.readFile(filePath, 'utf-8')
           const fileName = path.basename(filePath, path.extname(filePath))
           mainWindow.webContents.executeJavaScript(`
             if (window.electronAPI?.handleFileContent) {
@@ -231,164 +215,15 @@ function createWindow() {
       }
     }
   })
-
-  // 使用改进的文件拖拽处理，支持 webkitGetAsEntry API
-  // DISABLED: Using React-based drag-drop implementation instead of external script
-  // mainWindow.webContents.on('dom-ready', () => {
-  //   // 加载并启用增强的拖拽功能
-  //   // 注入增强的拖拽处理代码
-  //   const fs = require('fs')
-  //   const enhancedDragDropPath = path.join(__dirname, 'enhanced-drag-drop.js')
-  //   
-  //   fs.readFile(enhancedDragDropPath, 'utf8', (err, data) => {
-  //     if (err) {
-  //       console.error('Failed to load enhanced drag drop script:', err)
-  //       return
-  //     }
-  //     
-  //     // 注入增强的拖拽代码并立即执行
-  //     mainWindow.webContents.executeJavaScript(`
-  //       ${data}
-  //       setupEnhancedDragDrop();
-  //     `).catch(error => {
-  //       console.error('Failed to inject enhanced drag drop:', error)
-  //     })
-  //   })
-    
-    // 备用的简单拖拽处理（如果增强版本失败）
-    // DISABLED: Using React-based drag-drop implementation instead of fallback handlers
-    // setTimeout(() => {
-    //   mainWindow.webContents.executeJavaScript(`
-    //     // 检查增强版本是否已加载
-    //     if (typeof window.setupEnhancedDragDrop === 'undefined') {
-    //       console.log('Enhanced drag drop not available, setting up fallback handlers')
-    //       
-    //       const body = document.body || document.documentElement
-    //   
-    //   body.addEventListener('dragover', (e) => {
-    //     console.log('dragover event')
-    //     e.preventDefault()
-    //     e.stopPropagation()
-    //     e.dataTransfer.dropEffect = 'copy'
-    //   }, true)
-    //   
-    //   body.addEventListener('dragenter', (e) => {
-    //     console.log('dragenter event')
-    //     e.preventDefault()
-    //     e.stopPropagation()
-    //   }, true)
-    //   
-    //   body.addEventListener('drop', (e) => {
-    //     console.log('drop event triggered with', e.dataTransfer.files.length, 'files')
-    //     e.preventDefault()
-    //     e.stopPropagation()
-    //     
-    //     const files = [...e.dataTransfer.files]
-    //     console.log('Files:', files.map(f => ({
-    //       name: f.name, 
-    //       type: f.type, 
-    //       size: f.size, 
-    //       path: f.path,
-    //       webkitRelativePath: f.webkitRelativePath
-    //     })))
-    //     
-    //     // 在 Electron 中检测文件夹 - 通过主进程处理
-    //     // 尝试从 webkitRelativePath 或其他属性获取路径
-    //     const fileData = files.map(file => ({
-    //       name: file.name,
-    //       type: file.type,
-    //       size: file.size,
-    //       path: file.path || '',
-    //       webkitRelativePath: file.webkitRelativePath || '',
-    //       // 尝试更多属性
-    //       fullPath: file.fullPath || '',
-    //       relativePath: file.relativePath || ''
-    //     }))
-    //     
-    //     console.log('Enhanced file data:', fileData)
-    //     
-    //     console.log('Sending files to main process for classification:', fileData)
-    //     
-    //     // 发送到主进程进行分类
-    //     if (window.electronAPI?.classifyFiles) {
-    //       window.electronAPI.classifyFiles(fileData).then(result => {
-    //         console.log('File classification result:', result)
-    //         const { directories, markdownFiles } = result
-    //         
-    //         if (directories.length > 0) {
-    //           // 处理目录拖拽 - 提示用户选择文件夹，因为无法直接获取拖拽文件夹的路径
-    //           console.log('Directory detected:', directories[0].name)
-    //           if (window.electronAPI?.handleDirectoryDrop) {
-    //             console.log('Calling handleDirectoryDrop')
-    //             window.electronAPI.handleDirectoryDrop(directories[0].name)
-    //           } else {
-    //             console.error('electronAPI.handleDirectoryDrop not available')
-    //             alert('检测到文件夹拖拽。由于安全限制，请点击"打开文件夹"按钮选择要加载的文件夹。')
-    //           }
-    //         } else if (markdownFiles.length > 0) {
-    //           // 处理单个 Markdown 文件
-    //           const file = files.find(f => markdownFiles.some(mf => mf.name === f.name))
-    //           console.log('Found markdown file:', file.name)
-    //           
-    //           // 使用 FileReader API 读取文件内容
-    //           const reader = new FileReader()
-    //           
-    //           reader.onload = (event) => {
-    //             const content = event.target.result
-    //             console.log('File content read successfully, length:', content.length)
-    //             
-    //             if (window.electronAPI?.handleFileContent) {
-    //               console.log('Calling handleFileContent')
-    //               window.electronAPI.handleFileContent({
-    //                 content: content,
-    //                 fileName: file.name.replace(/\\.md$/, '').replace(/\\.markdown$/, ''),
-    //                 originalName: file.name,
-    //                 isDirectory: false
-    //               })
-    //             } else {
-    //               console.error('electronAPI.handleFileContent not available')
-    //             }
-    //           }
-    //           
-    //           reader.onerror = (error) => {
-    //             console.error('Error reading file:', error)
-    //             alert('读取文件失败: ' + error.message)
-    //           }
-    //           
-    //           console.log('Starting to read file as text')
-    //           reader.readAsText(file)
-    //         } else {
-    //           console.log('No markdown files or directories found')
-    //           alert('请拖拽 Markdown 文件（.md）或包含 Markdown 文件的文件夹')
-    //         }
-    //       }).catch(error => {
-    //         console.error('Failed to classify files:', error)
-    //         alert('文件分类失败: ' + error.message)
-    //       })
-    //     } else {
-    //       console.error('electronAPI.classifyFiles not available')
-    //       alert('无法处理拖拽的文件')
-    //     }
-    //   }, true)
-    //   
-    //       console.log('Fallback drag and drop handlers set up')
-    //     } else {
-    //       console.log('Enhanced drag drop already available, skipping fallback')
-    //     }
-    //   `).catch(error => {
-    //     console.error('Failed to set up fallback drag drop:', error)
-    //   })
-    // }, 1000) // 延迟1秒确保增强版本有时间加载
-    // })
 }
 
 // 递归扫描目录中的 Markdown 和 PDF 文件
-function scanDirectory(dirPath) {
+async function scanDirectory(dirPath) {
   const documentFiles = []
 
-  function scanRecursive(currentPath) {
+  async function scanRecursive(currentPath) {
     try {
-      const entries = fs.readdirSync(currentPath, { withFileTypes: true })
+      const entries = await fs.promises.readdir(currentPath, { withFileTypes: true })
 
       for (const entry of entries) {
         const fullPath = path.join(currentPath, entry.name)
@@ -396,7 +231,7 @@ function scanDirectory(dirPath) {
         if (entry.isDirectory()) {
           // 跳过隐藏文件夹和 node_modules
           if (!entry.name.startsWith('.') && entry.name !== 'node_modules') {
-            scanRecursive(fullPath)
+            await scanRecursive(fullPath)
           }
         } else if (entry.isFile()) {
           // 检查是否是 Markdown、PDF 或 EPUB 文件
@@ -425,7 +260,7 @@ function scanDirectory(dirPath) {
     }
   }
 
-  scanRecursive(dirPath)
+  await scanRecursive(dirPath)
   return documentFiles.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
 }
 
@@ -454,7 +289,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
     // 处理EPUB文件 - 读取文件并返回base64数据
     if (ext === '.epub') {
       console.log('Main: Reading EPUB file:', filePath)
-      const epubData = fs.readFileSync(filePath)
+      const epubData = await fs.promises.readFile(filePath)
       const base64Data = epubData.toString('base64')
       console.log('Main: EPUB file read successfully, size:', epubData.length, 'bytes')
       return {
@@ -466,7 +301,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
     }
 
     // 处理Markdown和文本文件
-    const content = fs.readFileSync(filePath, 'utf-8')
+    const content = await fs.promises.readFile(filePath, 'utf-8')
     console.log('Main: file read successfully:', fileName)
     return {
       content,
@@ -487,13 +322,13 @@ ipcMain.handle('scan-directory', async (event, dirPath) => {
     if (!dirPath || typeof dirPath !== 'string') {
       throw new Error(`无效的目录路径: ${dirPath}`)
     }
-    
-    const stat = fs.statSync(dirPath)
+
+    const stat = await fs.promises.stat(dirPath)
     if (!stat.isDirectory()) {
       throw new Error('提供的路径不是目录')
     }
-    
-    const files = scanDirectory(dirPath)
+
+    const files = await scanDirectory(dirPath)
     console.log(`Main: found ${files.length} markdown files`)
     return { files, rootPath: dirPath }
   } catch (error) {
@@ -530,7 +365,7 @@ ipcMain.handle('open-file-dialog', async () => {
 
     // 处理EPUB文件 - 读取文件并返回base64数据
     if (ext === '.epub') {
-      const epubData = fs.readFileSync(filePath)
+      const epubData = await fs.promises.readFile(filePath)
       const base64Data = epubData.toString('base64')
       console.log('Main: EPUB file read from dialog, size:', epubData.length, 'bytes')
       return {
@@ -542,7 +377,7 @@ ipcMain.handle('open-file-dialog', async () => {
     }
 
     // 处理Markdown文件
-    const content = fs.readFileSync(filePath, 'utf-8')
+    const content = await fs.promises.readFile(filePath, 'utf-8')
     return {
       content,
       fileName,
@@ -559,13 +394,13 @@ ipcMain.handle('open-directory-dialog', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory']
   })
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     const dirPath = result.filePaths[0]
-    const files = scanDirectory(dirPath)
+    const files = await scanDirectory(dirPath)
     return { files, rootPath: dirPath }
   }
-  
+
   return null
 })
 
@@ -582,36 +417,36 @@ ipcMain.handle('get-fullscreen', async () => {
 ipcMain.handle('classify-files', async (event, fileData) => {
   try {
     console.log('Main: classify-files called with:', fileData)
-    
+
     const directories = []
     const markdownFiles = []
-    
+
     for (const file of fileData) {
       console.log('Main: processing file:', file)
-      
+
       if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
         markdownFiles.push(file)
         console.log('Main: found markdown file:', file.name)
       } else if (file.type === '' && !file.name.includes('.')) {
         // 尝试构建可能的路径
         let possiblePath = file.path || file.fullPath
-        
+
         // 如果没有路径但有 webkitRelativePath，尝试构建完整路径
         if (!possiblePath && file.webkitRelativePath) {
           // webkitRelativePath 通常包含相对于选择根目录的路径
           console.log('Main: trying to use webkitRelativePath:', file.webkitRelativePath)
           possiblePath = file.webkitRelativePath
         }
-        
+
         if (possiblePath) {
           try {
             // 移除文件名获取目录路径
-            const dirPath = possiblePath.includes('/') 
+            const dirPath = possiblePath.includes('/')
               ? possiblePath.substring(0, possiblePath.lastIndexOf('/'))
               : possiblePath
-            
+
             console.log('Main: trying directory path:', dirPath)
-            const stat = fs.statSync(dirPath)
+            const stat = await fs.promises.stat(dirPath)
             if (stat.isDirectory()) {
               directories.push({...file, path: dirPath})
               console.log('Main: confirmed directory:', dirPath)
@@ -627,7 +462,7 @@ ipcMain.handle('classify-files', async (event, fileData) => {
         }
       }
     }
-    
+
     console.log('Main: classification result - directories:', directories.length, 'markdown files:', markdownFiles.length)
     return { directories, markdownFiles }
   } catch (error) {
@@ -671,7 +506,9 @@ ipcMain.handle('read-image', async (event, imagePath, markdownFilePath) => {
     console.log('Main: resolved image path:', resolvedPath)
 
     // 检查文件是否存在
-    if (!fs.existsSync(resolvedPath)) {
+    try {
+      await fs.promises.access(resolvedPath)
+    } catch {
       throw new Error(`图片文件不存在: ${resolvedPath}`)
     }
 
@@ -683,7 +520,7 @@ ipcMain.handle('read-image', async (event, imagePath, markdownFilePath) => {
     }
 
     // 读取图片文件
-    const imageData = fs.readFileSync(resolvedPath)
+    const imageData = await fs.promises.readFile(resolvedPath)
     const base64Data = imageData.toString('base64')
 
     // 确定MIME类型
@@ -752,7 +589,7 @@ function getFileFromArgs(argv) {
 }
 
 // 发送文件到渲染进程
-function openFileInRenderer(filePath) {
+async function openFileInRenderer(filePath) {
   if (mainWindow && filePath) {
     console.log('Opening file via association:', filePath)
     try {
@@ -773,7 +610,7 @@ function openFileInRenderer(filePath) {
         fileType = 'epub'
         console.log('Main: EPUB file path sent for association:', filePath)
       } else {
-        content = fs.readFileSync(filePath, 'utf8')
+        content = await fs.promises.readFile(filePath, 'utf8')
         fileType = ext === '.md' || ext === '.markdown' ? 'markdown' : 'text'
       }
 

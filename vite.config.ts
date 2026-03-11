@@ -52,7 +52,8 @@ export default defineConfig({
   },
   base: './',
   build: {
-    target: 'es2020',
+    target: 'chrome130',
+    cssCodeSplit: true,
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
@@ -69,11 +70,13 @@ export default defineConfig({
         manualChunks: {
           // 分离大型依赖
           'mermaid': ['mermaid'],
-          'katex': ['katex'],
           'highlight': ['highlight.js'],
+          'pdfjs': ['pdfjs-dist'],
+          'epub': ['epubjs'],
           'react-vendor': ['react', 'react-dom'],
           'markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight', 'rehype-raw'],
         },
+        compact: true,
         chunkFileNames: 'assets/chunk-[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
@@ -94,7 +97,6 @@ export default defineConfig({
     ],
     exclude: [
       'mermaid',
-      'katex',
     ],
   },
   server: {

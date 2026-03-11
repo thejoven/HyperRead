@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import FileList from '@/components/FileList'
@@ -66,7 +66,9 @@ export default function ElectronApp() {
   // === Drag Drop Handlers ===
   const handleSingleFileDrop = useCallback((data: FileData) => {
     tabs.replaceTabWithData(data)
-    setFileData(data)
+    startTransition(() => {
+      setFileData(data)
+    })
     directory.setIsDirectoryMode(false)
     directory.setIsEnhancedDragMode(false)
   }, [tabs, directory])
@@ -86,7 +88,9 @@ export default function ElectronApp() {
     directory.setIsEnhancedDragMode(true)
 
     if (firstFileData) {
-      setFileData(firstFileData)
+      startTransition(() => {
+        setFileData(firstFileData)
+      })
     }
   }, [tabs, directory])
 
@@ -102,10 +106,14 @@ export default function ElectronApp() {
     const tab = tabs.openTabs.find(t => t.filePath === filePath)
     const cached = tabs.cache.get(filePath)
     if (cached && tab) {
-      setFileData({ content: cached, fileName: tab.fileName, filePath, fileType: tab.fileType })
+      startTransition(() => {
+        setFileData({ content: cached, fileName: tab.fileName, filePath, fileType: tab.fileType })
+      })
     } else if (window.electronAPI?.readFile) {
       const data = await window.electronAPI.readFile(filePath)
-      setFileData(data)
+      startTransition(() => {
+        setFileData(data)
+      })
     }
   }, [tabs])
 
@@ -114,10 +122,14 @@ export default function ElectronApp() {
       const tab = tabs.openTabs.find(t => t.filePath === fp)
       const cached = tabs.cache.get(fp)
       if (cached && tab) {
-        setFileData({ content: cached, fileName: tab.fileName, filePath: fp, fileType: tab.fileType })
+        startTransition(() => {
+          setFileData({ content: cached, fileName: tab.fileName, filePath: fp, fileType: tab.fileType })
+        })
       } else if (window.electronAPI?.readFile) {
         const data = await window.electronAPI.readFile(fp)
-        setFileData(data)
+        startTransition(() => {
+          setFileData(data)
+        })
       }
     })
   }, [tabs])
@@ -129,7 +141,9 @@ export default function ElectronApp() {
     try {
       const data = await window.electronAPI.readFile(filePath)
       tabs.openTabWithData(data)
-      setFileData(data)
+      startTransition(() => {
+        setFileData(data)
+      })
     } catch (error) {
       console.error('Failed to load file:', error)
       toast.error('文件加载失败: ' + (error as Error).message)
@@ -145,7 +159,9 @@ export default function ElectronApp() {
       const data = await window.electronAPI.openFileDialog()
       if (data) {
         tabs.replaceTabWithData(data)
-        setFileData(data)
+        startTransition(() => {
+          setFileData(data)
+        })
         directory.setIsDirectoryMode(false)
         directory.setDirectoryData(null)
       }
@@ -200,10 +216,11 @@ export default function ElectronApp() {
   }, [tabs, directory])
 
   const loadFileFromDirectory = useCallback(async (fileInfo: FileInfo) => {
+    const setFileDataTransition = (data: FileData) => startTransition(() => setFileData(data))
     await directory.loadFileFromDirectory(
       fileInfo,
       tabs.cache,
-      setFileData,
+      setFileDataTransition,
       tabs.openTabWithData,
       setLoading
     )
@@ -289,7 +306,9 @@ export default function ElectronApp() {
       if (data) {
         console.log('React: Received file via association:', data.fileName)
         tabs.openTabWithData(data)
-        setFileData(data)
+        startTransition(() => {
+          setFileData(data)
+        })
       }
     }
 
@@ -350,16 +369,6 @@ export default function ElectronApp() {
         className="flex-1 relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col"
         style={{ marginRight: showAiAssistant ? `${settings.aiSidebarWidth}px` : '0px' }}
       >
-        {/* Loading Overlay */}
-        {loading && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-              <p>{t('file.operations.loading')}</p>
-            </div>
-          </div>
-        )}
-
         {/* Directory Mode */}
         {directory.isDirectoryMode && directory.directoryData ? (
           <div className="flex flex-1 relative overflow-hidden">
@@ -404,6 +413,15 @@ export default function ElectronApp() {
 
             {/* Document Content Area */}
             <div className="flex-1 overflow-hidden bg-background relative">
+              {/* Loading Overlay — only covers content, not sidebar */}
+              {loading && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                    <p>{t('file.operations.loading')}</p>
+                  </div>
+                </div>
+              )}
               {fileData ? (
                 <DocumentContent
                   fileData={fileData}
@@ -442,6 +460,14 @@ export default function ElectronApp() {
         ) : fileData ? (
           // Single File Mode
           <div className="flex-1 relative overflow-hidden">
+            {loading && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                  <p>{t('file.operations.loading')}</p>
+                </div>
+              </div>
+            )}
             <DocumentContent
               fileData={fileData}
               fontSize={settings.fontSize}

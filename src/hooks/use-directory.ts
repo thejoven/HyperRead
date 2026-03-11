@@ -77,33 +77,34 @@ export function useDirectory(): UseDirectoryReturn {
   ) => {
     if (!window.electronAPI) return
 
+    console.log('React: loading file from directory:', fileInfo.fullPath)
+
+    // Use cached content when available (tabs cache or enhanced drag mode cache)
+    if (fileContentCache.has(fileInfo.fullPath)) {
+      console.log('React: using cached content for:', fileInfo.fullPath)
+      const cachedContent = fileContentCache.get(fileInfo.fullPath)!
+      const opened = {
+        content: cachedContent,
+        fileName: fileInfo.name,
+        filePath: fileInfo.fullPath,
+        fileType: fileInfo.fileType
+      }
+      openTabWithData(opened)
+      setFileData(opened)
+      return
+    }
+
+    // Fallback to IPC file reading — show loading only for async reads
     setLoading(true)
     try {
-      console.log('React: loading file from directory:', fileInfo.fullPath)
-
-      // Check if we're in enhanced drag mode and have cached content
-      if (isEnhancedDragMode && fileContentCache.has(fileInfo.fullPath)) {
-        console.log('React: using cached content for enhanced drag mode:', fileInfo.fullPath)
-        const cachedContent = fileContentCache.get(fileInfo.fullPath)!
-        const opened = {
-          content: cachedContent,
-          fileName: fileInfo.name,
-          filePath: fileInfo.fullPath,
-          fileType: fileInfo.fileType
-        }
-        openTabWithData(opened)
-        setFileData(opened)
-      } else {
-        // Fallback to IPC file reading
-        console.log('React: reading file via IPC:', fileInfo.fullPath)
-        const data = await window.electronAPI.readFile(fileInfo.fullPath)
-        const opened = {
-          ...data,
-          filePath: fileInfo.fullPath
-        }
-        openTabWithData(opened)
-        setFileData(opened)
+      console.log('React: reading file via IPC:', fileInfo.fullPath)
+      const data = await window.electronAPI.readFile(fileInfo.fullPath)
+      const opened = {
+        ...data,
+        filePath: fileInfo.fullPath
       }
+      openTabWithData(opened)
+      setFileData(opened)
     } catch (error) {
       console.error('React: Failed to load file from directory:', error)
       toast.error(t('ui.messages.fileLoadFailed') + ': ' + (error as Error).message)
