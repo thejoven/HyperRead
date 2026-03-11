@@ -78,7 +78,7 @@ export default function ElectronApp() {
 
   // === Drag Drop Handlers ===
   const handleFileDrop = useCallback((data: FileData) => {
-    tabs.resetTabsWithData(data)
+    tabs.replaceTabWithData(data)
     startTransition(() => {
       setFileData(data)
     })
