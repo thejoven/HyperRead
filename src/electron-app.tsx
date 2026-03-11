@@ -90,7 +90,7 @@ export default function ElectronApp() {
     // Use resetTabsWithCache to atomically set the initial tab and populate the full cache
     // This prevents old tabs from persisting and ensures the cache is ready for the new files
     tabs.resetTabsWithCache(firstFileData, fileContentsCache)
-    
+
     directory.setDirectoryData(dirData)
     directory.setActualRootPath(systemRootPath || null)
     directory.setDraggedDirectoryEntries(directoryEntries)
@@ -105,12 +105,7 @@ export default function ElectronApp() {
         setFileData(firstFileData)
       })
     }
-    if (systemRootPath) {
-      const dirName = systemRootPath.split('/').filter(Boolean).pop() || systemRootPath
-      addRecentItem({ type: 'directory', filePath: systemRootPath, fileName: dirName })
-    }
-  }, [tabs, directory, addRecentItem])
-
+  }, [tabs, directory])
   // === Drag Drop Hook ===
   const { isDragOver } = useDragDrop({
     onSingleFileDrop: handleSingleFileDrop,
