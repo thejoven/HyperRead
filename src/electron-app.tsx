@@ -108,7 +108,7 @@ export default function ElectronApp() {
   }, [tabs, directory])
   // === Drag Drop Hook ===
   const { isDragOver } = useDragDrop({
-    onSingleFileDrop: handleSingleFileDrop,
+    onSingleFileDrop: handleFileDrop,
     onDirectoryDrop: handleDirectoryDrop
   })
 
