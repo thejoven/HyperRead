@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-5.1.1-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.2.1-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -50,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.1.1-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.2.1-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-5.1.1-arm64.dmg` 安装包
+1. 下载 `HyperRead-5.2.1-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -258,7 +258,7 @@ npm run lint              # ESLint 检查
 
 ## 📝 最新更新
 
-### 🎉 版本 5.1.1（最新）
+### 🎉 版本 5.2.1（最新）
 
 **关键修复：**
 - 📁 **原生目录刷新** - 为拖拽的文件夹实现了健壮的系统路径追踪，支持原生"刷新"功能而无需重新拖拽。
