@@ -2,6 +2,7 @@
 
 import { memo } from 'react'
 import DocumentViewer from './DocumentViewer'
+import TocMinimap from './TocMinimap'
 
 interface MarkdownContentWrapperProps {
   content: string
@@ -23,7 +24,7 @@ function MarkdownContentWrapper({
   className = ''
 }: MarkdownContentWrapperProps) {
   return (
-    <div className="h-full overflow-y-auto content-scroll">
+    <div className="h-full overflow-y-auto content-scroll relative">
       <div className={className}>
         <DocumentViewer
           content={content}
@@ -34,6 +35,7 @@ function MarkdownContentWrapper({
           searchOptions={searchOptions}
         />
       </div>
+      <TocMinimap content={content} />
     </div>
   )
 }

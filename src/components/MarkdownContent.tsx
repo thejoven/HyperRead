@@ -6,7 +6,6 @@ import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeRaw from 'rehype-raw'
 import LocalImage from './LocalImage'
-import TableOfContents from './TableOfContents'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { LinkProvider, useLinkContext } from './LinkContext'
@@ -108,19 +107,30 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
     return children
   }
   
-  // Generate heading ID from text - same logic as before for consistency
+  // Extract plain text from React children recursively (handles bold, code, links, etc.)
+  const extractPlainText = (node: React.ReactNode): string => {
+    if (typeof node === 'string') return node
+    if (typeof node === 'number') return String(node)
+    if (Array.isArray(node)) return node.map(extractPlainText).join('')
+    if (node && typeof node === 'object' && 'props' in (node as React.ReactElement)) {
+      return extractPlainText((node as React.ReactElement).props?.children)
+    }
+    return ''
+  }
+
+  // Generate heading ID - accepts React children or raw string
   const usedHeadingIds = useRef(new Set<string>())
 
-  const generateHeadingId = (text: string): string => {
-    if (typeof text !== 'string') return ''
+  const generateHeadingId = (children: React.ReactNode | string): string => {
+    const text = typeof children === 'string' ? children : extractPlainText(children)
+    if (!text) return ''
     let id = text
       .toLowerCase()
-      .replace(/[^\w\s\u4e00-\u9fff-]/g, '') // Support Chinese characters
+      .replace(/[^\w\s\u4e00-\u9fff-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '')
 
-    // 确保ID唯一性，避免同名标题冲突
     let counter = 1
     let uniqueId = id
     while (usedHeadingIds.current.has(uniqueId)) {
@@ -128,7 +138,6 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       counter++
     }
     usedHeadingIds.current.add(uniqueId)
-
     return uniqueId
   }
 
@@ -235,8 +244,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
   // Memoize the ReactMarkdown components object to avoid re-creating on every render
   const markdownComponents = useMemo(() => ({
     h1: ({ children }: { children?: React.ReactNode }) => {
-      const textContent = Array.isArray(children) ? children.join('') : String(children || '')
-      const id = generateHeadingId(textContent)
+      const id = generateHeadingId(children)
       return (
         <h1
           id={id}
@@ -248,8 +256,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h2: ({ children }: { children?: React.ReactNode }) => {
-      const textContent = Array.isArray(children) ? children.join('') : String(children || '')
-      const id = generateHeadingId(textContent)
+      const id = generateHeadingId(children)
       return (
         <h2
           id={id}
@@ -261,8 +268,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h3: ({ children }: { children?: React.ReactNode }) => {
-      const textContent = Array.isArray(children) ? children.join('') : String(children || '')
-      const id = generateHeadingId(textContent)
+      const id = generateHeadingId(children)
       return (
         <h3
           id={id}
@@ -274,8 +280,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h4: ({ children }: { children?: React.ReactNode }) => {
-      const textContent = Array.isArray(children) ? children.join('') : String(children || '')
-      const id = generateHeadingId(textContent)
+      const id = generateHeadingId(children)
       return (
         <h4
           id={id}
@@ -287,8 +292,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h5: ({ children }: { children?: React.ReactNode }) => {
-      const textContent = Array.isArray(children) ? children.join('') : String(children || '')
-      const id = generateHeadingId(textContent)
+      const id = generateHeadingId(children)
       return (
         <h5
           id={id}
@@ -300,8 +304,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h6: ({ children }: { children?: React.ReactNode }) => {
-      const textContent = Array.isArray(children) ? children.join('') : String(children || '')
-      const id = generateHeadingId(textContent)
+      const id = generateHeadingId(children)
       return (
         <h6
           id={id}
@@ -574,7 +577,6 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
 
   return (
     <div className="relative">
-      <TableOfContents content={content} />
       <article
         ref={articleRef}
         className={cn(
