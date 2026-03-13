@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard, UserCog, Edit2, Save, ChevronRight, ChevronDown, Settings2, Info, Github, Copy, Check as CheckIcon, X as XIcon, HelpCircle } from 'lucide-react'
+import { Minus, Plus, BookOpen, Languages, Check, Bot, Key, Globe, Cpu, History, Trash, Keyboard, UserCog, Edit2, Save, ChevronRight, ChevronDown, Settings2, Info, Github, Copy, Check as CheckIcon, X as XIcon, HelpCircle, Puzzle } from 'lucide-react'
 import packageJson from '../../package.json'
 import { useTranslation } from '@/lib/i18n'
 import { conversationStorage } from '@/lib/conversation-storage'
 import { toast } from "sonner"
 import ShortcutSettings from './ShortcutSettings'
 import HelpDialog from './HelpDialog'
+import PluginSettingsRenderer from './PluginSettingsRenderer'
+import { usePlugins } from '@/contexts/PluginContext'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -47,6 +49,7 @@ interface AiRole {
 
 export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeChange, contentWidth, onContentWidthChange, primaryColor, onPrimaryColorChange }: SettingsModalProps) {
   const { t, currentLanguage, languages, changeLanguage } = useTranslation()
+  const { plugins, manager } = usePlugins()
   const [activeCategory, setActiveCategory] = useState('reading')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['general']))
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false)
@@ -115,7 +118,12 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         }
       ]
     },
-    // 底部增加“关于软件”入口
+    {
+      id: 'plugins',
+      label: '插件',
+      icon: <Puzzle className="w-4 h-4" />
+    },
+    // 底部增加"关于软件"入口
     {
       id: 'about',
       label: t('ui.buttons.about'),
@@ -967,6 +975,74 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
     )
   }
 
+  // 渲染插件设置
+  const renderPluginsSettings = () => {
+    const handleInstall = async () => {
+      const zipPath = await window.electronAPI?.pluginAPI?.openZipDialog()
+      if (!zipPath) return
+      try {
+        const result = await window.electronAPI?.pluginAPI?.installZip(zipPath)
+        if (result?.success) {
+          toast.success(`插件 "${result.manifest.name}" 安装成功`)
+          await manager?.initialize()
+        }
+      } catch (e) {
+        toast.error('安装失败：' + (e as Error).message)
+      }
+    }
+
+    const handleRefresh = async () => {
+      await manager?.initialize()
+    }
+
+    const handleUninstalled = async () => {
+      await manager?.initialize()
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-3 py-2 px-3 bg-muted/20 rounded-lg">
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1">已安装插件</label>
+            <p className="text-xs text-muted-foreground">
+              支持从 .zip 文件安装，包内须有 manifest.json 和 main.js。
+            </p>
+          </div>
+          <div className="flex gap-1.5 flex-shrink-0">
+            <Button
+              variant="default"
+              size="sm"
+              className="h-7 px-3 text-xs"
+              onClick={handleInstall}
+            >
+              安装插件
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={handleRefresh}
+            >
+              刷新
+            </Button>
+          </div>
+        </div>
+        {plugins.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground">未安装任何插件</p>
+            <p className="text-xs text-muted-foreground mt-1">点击"安装插件"选择 .zip 文件</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {plugins.map(plugin => (
+              <PluginSettingsRenderer key={plugin.manifest.id} plugin={plugin} onUninstalled={handleUninstalled} />
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // 渲染分类内容
   const renderCategoryContent = () => {
     switch (activeCategory) {
@@ -982,6 +1058,8 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         return renderHistorySettings()
       case 'shortcuts':
         return renderShortcutSettings()
+      case 'plugins':
+        return renderPluginsSettings()
       case 'about':
         return renderAboutSettings()
       default:

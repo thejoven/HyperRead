@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, startTransition, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback, startTransition, lazy, Suspense, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import FileList from '@/components/FileList'
@@ -27,16 +27,25 @@ import DocumentContent from '@/components/viewers/DocumentContent'
 import type { SearchOptions } from '@/components/viewers/DocumentContent'
 import WelcomeScreen from '@/components/screens/WelcomeScreen'
 import RefreshHintModal from '@/components/screens/RefreshHintModal'
+import StatusBar from '@/components/StatusBar'
+import PluginSidebarPanel from '@/components/PluginSidebarPanel'
 
 // Types
 import type { FileData } from '@/types/file'
 import type { FileInfo, DirectoryData } from '@/types/directory'
 import '@/types/electron' // Import for global declaration
 import { recentItemsService, type RecentItem } from '@/lib/recent-items'
+import { usePlugins } from '@/contexts/PluginContext'
 
-export default function ElectronApp() {
+interface ElectronAppProps {
+  activeDocRef?: React.MutableRefObject<FileData | null>
+}
+
+export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
   const t = useT()
   const { shortcuts } = useShortcuts()
+  const { statusBarItems, sidebarPanels, emitDocumentOpen, emitDocumentClose, emitTabActivate } = usePlugins()
+  const [activePluginPanel, setActivePluginPanel] = useState<string | null>(null)
 
   // === Custom Hooks ===
   const settings = useSettings()
@@ -57,7 +66,13 @@ export default function ElectronApp() {
   }, [refreshRecentItems])
 
   // === Local State ===
-  const [fileData, setFileData] = useState<FileData | null>(null)
+  const [fileData, setFileDataRaw] = useState<FileData | null>(null)
+  const setFileData = useCallback((data: FileData | null) => {
+    setFileDataRaw(data)
+    if (activeDocRef) activeDocRef.current = data
+    if (data) emitDocumentOpen(data)
+    else emitDocumentClose()
+  }, [activeDocRef, emitDocumentOpen, emitDocumentClose])
   const [loading, setLoading] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showAiAssistant, setShowAiAssistant] = useState(false)
@@ -428,6 +443,9 @@ export default function ElectronApp() {
         loading={loading}
         isDirectoryMode={directory.isDirectoryMode}
         onGoHome={handleGoHome}
+        pluginPanels={sidebarPanels}
+        activePluginPanel={activePluginPanel}
+        onTogglePluginPanel={(id) => setActivePluginPanel(prev => prev === id ? null : id)}
       />
 
       {/* Main Content */}
@@ -603,6 +621,37 @@ export default function ElectronApp() {
           />
         </Suspense>
       )}
+
+      {/* Plugin Sidebar Panels */}
+      {(() => {
+        const activePanel = sidebarPanels.find(p => p.id === activePluginPanel)
+        if (!activePanel) return null
+        return (
+          <div
+            className="fixed right-0 top-14 bottom-0 border-l border-border/30 bg-background flex flex-col z-40"
+            style={{ width: `${settings.aiSidebarWidth}px` }}
+          >
+            <div className="flex items-center justify-between px-4 py-2 border-b border-border/20 flex-shrink-0">
+              <span className="text-sm font-medium">
+                {activePanel.icon && <span className="mr-1.5">{activePanel.icon}</span>}
+                {activePanel.title}
+              </span>
+              <button
+                onClick={() => setActivePluginPanel(null)}
+                className="text-muted-foreground hover:text-foreground text-xs px-1"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <PluginSidebarPanel key={activePanel.id} panel={activePanel} />
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Plugin Status Bar */}
+      <StatusBar items={statusBarItems} />
 
       {/* Toast notifications */}
       <Toaster />

@@ -1,0 +1,10 @@
+{
+  "id": "doc-assistant",
+  "name": "文档助手",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "侧边栏文档摘要与问答助手，演示 registerSidebarPanel + 读取文档内容",
+  "main": "main.js"
+}

@@ -102,7 +102,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 获取平台信息
   platform: process.platform,
   // 查询全屏状态
-  getFullScreen: () => ipcRenderer.invoke('get-fullscreen')
+  getFullScreen: () => ipcRenderer.invoke('get-fullscreen'),
+  pluginAPI: {
+    listInstalled: () => ipcRenderer.invoke('plugin:list-installed'),
+    readFile: (pluginId, fileName) => ipcRenderer.invoke('plugin:read-file', pluginId, fileName),
+    loadData: (pluginId) => ipcRenderer.invoke('plugin:load-data', pluginId),
+    saveData: (pluginId, data) => ipcRenderer.invoke('plugin:save-data', pluginId, data),
+    getSettings: (pluginId) => ipcRenderer.invoke('plugin:get-settings', pluginId),
+    saveSettings: (pluginId, settings) => ipcRenderer.invoke('plugin:save-settings', pluginId, settings),
+    openZipDialog: () => ipcRenderer.invoke('plugin:open-zip-dialog'),
+    installZip: (zipPath) => ipcRenderer.invoke('plugin:install-zip', zipPath),
+    uninstall: (pluginId) => ipcRenderer.invoke('plugin:uninstall', pluginId),
+  },
 })
 
 // IPC 监听器：接收主进程通过 webContents.send() 发送的消息

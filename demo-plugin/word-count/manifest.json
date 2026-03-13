@@ -1,0 +1,9 @@
+{
+  "id": "word-count",
+  "name": "字数统计",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead Demo",
+  "description": "在状态栏显示当前文档的字数、字符数和行数",
+  "main": "main.js"
+}

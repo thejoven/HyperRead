@@ -6,6 +6,7 @@ import DocumentTabs from '@/components/DocumentTabs'
 import { FileText, Folder, Settings, MessageSquare, PanelLeft, Home } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import type { TabInfo } from '@/hooks/use-tabs'
+import type { RegisteredSidebarPanel } from '@/lib/plugins/types'
 
 interface AppToolbarProps {
   isFullScreen: boolean
@@ -23,6 +24,9 @@ interface AppToolbarProps {
   loading: boolean
   isDirectoryMode: boolean // Show sidebar toggle only in directory mode
   onGoHome: () => void
+  pluginPanels?: RegisteredSidebarPanel[]
+  activePluginPanel?: string | null
+  onTogglePluginPanel?: (panelId: string) => void
 }
 
 export default function AppToolbar({
@@ -40,7 +44,10 @@ export default function AppToolbar({
   onOpenSettings,
   loading,
   isDirectoryMode,
-  onGoHome
+  onGoHome,
+  pluginPanels = [],
+  activePluginPanel,
+  onTogglePluginPanel
 }: AppToolbarProps) {
   const t = useT()
 
@@ -117,6 +124,24 @@ export default function AppToolbar({
             <Folder className="h-3.5 w-3.5" />
           </Button>
           <div className="w-px h-4 bg-border mx-1"></div>
+          {pluginPanels.map(panel => (
+            <Button
+              key={panel.id}
+              variant="ghost"
+              size="sm"
+              onClick={() => onTogglePluginPanel?.(panel.id)}
+              className={`h-7 w-7 p-0 macos-button ${activePluginPanel === panel.id ? 'bg-primary/10 text-primary' : ''}`}
+              title={panel.title}
+            >
+              {panel.icon ? (
+                <span className="text-xs leading-none">{panel.icon}</span>
+              ) : (
+                <span className="text-xs leading-none font-medium">
+                  {panel.title.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </Button>
+          ))}
           <Button
             variant="ghost"
             size="sm"

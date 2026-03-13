@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const os = require('os')
 
 let mainWindow
 
@@ -706,3 +707,166 @@ if (process.platform === 'win32') {
 } else {
   app.setAsDefaultProtocolClient('hyperread')
 }
+
+// ============================================================
+// Plugin System IPC Handlers
+// ============================================================
+
+function getPluginsDir() {
+  return path.join(os.homedir(), '.hyperread', 'plugins')
+}
+
+function getPluginDataDir() {
+  return path.join(os.homedir(), '.hyperread', 'plugin-data')
+}
+
+// List installed plugins
+ipcMain.handle('plugin:list-installed', async () => {
+  const pluginsDir = getPluginsDir()
+  try {
+    await fs.promises.mkdir(pluginsDir, { recursive: true })
+    const entries = await fs.promises.readdir(pluginsDir, { withFileTypes: true })
+    const manifests = []
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const manifestPath = path.join(pluginsDir, entry.name, 'manifest.json')
+      try {
+        const raw = await fs.promises.readFile(manifestPath, 'utf-8')
+        manifests.push(JSON.parse(raw))
+      } catch {}
+    }
+    return manifests
+  } catch (e) {
+    console.error('plugin:list-installed error:', e)
+    return []
+  }
+})
+
+// Read a file within a plugin directory (path traversal protected)
+ipcMain.handle('plugin:read-file', async (_event, pluginId, fileName) => {
+  const pluginsDir = getPluginsDir()
+  const pluginDir = path.resolve(pluginsDir, pluginId)
+  const filePath = path.resolve(pluginDir, fileName)
+  if (!filePath.startsWith(pluginDir + path.sep) && filePath !== pluginDir) {
+    throw new Error('Path traversal detected')
+  }
+  const content = await fs.promises.readFile(filePath, 'utf-8')
+  return { content, fileName, filePath, fileType: 'text' }
+})
+
+// Load plugin persistent data
+ipcMain.handle('plugin:load-data', async (_event, pluginId) => {
+  const dataDir = getPluginDataDir()
+  const dataFile = path.join(dataDir, `${pluginId}.json`)
+  try {
+    const raw = await fs.promises.readFile(dataFile, 'utf-8')
+    return JSON.parse(raw)
+  } catch {
+    return {}
+  }
+})
+
+// Save plugin persistent data
+ipcMain.handle('plugin:save-data', async (_event, pluginId, data) => {
+  const dataDir = getPluginDataDir()
+  await fs.promises.mkdir(dataDir, { recursive: true })
+  const dataFile = path.join(dataDir, `${pluginId}.json`)
+  await fs.promises.writeFile(dataFile, JSON.stringify(data, null, 2))
+})
+
+// Load plugin settings
+ipcMain.handle('plugin:get-settings', async (_event, pluginId) => {
+  const dataDir = getPluginDataDir()
+  const settingsFile = path.join(dataDir, `${pluginId}.settings.json`)
+  try {
+    const raw = await fs.promises.readFile(settingsFile, 'utf-8')
+    return JSON.parse(raw)
+  } catch {
+    return {}
+  }
+})
+
+// Save plugin settings
+ipcMain.handle('plugin:save-settings', async (_event, pluginId, settings) => {
+  const dataDir = getPluginDataDir()
+  await fs.promises.mkdir(dataDir, { recursive: true })
+  const settingsFile = path.join(dataDir, `${pluginId}.settings.json`)
+  await fs.promises.writeFile(settingsFile, JSON.stringify(settings, null, 2))
+})
+
+// Open file picker for plugin zip files
+ipcMain.handle('plugin:open-zip-dialog', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: '选择插件文件',
+    filters: [{ name: 'HyperRead 插件', extensions: ['zip'] }],
+    properties: ['openFile']
+  })
+  return result.canceled ? null : result.filePaths[0]
+})
+
+// Install plugin from zip — extract to ~/.hyperread/plugins/{id}/
+ipcMain.handle('plugin:install-zip', async (_event, zipPath) => {
+  const pluginsDir = getPluginsDir()
+  await fs.promises.mkdir(pluginsDir, { recursive: true })
+
+  const tmpDir = path.join(pluginsDir, `__tmp_${Date.now()}__`)
+  await fs.promises.mkdir(tmpDir, { recursive: true })
+
+  try {
+    // Cross-platform extraction
+    await new Promise((resolve, reject) => {
+      const { execFile } = require('child_process')
+      if (process.platform === 'win32') {
+        execFile('powershell', [
+          '-NoProfile', '-Command',
+          `Expand-Archive -LiteralPath '${zipPath}' -DestinationPath '${tmpDir}' -Force`
+        ], (err) => err ? reject(err) : resolve())
+      } else {
+        execFile('unzip', ['-o', zipPath, '-d', tmpDir], (err) => err ? reject(err) : resolve())
+      }
+    })
+
+    // Locate manifest.json — handle both flat and single-subdir layouts
+    let extractedRoot = tmpDir
+    const entries = await fs.promises.readdir(tmpDir, { withFileTypes: true })
+    if (entries.length === 1 && entries[0].isDirectory()) {
+      extractedRoot = path.join(tmpDir, entries[0].name)
+    }
+
+    const manifestPath = path.join(extractedRoot, 'manifest.json')
+    let manifest
+    try {
+      manifest = JSON.parse(await fs.promises.readFile(manifestPath, 'utf-8'))
+    } catch {
+      throw new Error('插件包中未找到有效的 manifest.json')
+    }
+    if (!manifest.id || typeof manifest.id !== 'string') {
+      throw new Error('manifest.json 中缺少 id 字段')
+    }
+    if (!manifest.main) {
+      throw new Error('manifest.json 中缺少 main 字段')
+    }
+
+    // Validate main file exists
+    const mainFilePath = path.join(extractedRoot, manifest.main)
+    await fs.promises.access(mainFilePath)
+
+    // Move to final destination (replace if exists)
+    const targetDir = path.join(pluginsDir, manifest.id)
+    await fs.promises.rm(targetDir, { recursive: true, force: true })
+    await fs.promises.rename(extractedRoot, targetDir)
+
+    return { success: true, manifest }
+  } finally {
+    await fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
+  }
+})
+
+// Uninstall a plugin (remove its directory)
+ipcMain.handle('plugin:uninstall', async (_event, pluginId) => {
+  const pluginsDir = getPluginsDir()
+  const pluginDir = path.resolve(pluginsDir, pluginId)
+  // Security check
+  if (!pluginDir.startsWith(pluginsDir + path.sep)) throw new Error('Invalid plugin id')
+  await fs.promises.rm(pluginDir, { recursive: true, force: true })
+})

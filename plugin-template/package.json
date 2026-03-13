@@ -1,0 +1,12 @@
+{
+  "name": "word-count",
+  "version": "1.0.0",
+  "description": "Word count plugin for HyperRead",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --format=esm --outfile=main.js",
+    "dev": "esbuild src/main.ts --bundle --format=esm --outfile=main.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0"
+  }
+}
