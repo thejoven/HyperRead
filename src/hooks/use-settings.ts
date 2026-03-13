@@ -9,7 +9,6 @@ interface Settings {
   primaryColor: PrimaryColor
   isSidebarCollapsed: boolean
   sidebarWidth: number
-  aiSidebarWidth: number
 }
 
 interface UseSettingsReturn extends Settings {
@@ -19,7 +18,6 @@ interface UseSettingsReturn extends Settings {
   setIsSidebarCollapsed: (collapsed: boolean) => void
   toggleSidebar: () => void
   setSidebarWidth: (width: number) => void
-  setAiSidebarWidth: (width: number) => void
   getMaxWidthClass: () => string
 }
 
@@ -29,7 +27,6 @@ const STORAGE_KEYS = {
   primaryColor: 'docs-primary-color',
   sidebarCollapsed: 'docs-sidebar-collapsed',
   sidebarWidth: 'docs-sidebar-width',
-  aiSidebarWidth: 'docs-ai-sidebar-width'
 } as const
 
 const DEFAULTS = {
@@ -38,7 +35,6 @@ const DEFAULTS = {
   primaryColor: 'cyan' as PrimaryColor,
   sidebarCollapsed: false,
   sidebarWidth: 288,
-  aiSidebarWidth: 288
 } as const
 
 export function useSettings(): UseSettingsReturn {
@@ -69,15 +65,6 @@ export function useSettings(): UseSettingsReturn {
       if (width >= 200 && width <= 600) return width
     }
     return DEFAULTS.sidebarWidth
-  })
-
-  const [aiSidebarWidth, setAiSidebarWidthState] = useState<number>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.aiSidebarWidth)
-    if (saved) {
-      const width = parseInt(saved, 10)
-      if (width >= 288 && width <= 800) return width
-    }
-    return DEFAULTS.aiSidebarWidth
   })
 
   // Save and apply font size
@@ -120,12 +107,6 @@ export function useSettings(): UseSettingsReturn {
     localStorage.setItem(STORAGE_KEYS.sidebarWidth, width.toString())
   }
 
-  // Save AI sidebar width
-  const setAiSidebarWidth = (width: number) => {
-    setAiSidebarWidthState(width)
-    localStorage.setItem(STORAGE_KEYS.aiSidebarWidth, width.toString())
-  }
-
   // Get max width class based on content width setting
   const getMaxWidthClass = (): string => {
     switch (contentWidth) {
@@ -148,14 +129,12 @@ export function useSettings(): UseSettingsReturn {
     primaryColor,
     isSidebarCollapsed,
     sidebarWidth,
-    aiSidebarWidth,
     setFontSize,
     setContentWidth,
     setPrimaryColor,
     setIsSidebarCollapsed,
     toggleSidebar,
     setSidebarWidth,
-    setAiSidebarWidth,
     getMaxWidthClass
   }
 }

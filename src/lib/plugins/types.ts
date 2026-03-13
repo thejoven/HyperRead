@@ -61,6 +61,21 @@ export interface SidebarHandle {
   remove(): void
 }
 
+export interface SettingsPanelDef {
+  id: string
+  title: string
+  icon?: string
+  render: (container: HTMLElement) => (() => void) | void
+}
+
+export interface SettingsHandle {
+  remove(): void
+}
+
+export interface RegisteredSettingsPanel extends SettingsPanelDef {
+  pluginId: string
+}
+
 export interface RegisteredSidebarPanel extends SidebarPanelDef {
   pluginId: string
 }
@@ -89,6 +104,7 @@ export interface PluginAPI {
   addStatusBarItem(item: StatusBarItem): StatusBarHandle
   addToolbarButton(btn: ToolbarButton): ToolbarHandle
   registerSidebarPanel(panel: SidebarPanelDef): SidebarHandle
+  registerSettingsPanel(panel: SettingsPanelDef): SettingsHandle
   registerViewType(view: ViewTypeDef): ViewTypeHandle
   getSetting<T>(key: string): T | undefined
   setSetting<T>(key: string, value: T): void

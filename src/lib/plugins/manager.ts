@@ -1,7 +1,7 @@
 import type {
   PluginManifest, PluginRecord, PluginState,
   RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredViewType, RegisteredCommand,
-  RegisteredSidebarPanel, FileData, PluginEvent
+  RegisteredSidebarPanel, RegisteredSettingsPanel, FileData, PluginEvent
 } from './types'
 import type { PluginUIRegistry } from './api-factory'
 import { createPluginAPI } from './api-factory'
@@ -25,6 +25,7 @@ export class PluginManager {
       statusBarItems: new Map(),
       toolbarButtons: new Map(),
       sidebarPanels: new Map(),
+      settingsPanels: new Map(),
       viewTypes: new Map(),
       commands: new Map(),
       onUpdate: onUIUpdate
@@ -57,7 +58,11 @@ export class PluginManager {
     try {
       const instance = await loadPlugin(record.manifest)
       const styleElement = await injectPluginStyles(record.manifest)
-      const api = createPluginAPI(pluginId, this.uiRegistry, this.getActiveDocument)
+      let initialSettings: Record<string, unknown> | undefined
+      try {
+        initialSettings = await window.electronAPI?.pluginAPI?.getSettings(pluginId) ?? undefined
+      } catch { /* ignore */ }
+      const api = createPluginAPI(pluginId, this.uiRegistry, this.getActiveDocument, initialSettings)
       await instance.onload(api)
 
       this.plugins.set(pluginId, { ...record, state: 'ACTIVE', instance, styleElement })
@@ -104,6 +109,9 @@ export class PluginManager {
     for (const [id, panel] of [...this.uiRegistry.sidebarPanels.entries()]) {
       if (panel.pluginId === pluginId) this.uiRegistry.sidebarPanels.delete(id)
     }
+    for (const [id, panel] of [...this.uiRegistry.settingsPanels.entries()]) {
+      if (panel.pluginId === pluginId) this.uiRegistry.settingsPanels.delete(id)
+    }
     for (const [ext, vt] of [...this.uiRegistry.viewTypes.entries()]) {
       if (vt.pluginId === pluginId) this.uiRegistry.viewTypes.delete(ext)
     }
@@ -130,6 +138,10 @@ export class PluginManager {
 
   getSidebarPanels(): RegisteredSidebarPanel[] {
     return Array.from(this.uiRegistry.sidebarPanels.values())
+  }
+
+  getSettingsPanels(): RegisteredSettingsPanel[] {
+    return Array.from(this.uiRegistry.settingsPanels.values())
   }
 
   getViewType(extension: string): RegisteredViewType | undefined {

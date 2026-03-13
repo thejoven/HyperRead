@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { PluginManager } from '@/lib/plugins/manager'
-import type { PluginRecord, RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredSidebarPanel, RegisteredViewType, RegisteredCommand } from '@/lib/plugins/types'
+import type { PluginRecord, RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredSidebarPanel, RegisteredSettingsPanel, RegisteredViewType, RegisteredCommand } from '@/lib/plugins/types'
 import type { FileData } from '@/types/file'
 
 interface PluginContextValue {
@@ -11,6 +11,7 @@ interface PluginContextValue {
   statusBarItems: RegisteredStatusBarItem[]
   toolbarButtons: RegisteredToolbarButton[]
   sidebarPanels: RegisteredSidebarPanel[]
+  settingsPanels: RegisteredSettingsPanel[]
   commands: RegisteredCommand[]
   getViewType: (ext: string) => RegisteredViewType | undefined
   enablePlugin: (id: string) => Promise<void>
@@ -28,6 +29,7 @@ const PluginContext = createContext<PluginContextValue>({
   statusBarItems: [],
   toolbarButtons: [],
   sidebarPanels: [],
+  settingsPanels: [],
   commands: [],
   getViewType: () => undefined,
   enablePlugin: async () => {},
@@ -76,6 +78,7 @@ export function PluginProvider({ children, getActiveDocument }: PluginProviderPr
     statusBarItems: manager?.getStatusBarItems() ?? [],
     toolbarButtons: manager?.getToolbarButtons() ?? [],
     sidebarPanels: manager?.getSidebarPanels() ?? [],
+    settingsPanels: manager?.getSettingsPanels() ?? [],
     commands: manager?.getCommands() ?? [],
     getViewType: (ext) => manager?.getViewType(ext),
     enablePlugin: async (id) => { await manager?.enablePlugin(id) },

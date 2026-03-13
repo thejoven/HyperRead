@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, startTransition, lazy, Suspense, useRef } from 'react'
+import { useState, useEffect, useCallback, startTransition, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import FileList from '@/components/FileList'
 import SettingsModal from '@/components/SettingsModal'
-const ConsistentAiSidebar = lazy(() => import('@/components/ConsistentAiSidebar'))
 import { Toaster } from '@/components/ui/sonner'
 import { FileText, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT } from '@/lib/i18n'
@@ -75,7 +74,6 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
   }, [activeDocRef, emitDocumentOpen, emitDocumentClose])
   const [loading, setLoading] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [showAiAssistant, setShowAiAssistant] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
@@ -437,8 +435,6 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         onCloseTab={handleCloseTab}
         onOpenFile={handleOpenFile}
         onOpenDirectory={handleOpenDirectory}
-        showAiAssistant={showAiAssistant}
-        onToggleAiAssistant={() => setShowAiAssistant(!showAiAssistant)}
         onOpenSettings={() => setShowSettings(true)}
         loading={loading}
         isDirectoryMode={directory.isDirectoryMode}
@@ -451,7 +447,6 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
       {/* Main Content */}
       <main
         className="flex-1 relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col"
-        style={{ marginRight: showAiAssistant ? `${settings.aiSidebarWidth}px` : '0px' }}
       >
         {/* Directory Mode */}
         {directory.isDirectoryMode && directory.directoryData ? (
@@ -605,23 +600,6 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         onPrimaryColorChange={settings.setPrimaryColor}
       />
 
-      {/* AI Assistant Sidebar */}
-      {showAiAssistant && (
-        <Suspense fallback={null}>
-          <ConsistentAiSidebar
-            isOpen={showAiAssistant}
-            onClose={() => setShowAiAssistant(false)}
-            currentDocument={fileData ? {
-              fileName: fileData.fileName,
-              content: fileData.content,
-              filePath: fileData.filePath
-            } : undefined}
-            width={settings.aiSidebarWidth}
-            onWidthChange={settings.setAiSidebarWidth}
-          />
-        </Suspense>
-      )}
-
       {/* Plugin Sidebar Panels */}
       {(() => {
         const activePanel = sidebarPanels.find(p => p.id === activePluginPanel)
@@ -629,7 +607,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         return (
           <div
             className="fixed right-0 top-14 bottom-0 border-l border-border/30 bg-background flex flex-col z-40"
-            style={{ width: `${settings.aiSidebarWidth}px` }}
+            style={{ width: '320px' }}
           >
             <div className="flex items-center justify-between px-4 py-2 border-b border-border/20 flex-shrink-0">
               <span className="text-sm font-medium">

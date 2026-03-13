@@ -1,9 +1,10 @@
 import type {
   PluginAPI, PluginEvent, CommandDef, StatusBarItem, StatusBarHandle,
   ToolbarButton, ToolbarHandle, SidebarPanelDef, SidebarHandle,
+  SettingsPanelDef, SettingsHandle,
   ViewTypeDef, ViewTypeHandle, FileData,
   RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredViewType, RegisteredCommand,
-  RegisteredSidebarPanel
+  RegisteredSidebarPanel, RegisteredSettingsPanel
 } from './types'
 import { pluginEventBus } from './event-bus'
 
@@ -11,6 +12,7 @@ export interface PluginUIRegistry {
   statusBarItems: Map<string, RegisteredStatusBarItem>
   toolbarButtons: Map<string, RegisteredToolbarButton>
   sidebarPanels: Map<string, RegisteredSidebarPanel>
+  settingsPanels: Map<string, RegisteredSettingsPanel>
   viewTypes: Map<string, RegisteredViewType>
   commands: Map<string, RegisteredCommand>
   onUpdate: () => void
@@ -20,9 +22,10 @@ export function createPluginAPI(
   pluginId: string,
   registry: PluginUIRegistry,
   getActiveDocument: () => FileData | null,
+  initialSettings?: Record<string, unknown>,
 ): PluginAPI & { _cleanup(): void } {
   const pluginHandlers: Array<(data?: unknown) => void> = []
-  const pluginSettings: Record<string, unknown> = {}
+  const pluginSettings: Record<string, unknown> = initialSettings ? { ...initialSettings } : {}
 
   return {
     on(event: PluginEvent, handler: (data?: unknown) => void) {
@@ -85,6 +88,17 @@ export function createPluginAPI(
       return {
         remove() {
           registry.sidebarPanels.delete(panel.id)
+          registry.onUpdate()
+        }
+      }
+    },
+
+    registerSettingsPanel(panel: SettingsPanelDef): SettingsHandle {
+      registry.settingsPanels.set(panel.id, { ...panel, pluginId })
+      registry.onUpdate()
+      return {
+        remove() {
+          registry.settingsPanels.delete(panel.id)
           registry.onUpdate()
         }
       }

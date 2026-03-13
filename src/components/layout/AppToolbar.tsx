@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import DocumentTabs from '@/components/DocumentTabs'
-import { FileText, Folder, Settings, MessageSquare, PanelLeft, Home } from 'lucide-react'
+import { FileText, Folder, Settings, PanelLeft, Home } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import type { TabInfo } from '@/hooks/use-tabs'
 import type { RegisteredSidebarPanel } from '@/lib/plugins/types'
@@ -18,8 +18,6 @@ interface AppToolbarProps {
   onCloseTab: (path: string) => void
   onOpenFile: () => void
   onOpenDirectory: () => void
-  showAiAssistant: boolean
-  onToggleAiAssistant: () => void
   onOpenSettings: () => void
   loading: boolean
   isDirectoryMode: boolean // Show sidebar toggle only in directory mode
@@ -39,8 +37,6 @@ export default function AppToolbar({
   onCloseTab,
   onOpenFile,
   onOpenDirectory,
-  showAiAssistant,
-  onToggleAiAssistant,
   onOpenSettings,
   loading,
   isDirectoryMode,
@@ -142,15 +138,6 @@ export default function AppToolbar({
               )}
             </Button>
           ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleAiAssistant}
-            className={`h-7 w-7 p-0 macos-button ${showAiAssistant ? 'bg-primary/10 text-primary' : ''}`}
-            title="AI 助手"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-          </Button>
           <Button
             variant="ghost"
             size="sm"

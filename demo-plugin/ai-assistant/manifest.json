@@ -1,0 +1,9 @@
+{
+  "id": "ai-assistant",
+  "name": "AI 助手",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "AI 驱动的文档问答助手，支持自定义 API 端点和角色",
+  "main": "main.js"
+}
