@@ -24,16 +24,18 @@ function MarkdownContentWrapper({
   className = ''
 }: MarkdownContentWrapperProps) {
   return (
-    <div className="h-full overflow-y-auto content-scroll relative">
-      <div className={className}>
-        <DocumentViewer
-          content={content}
-          fontSize={fontSize}
-          filePath={filePath}
-          onFileNavigation={onFileNavigation}
-          searchQuery={searchQuery}
-          searchOptions={searchOptions}
-        />
+    <div className="h-full relative flex flex-col">
+      <div className="flex-1 overflow-y-auto content-scroll">
+        <div className={className}>
+          <DocumentViewer
+            content={content}
+            fontSize={fontSize}
+            filePath={filePath}
+            onFileNavigation={onFileNavigation}
+            searchQuery={searchQuery}
+            searchOptions={searchOptions}
+          />
+        </div>
       </div>
       <TocMinimap content={content} />
     </div>

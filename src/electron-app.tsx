@@ -21,13 +21,13 @@ import { useFileNavigation } from '@/hooks/use-file-navigation'
 
 // Components
 import AppToolbar from '@/components/layout/AppToolbar'
+import RightSidebar from '@/components/layout/RightSidebar'
 import DragOverlay from '@/components/layout/DragOverlay'
 import DocumentContent from '@/components/viewers/DocumentContent'
 import type { SearchOptions } from '@/components/viewers/DocumentContent'
 import WelcomeScreen from '@/components/screens/WelcomeScreen'
 import RefreshHintModal from '@/components/screens/RefreshHintModal'
 import StatusBar from '@/components/StatusBar'
-import PluginSidebarPanel from '@/components/PluginSidebarPanel'
 
 // Types
 import type { FileData } from '@/types/file'
@@ -45,6 +45,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
   const { shortcuts } = useShortcuts()
   const { statusBarItems, sidebarPanels, emitDocumentOpen, emitDocumentClose, emitTabActivate } = usePlugins()
   const [activePluginPanel, setActivePluginPanel] = useState<string | null>(null)
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false)
 
   // === Custom Hooks ===
   const settings = useSettings()
@@ -439,60 +440,103 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         loading={loading}
         isDirectoryMode={directory.isDirectoryMode}
         onGoHome={handleGoHome}
-        pluginPanels={sidebarPanels}
-        activePluginPanel={activePluginPanel}
-        onTogglePluginPanel={(id) => setActivePluginPanel(prev => prev === id ? null : id)}
       />
 
-      {/* Main Content */}
-      <main
-        className="flex-1 relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col"
-      >
-        {/* Directory Mode */}
-        {directory.isDirectoryMode && directory.directoryData ? (
-          <div className="flex flex-1 relative overflow-hidden">
-            {/* File List Sidebar */}
-            <div
-              className="transition-all duration-300 ease-in-out overflow-hidden"
-              style={{
-                width: settings.isSidebarCollapsed ? '0px' : `${settings.sidebarWidth}px`,
-                minWidth: settings.isSidebarCollapsed ? '0px' : `${settings.sidebarWidth}px`
-              }}
-            >
-              <FileList
-                files={directory.directoryData.files}
-                rootPath={directory.directoryData.rootPath}
-                currentFile={fileData?.filePath}
-                onFileSelect={loadFileFromDirectory}
-                isCollapsed={settings.isSidebarCollapsed}
-                onRefresh={handleRefresh}
-                isRefreshing={directory.isRefreshing}
-                width={settings.sidebarWidth}
-                onWidthChange={settings.setSidebarWidth}
-              />
-            </div>
+      {/* Main Content — flex-row: left sidebar | center content | right sidebar */}
+      <main className="flex-1 overflow-hidden flex flex-row">
 
-            {/* Sidebar Toggle Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={settings.toggleSidebar}
-              className="absolute top-1/2 transform -translate-y-1/2 z-20 h-12 w-5 p-0 bg-background hover:bg-background border border-border transition-all duration-300 ease-in-out opacity-50 hover:opacity-100 rounded-md"
-              style={{ left: settings.isSidebarCollapsed ? '8px' : `${settings.sidebarWidth - 12}px` }}
-              title={settings.isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
-            >
-              <div className="flex flex-col items-center justify-center h-full">
-                {settings.isSidebarCollapsed ? (
-                  <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+        {/* Center area: existing directory/single-file/welcome layout */}
+        <div className="flex-1 overflow-hidden flex flex-col relative">
+          {/* Directory Mode */}
+          {directory.isDirectoryMode && directory.directoryData ? (
+            <div className="flex flex-1 relative overflow-hidden">
+              {/* File List Sidebar */}
+              <div
+                className="transition-all duration-300 ease-in-out overflow-hidden"
+                style={{
+                  width: settings.isSidebarCollapsed ? '0px' : `${settings.sidebarWidth}px`,
+                  minWidth: settings.isSidebarCollapsed ? '0px' : `${settings.sidebarWidth}px`
+                }}
+              >
+                <FileList
+                  files={directory.directoryData.files}
+                  rootPath={directory.directoryData.rootPath}
+                  currentFile={fileData?.filePath}
+                  onFileSelect={loadFileFromDirectory}
+                  isCollapsed={settings.isSidebarCollapsed}
+                  onRefresh={handleRefresh}
+                  isRefreshing={directory.isRefreshing}
+                  width={settings.sidebarWidth}
+                  onWidthChange={settings.setSidebarWidth}
+                />
+              </div>
+
+              {/* Sidebar Toggle Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={settings.toggleSidebar}
+                className="absolute top-1/2 transform -translate-y-1/2 z-20 h-12 w-5 p-0 bg-background hover:bg-background border border-border transition-all duration-300 ease-in-out opacity-50 hover:opacity-100 rounded-md"
+                style={{ left: settings.isSidebarCollapsed ? '8px' : `${settings.sidebarWidth - 12}px` }}
+                title={settings.isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
+              >
+                <div className="flex flex-col items-center justify-center h-full">
+                  {settings.isSidebarCollapsed ? (
+                    <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronLeft className="h-2.5 w-2.5 text-muted-foreground" />
+                  )}
+                </div>
+              </Button>
+
+              {/* Document Content Area */}
+              <div className="flex-1 overflow-hidden bg-background relative">
+                {loading && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="text-center">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                      <p>{t('file.operations.loading')}</p>
+                    </div>
+                  </div>
+                )}
+                {fileData ? (
+                  <DocumentContent
+                    fileData={fileData}
+                    fontSize={settings.fontSize}
+                    contentWidth={settings.contentWidth}
+                    maxWidthClass={settings.getMaxWidthClass()}
+                    showSearch={showSearch}
+                    searchQuery={searchQuery}
+                    searchOptions={searchOptions}
+                    onCloseSearch={() => setShowSearch(false)}
+                    onSearchChange={(query, options) => {
+                      setSearchQuery(query)
+                      setSearchOptions(options)
+                    }}
+                    onFileNavigation={handleFileNavigation}
+                    onNavigateToLine={handleNavigateToLine}
+                  />
                 ) : (
-                  <ChevronLeft className="h-2.5 w-2.5 text-muted-foreground" />
+                  <div className="flex items-center justify-center h-full">
+                    <Card className="max-w-md border-dashed">
+                      <CardContent className="p-6 text-center">
+                        <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/60" />
+                        <h3 className="text-sm font-medium mb-2 text-foreground">{t('ui.messages.selectFile')}</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {settings.isSidebarCollapsed
+                            ? t('ui.messages.selectFromListCollapsed')
+                            : t('ui.messages.selectFromList')
+                          }
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
                 )}
               </div>
-            </Button>
-
-            {/* Document Content Area */}
-            <div className="flex-1 overflow-hidden bg-background relative">
-              {/* Loading Overlay — only covers content, not sidebar */}
+            </div>
+          ) : fileData ? (
+            // Single File Mode
+            <div className="flex-1 relative overflow-hidden">
               {loading && (
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
                   <div className="text-center">
@@ -501,83 +545,51 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
                   </div>
                 </div>
               )}
-              {fileData ? (
-                <DocumentContent
-                  fileData={fileData}
-                  fontSize={settings.fontSize}
-                  contentWidth={settings.contentWidth}
-                  maxWidthClass={settings.getMaxWidthClass()}
-                  showSearch={showSearch}
-                  searchQuery={searchQuery}
-                  searchOptions={searchOptions}
-                  onCloseSearch={() => setShowSearch(false)}
-                  onSearchChange={(query, options) => {
-                    setSearchQuery(query)
-                    setSearchOptions(options)
-                  }}
-                  onFileNavigation={handleFileNavigation}
-                  onNavigateToLine={handleNavigateToLine}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <Card className="max-w-md border-dashed">
-                    <CardContent className="p-6 text-center">
-                      <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/60" />
-                      <h3 className="text-sm font-medium mb-2 text-foreground">{t('ui.messages.selectFile')}</h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {settings.isSidebarCollapsed
-                          ? t('ui.messages.selectFromListCollapsed')
-                          : t('ui.messages.selectFromList')
-                        }
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+              <DocumentContent
+                fileData={fileData}
+                fontSize={settings.fontSize}
+                contentWidth={settings.contentWidth}
+                maxWidthClass={settings.getMaxWidthClass()}
+                showSearch={showSearch}
+                searchQuery={searchQuery}
+                searchOptions={searchOptions}
+                onCloseSearch={() => setShowSearch(false)}
+                onSearchChange={(query, options) => {
+                  setSearchQuery(query)
+                  setSearchOptions(options)
+                }}
+                onFileNavigation={handleFileNavigation}
+                onNavigateToLine={handleNavigateToLine}
+              />
             </div>
-          </div>
-        ) : fileData ? (
-          // Single File Mode
-          <div className="flex-1 relative overflow-hidden">
-            {loading && (
-              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-                <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                  <p>{t('file.operations.loading')}</p>
-                </div>
-              </div>
-            )}
-            <DocumentContent
-              fileData={fileData}
-              fontSize={settings.fontSize}
-              contentWidth={settings.contentWidth}
-              maxWidthClass={settings.getMaxWidthClass()}
-              showSearch={showSearch}
-              searchQuery={searchQuery}
-              searchOptions={searchOptions}
-              onCloseSearch={() => setShowSearch(false)}
-              onSearchChange={(query, options) => {
-                setSearchQuery(query)
-                setSearchOptions(options)
-              }}
-              onFileNavigation={handleFileNavigation}
-              onNavigateToLine={handleNavigateToLine}
+          ) : (
+            // Welcome Screen
+            <WelcomeScreen
+              isDragOver={isDragOver}
+              onOpenFile={handleOpenFile}
+              onOpenDirectory={handleOpenDirectory}
+              recentItems={recentItems}
+              onOpenRecent={handleOpenRecent}
+              onClearRecent={() => { recentItemsService.clear(); refreshRecentItems() }}
             />
-          </div>
-        ) : (
-          // Welcome Screen
-          <WelcomeScreen
-            isDragOver={isDragOver}
-            onOpenFile={handleOpenFile}
-            onOpenDirectory={handleOpenDirectory}
-            recentItems={recentItems}
-            onOpenRecent={handleOpenRecent}
-            onClearRecent={() => { recentItemsService.clear(); refreshRecentItems() }}
+          )}
+
+          {/* Drag Overlay */}
+          <DragOverlay visible={isDragOver} />
+        </div>
+
+        {/* Right Sidebar — inline layout, shown when plugin panels are registered */}
+        {sidebarPanels.length > 0 && (
+          <RightSidebar
+            panels={sidebarPanels}
+            activePanel={activePluginPanel}
+            onActiveChange={(id) => setActivePluginPanel(id)}
+            width={settings.rightSidebarWidth}
+            onWidthChange={settings.setRightSidebarWidth}
+            isCollapsed={isRightSidebarCollapsed}
+            onToggleCollapse={() => setIsRightSidebarCollapsed(c => !c)}
           />
         )}
-
-        {/* Drag Overlay */}
-        <DragOverlay visible={isDragOver} />
       </main>
 
       {/* Refresh Hint Modal */}
@@ -599,34 +611,6 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         primaryColor={settings.primaryColor}
         onPrimaryColorChange={settings.setPrimaryColor}
       />
-
-      {/* Plugin Sidebar Panels */}
-      {(() => {
-        const activePanel = sidebarPanels.find(p => p.id === activePluginPanel)
-        if (!activePanel) return null
-        return (
-          <div
-            className="fixed right-0 top-14 bottom-0 border-l border-border/30 bg-background flex flex-col z-40"
-            style={{ width: '320px' }}
-          >
-            <div className="flex items-center justify-between px-4 py-2 border-b border-border/20 flex-shrink-0">
-              <span className="text-sm font-medium">
-                {activePanel.icon && <span className="mr-1.5">{activePanel.icon}</span>}
-                {activePanel.title}
-              </span>
-              <button
-                onClick={() => setActivePluginPanel(null)}
-                className="text-muted-foreground hover:text-foreground text-xs px-1"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <PluginSidebarPanel key={activePanel.id} panel={activePanel} />
-            </div>
-          </div>
-        )
-      })()}
 
       {/* Plugin Status Bar */}
       <StatusBar items={statusBarItems} />

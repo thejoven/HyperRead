@@ -1,0 +1,15 @@
+{
+  "name": "ai-assistant",
+  "version": "2.0.0",
+  "description": "AI assistant sidebar plugin for HyperRead",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js --watch"
+  },
+  "dependencies": {
+    "marked": "^12.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0"
+  }
+}

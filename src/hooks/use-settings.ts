@@ -9,6 +9,7 @@ interface Settings {
   primaryColor: PrimaryColor
   isSidebarCollapsed: boolean
   sidebarWidth: number
+  rightSidebarWidth: number
 }
 
 interface UseSettingsReturn extends Settings {
@@ -18,6 +19,7 @@ interface UseSettingsReturn extends Settings {
   setIsSidebarCollapsed: (collapsed: boolean) => void
   toggleSidebar: () => void
   setSidebarWidth: (width: number) => void
+  setRightSidebarWidth: (width: number) => void
   getMaxWidthClass: () => string
 }
 
@@ -27,6 +29,7 @@ const STORAGE_KEYS = {
   primaryColor: 'docs-primary-color',
   sidebarCollapsed: 'docs-sidebar-collapsed',
   sidebarWidth: 'docs-sidebar-width',
+  rightSidebarWidth: 'docs-right-sidebar-width',
 } as const
 
 const DEFAULTS = {
@@ -35,6 +38,7 @@ const DEFAULTS = {
   primaryColor: 'cyan' as PrimaryColor,
   sidebarCollapsed: false,
   sidebarWidth: 288,
+  rightSidebarWidth: 320,
 } as const
 
 export function useSettings(): UseSettingsReturn {
@@ -107,6 +111,20 @@ export function useSettings(): UseSettingsReturn {
     localStorage.setItem(STORAGE_KEYS.sidebarWidth, width.toString())
   }
 
+  const [rightSidebarWidth, setRightSidebarWidthState] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.rightSidebarWidth)
+    if (saved) {
+      const width = parseInt(saved, 10)
+      if (width >= 240 && width <= 800) return width
+    }
+    return DEFAULTS.rightSidebarWidth
+  })
+
+  const setRightSidebarWidth = (width: number) => {
+    setRightSidebarWidthState(width)
+    localStorage.setItem(STORAGE_KEYS.rightSidebarWidth, width.toString())
+  }
+
   // Get max width class based on content width setting
   const getMaxWidthClass = (): string => {
     switch (contentWidth) {
@@ -129,12 +147,14 @@ export function useSettings(): UseSettingsReturn {
     primaryColor,
     isSidebarCollapsed,
     sidebarWidth,
+    rightSidebarWidth,
     setFontSize,
     setContentWidth,
     setPrimaryColor,
     setIsSidebarCollapsed,
     toggleSidebar,
     setSidebarWidth,
+    setRightSidebarWidth,
     getMaxWidthClass
   }
 }
