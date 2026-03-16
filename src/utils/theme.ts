@@ -19,134 +19,134 @@ interface ColorTheme {
 export const colorMap: Record<PrimaryColor, ColorTheme> = {
   cyan: {
     light: {
-      primary: '183 70% 45%',
+      primary: '183 70% 42%',
       secondary: '183 15% 96%',
       muted: '183 10% 96%',
-      accent: '183 60% 92%',
-      accentForeground: '183 70% 25%',
-      border: '183 15% 89%',
-      input: '183 10% 89%',
-      ring: '183 70% 45%'
+      accent: '183 55% 91%',
+      accentForeground: '183 70% 22%',
+      border: '183 15% 88%',
+      input: '183 10% 88%',
+      ring: '183 70% 42%'
     },
     dark: {
-      primary: '183 70% 50%',
-      secondary: '183 8% 15%',
-      muted: '183 8% 15%',
-      accent: '183 30% 20%',
-      accentForeground: '183 70% 70%',
-      border: '183 15% 20%',
-      input: '183 10% 20%',
-      ring: '183 70% 50%'
+      primary: '183 72% 52%',
+      secondary: '220 8% 15%',
+      muted: '220 8% 15%',
+      accent: '183 20% 18%',
+      accentForeground: '183 72% 68%',
+      border: '220 8% 20%',
+      input: '220 8% 16%',
+      ring: '183 72% 52%'
     }
   },
   blue: {
     light: {
-      primary: '217 91% 60%',
+      primary: '217 91% 56%',
       secondary: '217 15% 96%',
       muted: '217 10% 96%',
-      accent: '217 60% 92%',
-      accentForeground: '217 91% 30%',
-      border: '217 15% 89%',
-      input: '217 10% 89%',
-      ring: '217 91% 60%'
+      accent: '217 55% 91%',
+      accentForeground: '217 91% 28%',
+      border: '217 15% 88%',
+      input: '217 10% 88%',
+      ring: '217 91% 56%'
     },
     dark: {
-      primary: '217 91% 65%',
-      secondary: '217 8% 15%',
-      muted: '217 8% 15%',
-      accent: '217 30% 20%',
-      accentForeground: '217 91% 75%',
-      border: '217 15% 20%',
-      input: '217 10% 20%',
-      ring: '217 91% 65%'
+      primary: '217 88% 62%',
+      secondary: '220 8% 15%',
+      muted: '220 8% 15%',
+      accent: '217 20% 18%',
+      accentForeground: '217 88% 75%',
+      border: '220 8% 20%',
+      input: '220 8% 16%',
+      ring: '217 88% 62%'
     }
   },
   purple: {
     light: {
-      primary: '262 83% 58%',
+      primary: '262 83% 54%',
       secondary: '262 15% 96%',
       muted: '262 10% 96%',
-      accent: '262 60% 92%',
-      accentForeground: '262 83% 30%',
-      border: '262 15% 89%',
-      input: '262 10% 89%',
-      ring: '262 83% 58%'
+      accent: '262 55% 91%',
+      accentForeground: '262 83% 28%',
+      border: '262 15% 88%',
+      input: '262 10% 88%',
+      ring: '262 83% 54%'
     },
     dark: {
-      primary: '262 83% 63%',
-      secondary: '262 8% 15%',
-      muted: '262 8% 15%',
-      accent: '262 30% 20%',
-      accentForeground: '262 83% 73%',
-      border: '262 15% 20%',
-      input: '262 10% 20%',
-      ring: '262 83% 63%'
+      primary: '262 78% 65%',
+      secondary: '220 8% 15%',
+      muted: '220 8% 15%',
+      accent: '262 18% 18%',
+      accentForeground: '262 78% 76%',
+      border: '220 8% 20%',
+      input: '220 8% 16%',
+      ring: '262 78% 65%'
     }
   },
   green: {
     light: {
-      primary: '142 76% 36%',
+      primary: '142 72% 34%',
       secondary: '142 15% 96%',
       muted: '142 10% 96%',
-      accent: '142 60% 92%',
-      accentForeground: '142 76% 20%',
-      border: '142 15% 89%',
-      input: '142 10% 89%',
-      ring: '142 76% 36%'
+      accent: '142 55% 91%',
+      accentForeground: '142 72% 18%',
+      border: '142 15% 88%',
+      input: '142 10% 88%',
+      ring: '142 72% 34%'
     },
     dark: {
-      primary: '142 76% 45%',
-      secondary: '142 8% 15%',
-      muted: '142 8% 15%',
-      accent: '142 30% 20%',
-      accentForeground: '142 76% 60%',
-      border: '142 15% 20%',
-      input: '142 10% 20%',
-      ring: '142 76% 45%'
+      primary: '142 68% 46%',
+      secondary: '220 8% 15%',
+      muted: '220 8% 15%',
+      accent: '142 18% 17%',
+      accentForeground: '142 68% 62%',
+      border: '220 8% 20%',
+      input: '220 8% 16%',
+      ring: '142 68% 46%'
     }
   },
   orange: {
     light: {
-      primary: '24 94% 50%',
+      primary: '24 90% 48%',
       secondary: '24 15% 96%',
       muted: '24 10% 96%',
-      accent: '24 60% 92%',
-      accentForeground: '24 94% 25%',
-      border: '24 15% 89%',
-      input: '24 10% 89%',
-      ring: '24 94% 50%'
+      accent: '24 55% 91%',
+      accentForeground: '24 90% 24%',
+      border: '24 15% 88%',
+      input: '24 10% 88%',
+      ring: '24 90% 48%'
     },
     dark: {
-      primary: '24 94% 55%',
-      secondary: '24 8% 15%',
-      muted: '24 8% 15%',
-      accent: '24 30% 20%',
-      accentForeground: '24 94% 70%',
-      border: '24 15% 20%',
-      input: '24 10% 20%',
-      ring: '24 94% 55%'
+      primary: '24 90% 56%',
+      secondary: '220 8% 15%',
+      muted: '220 8% 15%',
+      accent: '24 18% 17%',
+      accentForeground: '24 90% 70%',
+      border: '220 8% 20%',
+      input: '220 8% 16%',
+      ring: '24 90% 56%'
     }
   },
   pink: {
     light: {
-      primary: '330 81% 60%',
+      primary: '330 78% 56%',
       secondary: '330 15% 96%',
       muted: '330 10% 96%',
-      accent: '330 60% 92%',
-      accentForeground: '330 81% 30%',
-      border: '330 15% 89%',
-      input: '330 10% 89%',
-      ring: '330 81% 60%'
+      accent: '330 55% 91%',
+      accentForeground: '330 78% 28%',
+      border: '330 15% 88%',
+      input: '330 10% 88%',
+      ring: '330 78% 56%'
     },
     dark: {
-      primary: '330 81% 65%',
-      secondary: '330 8% 15%',
-      muted: '330 8% 15%',
-      accent: '330 30% 20%',
-      accentForeground: '330 81% 75%',
-      border: '330 15% 20%',
-      input: '330 10% 20%',
-      ring: '330 81% 65%'
+      primary: '330 76% 65%',
+      secondary: '220 8% 15%',
+      muted: '220 8% 15%',
+      accent: '330 18% 18%',
+      accentForeground: '330 76% 76%',
+      border: '220 8% 20%',
+      input: '220 8% 16%',
+      ring: '330 76% 65%'
     }
   }
 }

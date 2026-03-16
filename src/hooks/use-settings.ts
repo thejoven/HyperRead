@@ -90,9 +90,16 @@ export function useSettings(): UseSettingsReturn {
     applyPrimaryColor(color)
   }
 
-  // Apply primary color on initial load and when color changes
+  // Apply primary color on initial load and when color changes,
+  // and re-apply whenever the dark/light class toggles on <html>
   useEffect(() => {
     applyPrimaryColor(primaryColor)
+
+    const observer = new MutationObserver(() => {
+      applyPrimaryColor(primaryColor)
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
   }, [primaryColor])
 
   // Save sidebar collapsed state

@@ -26,7 +26,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         attribute="class"
         defaultTheme="system"
         enableSystem
-        disableTransitionOnChange
       >
         <ShortcutProvider>
           <AppRoot />

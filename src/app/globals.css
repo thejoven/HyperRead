@@ -40,35 +40,35 @@
   }
 
   .dark {
-    /* macOS 风格的深色主题 - 青色调 */
-    --background: 183 8% 7%;
-    --foreground: 0 0% 98%;
+    /* macOS 风格的深色主题 - 中性深灰，主色通过 CSS 变量注入 */
+    --background: 220 8% 8%;
+    --foreground: 220 5% 96%;
 
-    --card: 183 8% 10%;
-    --card-foreground: 0 0% 98%;
+    --card: 220 8% 11%;
+    --card-foreground: 220 5% 96%;
 
-    --popover: 183 8% 10%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 10% 13%;
+    --popover-foreground: 220 5% 96%;
 
-    /* 深色模式使用较亮的青色以保持视觉舒适 */
-    --primary: 183 75% 55%; /* 深色模式下稍亮的青色 */
-    --primary-foreground: 183 10% 10%;
+    /* 深色模式主色由 applyPrimaryColor() 动态覆盖 */
+    --primary: 183 70% 52%;
+    --primary-foreground: 183 10% 8%;
 
-    --secondary: 183 12% 15%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 8% 15%;
+    --secondary-foreground: 220 5% 90%;
 
-    --muted: 183 10% 15%;
-    --muted-foreground: 0 0% 63%;
+    --muted: 220 8% 15%;
+    --muted-foreground: 220 5% 55%;
 
-    --accent: 183 25% 20%; /* 深色模式的强调色 */
-    --accent-foreground: 183 75% 70%;
+    --accent: 220 8% 18%;
+    --accent-foreground: 183 70% 65%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 183 12% 20%;
-    --input: 183 10% 15%;
-    --ring: 183 75% 55%;
+    --border: 220 8% 20%;
+    --input: 220 8% 16%;
+    --ring: 183 70% 52%;
   }
 }
 
@@ -97,9 +97,11 @@
   --radius: var(--radius);
 }
 
+/* Smooth theme transition */
 html {
   background: var(--background);
   scroll-behavior: smooth;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 body {
@@ -141,62 +143,76 @@ body {
 
 /* Code block styling - Dark mode */
 .dark .hljs {
-  background: hsl(183 8% 12%) !important; /* 略深于背景 */
-  color: hsl(0 0% 92%) !important;
-  border: 1px solid hsl(183 12% 25%) !important;
+  background: hsl(220 10% 10%) !important;
+  color: hsl(220 5% 88%) !important;
+  border: 1px solid hsl(220 8% 18%) !important;
 }
 
-/* Dark mode - syntax highlighting colors */
+/* Dark mode - syntax highlighting: One Dark Pro inspired */
 .dark .hljs-keyword,
 .dark .hljs-selector-tag,
-.dark .hljs-literal,
-.dark .hljs-section,
-.dark .hljs-link {
-  color: hsl(183 75% 65%) !important; /* 明亮的青色 */
+.dark .hljs-literal {
+  color: hsl(286 60% 72%) !important; /* 柔紫 — if/for/return */
+}
+
+.dark .hljs-built_in,
+.dark .hljs-type {
+  color: hsl(187 70% 62%) !important; /* 主色青 — built-in types */
 }
 
 .dark .hljs-string,
+.dark .hljs-addition {
+  color: hsl(114 40% 62%) !important; /* 柔绿 — strings */
+}
+
 .dark .hljs-title,
+.dark .hljs-section {
+  color: hsl(207 82% 66%) !important; /* 明蓝 — function names, headings */
+}
+
 .dark .hljs-name,
-.dark .hljs-type,
+.dark .hljs-tag {
+  color: hsl(5 65% 65%) !important; /* 暖红 — HTML tags */
+}
+
 .dark .hljs-attribute,
+.dark .hljs-attr {
+  color: hsl(29 75% 65%) !important; /* 橙色 — attributes */
+}
+
+.dark .hljs-number,
+.dark .hljs-regexp {
+  color: hsl(29 75% 65%) !important; /* 橙 — numbers */
+}
+
 .dark .hljs-symbol,
 .dark .hljs-bullet,
-.dark .hljs-built_in,
-.dark .hljs-addition,
 .dark .hljs-variable,
 .dark .hljs-template-tag,
-.dark .hljs-template-variable {
-  color: hsl(150 60% 60%) !important; /* 柔和的绿色 */
+.dark .hljs-template-variable,
+.dark .hljs-selector-id,
+.dark .hljs-selector-class,
+.dark .hljs-selector-attr,
+.dark .hljs-selector-pseudo {
+  color: hsl(5 65% 65%) !important; /* 暖红 */
 }
 
 .dark .hljs-comment,
 .dark .hljs-quote,
 .dark .hljs-deletion,
 .dark .hljs-meta {
-  color: hsl(0 0% 55%) !important; /* 灰色注释 */
-}
-
-.dark .hljs-number,
-.dark .hljs-regexp,
-.dark .hljs-selector-id,
-.dark .hljs-selector-class,
-.dark .hljs-selector-attr,
-.dark .hljs-selector-pseudo {
-  color: hsl(280 60% 70%) !important; /* 紫色数字 */
+  color: hsl(220 5% 48%) !important; /* 静灰 — comments */
+  font-style: italic;
 }
 
 .dark .hljs-doctag,
 .dark .hljs-formula {
-  color: hsl(30 80% 65%) !important; /* 橙色 */
+  color: hsl(29 75% 65%) !important;
 }
 
-.dark .hljs-tag {
-  color: hsl(183 75% 65%) !important;
-}
-
-.dark .hljs-attr {
-  color: hsl(280 60% 70%) !important;
+.dark .hljs-link {
+  color: hsl(207 82% 66%) !important;
+  text-decoration: underline;
 }
 
 /* Inline code styling */
@@ -209,9 +225,9 @@ body {
 }
 
 .dark :not(pre) > code {
-  background: hsl(183 12% 18%) !important;
-  color: hsl(183 75% 70%) !important;
-  border: 1px solid hsl(183 12% 25%) !important;
+  background: hsl(220 10% 14%) !important;
+  color: hsl(var(--primary)) !important;
+  border: 1px solid hsl(220 8% 22%) !important;
 }
 
 /* Table improvements */
@@ -233,13 +249,23 @@ table th {
   font-weight: 600;
 }
 
+table tr:hover {
+  background-color: hsl(var(--accent) / 0.4);
+}
+
 /* Blockquote styling */
 blockquote {
-  border-left: 4px solid hsl(var(--primary));
-  background: hsl(var(--muted));
-  padding: 1rem 1.5rem;
+  border-left: 3px solid hsl(var(--primary) / 0.7);
+  background: hsl(var(--accent) / 0.5);
+  padding: 0.875rem 1.25rem;
   margin: 1.5rem 0;
   font-style: italic;
+  border-radius: 0 0.375rem 0.375rem 0;
+}
+
+.dark blockquote {
+  border-left-color: hsl(var(--primary) / 0.6);
+  background: hsl(var(--accent) / 0.4);
 }
 
 /* List styling */

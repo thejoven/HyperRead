@@ -140,15 +140,14 @@ export default function TocMinimap({ content, className }: TocMinimapProps) {
   return (
     <div
       className={cn(
-        'absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col items-end pointer-events-none',
+        'absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col items-end',
         'transition-opacity duration-200',
         isHovered ? 'opacity-90' : 'opacity-30',
         className
       )}
-      style={{ gap: `${BAR_GAP}px` }}
+      style={{ gap: `${BAR_GAP}px`, pointerEvents: 'auto' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setHoveredIndex(null) }}
-      style={{ pointerEvents: 'auto' }}
     >
       {segments.map((seg, i) => {
         const isActive = seg.id === activeId
