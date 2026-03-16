@@ -2,6 +2,7 @@ export type PrimaryColor = 'cyan' | 'blue' | 'purple' | 'green' | 'orange' | 'pi
 
 interface ColorVariants {
   primary: string
+  primaryForeground: string
   secondary: string
   muted: string
   accent: string
@@ -16,10 +17,20 @@ interface ColorTheme {
   dark: ColorVariants
 }
 
+// Apple System Colors 参考 (Dark Mode):
+//   Cyan   #5AC8FA → hsl(200 93% 66%)
+//   Blue   #0A84FF → hsl(211 100% 52%)
+//   Purple #BF5AF2 → hsl(283 85% 64%)
+//   Green  #30D158 → hsl(142 64% 50%)
+//   Orange #FF9F0A → hsl(37 100% 52%)
+//   Pink   #FF375F → hsl(349 100% 61%)
+//   Red    #FF453A → hsl(3 100% 61%)
+
 export const colorMap: Record<PrimaryColor, ColorTheme> = {
   cyan: {
     light: {
       primary: '183 70% 42%',
+      primaryForeground: '0 0% 100%',
       secondary: '183 15% 96%',
       muted: '183 10% 96%',
       accent: '183 55% 91%',
@@ -29,41 +40,47 @@ export const colorMap: Record<PrimaryColor, ColorTheme> = {
       ring: '183 70% 42%'
     },
     dark: {
-      primary: '183 72% 52%',
-      secondary: '220 8% 15%',
-      muted: '220 8% 15%',
-      accent: '183 20% 18%',
-      accentForeground: '183 72% 68%',
-      border: '220 8% 20%',
-      input: '220 8% 16%',
-      ring: '183 72% 52%'
+      // Apple System Cyan: #5AC8FA
+      primary: '200 93% 66%',
+      primaryForeground: '240 3% 8%',   /* 青色较亮，用深色文字 */
+      secondary: '240 2% 17%',
+      muted: '240 2% 17%',
+      accent: '200 30% 18%',
+      accentForeground: '200 93% 72%',
+      border: '240 2% 23%',
+      input: '240 2% 18%',
+      ring: '200 93% 66%'
     }
   },
   blue: {
     light: {
-      primary: '217 91% 56%',
-      secondary: '217 15% 96%',
-      muted: '217 10% 96%',
-      accent: '217 55% 91%',
-      accentForeground: '217 91% 28%',
-      border: '217 15% 88%',
-      input: '217 10% 88%',
-      ring: '217 91% 56%'
+      primary: '211 95% 52%',
+      primaryForeground: '0 0% 100%',
+      secondary: '211 15% 96%',
+      muted: '211 10% 96%',
+      accent: '211 55% 91%',
+      accentForeground: '211 95% 28%',
+      border: '211 15% 88%',
+      input: '211 10% 88%',
+      ring: '211 95% 52%'
     },
     dark: {
-      primary: '217 88% 62%',
-      secondary: '220 8% 15%',
-      muted: '220 8% 15%',
-      accent: '217 20% 18%',
-      accentForeground: '217 88% 75%',
-      border: '220 8% 20%',
-      input: '220 8% 16%',
-      ring: '217 88% 62%'
+      // Apple System Blue: #0A84FF
+      primary: '211 100% 52%',
+      primaryForeground: '0 0% 100%',
+      secondary: '240 2% 17%',
+      muted: '240 2% 17%',
+      accent: '211 40% 17%',
+      accentForeground: '211 100% 72%',
+      border: '240 2% 23%',
+      input: '240 2% 18%',
+      ring: '211 100% 52%'
     }
   },
   purple: {
     light: {
       primary: '262 83% 54%',
+      primaryForeground: '0 0% 100%',
       secondary: '262 15% 96%',
       muted: '262 10% 96%',
       accent: '262 55% 91%',
@@ -73,19 +90,22 @@ export const colorMap: Record<PrimaryColor, ColorTheme> = {
       ring: '262 83% 54%'
     },
     dark: {
-      primary: '262 78% 65%',
-      secondary: '220 8% 15%',
-      muted: '220 8% 15%',
-      accent: '262 18% 18%',
-      accentForeground: '262 78% 76%',
-      border: '220 8% 20%',
-      input: '220 8% 16%',
-      ring: '262 78% 65%'
+      // Apple System Purple: #BF5AF2
+      primary: '283 85% 64%',
+      primaryForeground: '0 0% 100%',
+      secondary: '240 2% 17%',
+      muted: '240 2% 17%',
+      accent: '283 30% 18%',
+      accentForeground: '283 85% 78%',
+      border: '240 2% 23%',
+      input: '240 2% 18%',
+      ring: '283 85% 64%'
     }
   },
   green: {
     light: {
       primary: '142 72% 34%',
+      primaryForeground: '0 0% 100%',
       secondary: '142 15% 96%',
       muted: '142 10% 96%',
       accent: '142 55% 91%',
@@ -95,58 +115,66 @@ export const colorMap: Record<PrimaryColor, ColorTheme> = {
       ring: '142 72% 34%'
     },
     dark: {
-      primary: '142 68% 46%',
-      secondary: '220 8% 15%',
-      muted: '220 8% 15%',
-      accent: '142 18% 17%',
-      accentForeground: '142 68% 62%',
-      border: '220 8% 20%',
-      input: '220 8% 16%',
-      ring: '142 68% 46%'
+      // Apple System Green: #30D158
+      primary: '142 64% 50%',
+      primaryForeground: '0 0% 100%',
+      secondary: '240 2% 17%',
+      muted: '240 2% 17%',
+      accent: '142 28% 16%',
+      accentForeground: '142 64% 66%',
+      border: '240 2% 23%',
+      input: '240 2% 18%',
+      ring: '142 64% 50%'
     }
   },
   orange: {
     light: {
-      primary: '24 90% 48%',
-      secondary: '24 15% 96%',
-      muted: '24 10% 96%',
-      accent: '24 55% 91%',
-      accentForeground: '24 90% 24%',
-      border: '24 15% 88%',
-      input: '24 10% 88%',
-      ring: '24 90% 48%'
+      primary: '32 95% 48%',
+      primaryForeground: '0 0% 100%',
+      secondary: '32 15% 96%',
+      muted: '32 10% 96%',
+      accent: '32 55% 91%',
+      accentForeground: '32 95% 24%',
+      border: '32 15% 88%',
+      input: '32 10% 88%',
+      ring: '32 95% 48%'
     },
     dark: {
-      primary: '24 90% 56%',
-      secondary: '220 8% 15%',
-      muted: '220 8% 15%',
-      accent: '24 18% 17%',
-      accentForeground: '24 90% 70%',
-      border: '220 8% 20%',
-      input: '220 8% 16%',
-      ring: '24 90% 56%'
+      // Apple System Orange: #FF9F0A
+      primary: '37 100% 52%',
+      primaryForeground: '240 3% 8%',   /* 橙色较亮，用深色文字 */
+      secondary: '240 2% 17%',
+      muted: '240 2% 17%',
+      accent: '37 35% 16%',
+      accentForeground: '37 100% 68%',
+      border: '240 2% 23%',
+      input: '240 2% 18%',
+      ring: '37 100% 52%'
     }
   },
   pink: {
     light: {
-      primary: '330 78% 56%',
-      secondary: '330 15% 96%',
-      muted: '330 10% 96%',
-      accent: '330 55% 91%',
-      accentForeground: '330 78% 28%',
-      border: '330 15% 88%',
-      input: '330 10% 88%',
-      ring: '330 78% 56%'
+      primary: '349 80% 54%',
+      primaryForeground: '0 0% 100%',
+      secondary: '349 15% 96%',
+      muted: '349 10% 96%',
+      accent: '349 55% 91%',
+      accentForeground: '349 80% 28%',
+      border: '349 15% 88%',
+      input: '349 10% 88%',
+      ring: '349 80% 54%'
     },
     dark: {
-      primary: '330 76% 65%',
-      secondary: '220 8% 15%',
-      muted: '220 8% 15%',
-      accent: '330 18% 18%',
-      accentForeground: '330 76% 76%',
-      border: '220 8% 20%',
-      input: '220 8% 16%',
-      ring: '330 76% 65%'
+      // Apple System Pink: #FF375F
+      primary: '349 100% 61%',
+      primaryForeground: '0 0% 100%',
+      secondary: '240 2% 17%',
+      muted: '240 2% 17%',
+      accent: '349 35% 17%',
+      accentForeground: '349 100% 75%',
+      border: '240 2% 23%',
+      input: '240 2% 18%',
+      ring: '349 100% 61%'
     }
   }
 }
@@ -160,8 +188,8 @@ export function applyPrimaryColor(color: PrimaryColor): void {
   const isDark = root.classList.contains('dark')
   const colors = isDark ? colorMap[color].dark : colorMap[color].light
 
-  // Apply colors to CSS variables
   root.style.setProperty('--primary', colors.primary)
+  root.style.setProperty('--primary-foreground', colors.primaryForeground)
   root.style.setProperty('--secondary', colors.secondary)
   root.style.setProperty('--muted', colors.muted)
   root.style.setProperty('--accent', colors.accent)

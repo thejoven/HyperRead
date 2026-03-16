@@ -40,35 +40,38 @@
   }
 
   .dark {
-    /* macOS 风格的深色主题 - 中性深灰，主色通过 CSS 变量注入 */
-    --background: 220 8% 8%;
-    --foreground: 220 5% 96%;
+    /* Apple 风格深色主题
+       背景层次参照 macOS：#141416 → #222224 → #2F2F31 → #383839
+       近乎中性（saturation ≈ 2%），主色通过 applyPrimaryColor() 注入 */
 
-    --card: 220 8% 11%;
-    --card-foreground: 220 5% 96%;
+    --background: 240 3% 8%;          /* #141416 — 窗口底层 */
+    --foreground: 0 0% 100%;          /* 纯白 — Apple primary label */
 
-    --popover: 220 10% 13%;
-    --popover-foreground: 220 5% 96%;
+    --card: 240 2% 14%;               /* #222224 — 抬升面（如 #2C2C2E） */
+    --card-foreground: 0 0% 100%;
 
-    /* 深色模式主色由 applyPrimaryColor() 动态覆盖 */
-    --primary: 183 70% 52%;
-    --primary-foreground: 183 10% 8%;
+    --popover: 240 2% 19%;            /* #2F2F31 — 最高层（菜单/浮层） */
+    --popover-foreground: 0 0% 100%;
 
-    --secondary: 220 8% 15%;
-    --secondary-foreground: 220 5% 90%;
+    /* 主色由 applyPrimaryColor() 动态覆盖，默认为 Apple System Cyan */
+    --primary: 200 72% 54%;
+    --primary-foreground: 0 0% 100%;
 
-    --muted: 220 8% 15%;
-    --muted-foreground: 220 5% 55%;
+    --secondary: 240 2% 17%;          /* #2A2A2C — 次级填充面 */
+    --secondary-foreground: 0 0% 92%;
 
-    --accent: 220 8% 18%;
-    --accent-foreground: 183 70% 65%;
+    --muted: 240 2% 17%;
+    --muted-foreground: 240 3% 60%;   /* ≈ Apple secondary label rgba(235,235,245,0.6) */
 
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 0 0% 98%;
+    --accent: 240 2% 21%;             /* #343436 — 三级背景/hover 面 */
+    --accent-foreground: 200 72% 62%;
 
-    --border: 220 8% 20%;
-    --input: 220 8% 16%;
-    --ring: 183 70% 52%;
+    --destructive: 3 100% 61%;        /* #FF453A — Apple System Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 2% 23%;             /* #3A3A3C — Apple opaque separator */
+    --input: 240 2% 18%;              /* #2D2D2F — 输入框背景 */
+    --ring: 200 72% 54%;
   }
 }
 
@@ -143,9 +146,9 @@ body {
 
 /* Code block styling - Dark mode */
 .dark .hljs {
-  background: hsl(220 10% 10%) !important;
-  color: hsl(220 5% 88%) !important;
-  border: 1px solid hsl(220 8% 18%) !important;
+  background: hsl(240 2% 11%) !important;  /* #1B1B1D — 略深于 card */
+  color: hsl(240 5% 88%) !important;
+  border: 1px solid hsl(240 2% 20%) !important;
 }
 
 /* Dark mode - syntax highlighting: One Dark Pro inspired */
@@ -225,9 +228,9 @@ body {
 }
 
 .dark :not(pre) > code {
-  background: hsl(220 10% 14%) !important;
+  background: hsl(240 2% 17%) !important;  /* secondary surface */
   color: hsl(var(--primary)) !important;
-  border: 1px solid hsl(220 8% 22%) !important;
+  border: 1px solid hsl(240 2% 25%) !important;
 }
 
 /* Table improvements */
@@ -329,8 +332,8 @@ a:hover {
 .dark .mermaid-container .node circle,
 .dark .mermaid-container .node ellipse,
 .dark .mermaid-container .node polygon {
-  fill: hsl(183 8% 15%) !important;
-  stroke: hsl(183 75% 55%) !important;
+  fill: hsl(240 2% 17%) !important;
+  stroke: hsl(var(--primary)) !important;
 }
 
 .dark .mermaid-container .node .label,
@@ -343,12 +346,12 @@ a:hover {
 
 .dark .mermaid-container .edgePath .path,
 .dark .mermaid-container .flowchart-link {
-  stroke: hsl(183 60% 50%) !important;
+  stroke: hsl(var(--primary) / 0.8) !important;
 }
 
 .dark .mermaid-container .marker {
-  fill: hsl(183 60% 50%) !important;
-  stroke: hsl(183 60% 50%) !important;
+  fill: hsl(var(--primary)) !important;
+  stroke: hsl(var(--primary)) !important;
 }
 
 /* 强制文本换行，防止内容溢出 */

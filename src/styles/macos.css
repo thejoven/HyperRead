@@ -31,16 +31,16 @@
   -ms-overflow-style: none; /* Internet Explorer 10+ */
 }
 
-/* 内容区域滚动条样式 - 强制显示 */
+/* 内容区域滚动条 — Apple 风格：细、无轨道、悬停才加深 */
 .content-scroll {
-  scrollbar-width: thin !important; /* Firefox */
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent !important; /* Firefox */
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent !important;
 }
 
 .content-scroll::-webkit-scrollbar {
-  display: block !important; /* 强制显示 */
-  width: 8px !important;
-  height: 8px !important;
+  display: block !important;
+  width: 6px !important;
+  height: 6px !important;
 }
 
 .content-scroll::-webkit-scrollbar-track {
@@ -48,81 +48,81 @@
 }
 
 .content-scroll::-webkit-scrollbar-thumb {
-  display: block !important; /* 强制显示 */
-  background: rgba(0, 0, 0, 0.15) !important;
-  border-radius: 4px !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  display: block !important;
+  background: rgba(0, 0, 0, 0.18) !important;
+  border-radius: 10px !important;
+  border: 1.5px solid transparent !important;
+  background-clip: padding-box !important;
 }
 
 .content-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25) !important;
+  background: rgba(0, 0, 0, 0.30) !important;
+  background-clip: padding-box !important;
 }
 
 .dark .content-scroll {
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important; /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent !important;
 }
 
 .dark .content-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  border: 1.5px solid transparent !important;
+  background-clip: padding-box !important;
 }
 
 .dark .content-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.32) !important;
+  background-clip: padding-box !important;
 }
 
 /* macOS 风格的毛玻璃效果 */
 .glass-effect {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(252, 252, 252, 0.85);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .dark .glass-effect {
-  background: rgba(20, 20, 24, 0.82);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Apple NSVisualEffectView dark: 接近 #1C1C1E 有轻度透明 */
+  background: rgba(28, 28, 30, 0.85);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-/* macOS 风格的按钮 */
+/* macOS 风格的按钮 — Apple 扁平化风格 */
 .macos-button {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   border-radius: 6px !important;
-  transition: all 0.15s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
   color: hsl(var(--foreground)) !important;
 }
 
 .macos-button:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%) !important;
-  border-color: rgba(0, 0, 0, 0.15) !important;
-  transform: translateY(-0.5px);
+  background: rgba(0, 0, 0, 0.09) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
 }
 
 .macos-button:active {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.02) 100%) !important;
-  transform: translateY(0);
+  background: rgba(0, 0, 0, 0.14) !important;
 }
 
 .dark .macos-button {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  /* Apple dark control: rgba(255,255,255,0.1) fill */
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: hsl(var(--foreground)) !important;
 }
 
 .dark .macos-button:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+  background: rgba(255, 255, 255, 0.13) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 .dark .macos-button:active {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%) !important;
-  transform: translateY(0) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 /* 确保按钮内的图标和文字颜色正确 */
@@ -138,10 +138,10 @@
 
 /* macOS 风格的侧边栏 */
 .macos-sidebar {
-  background: rgba(244, 244, 246, 0.85);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-right: 1px solid rgba(0, 0, 0, 0.07);
+  background: rgba(242, 242, 247, 0.88);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
   /* 硬件加速优化 */
   transform: translateZ(0);
   backface-visibility: hidden;
@@ -149,10 +149,11 @@
 }
 
 .dark .macos-sidebar {
-  background: rgba(18, 19, 22, 0.88);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  /* Apple sidebar dark: 比窗口背景略亮 #1E1E20 */
+  background: rgba(30, 30, 32, 0.90);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* macOS 风格的文件项 */
@@ -168,29 +169,34 @@
 
 .macos-file-item.active {
   background: hsl(var(--primary));
-  color: white;
-  box-shadow: 0 1px 3px hsl(var(--primary) / 0.3);
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 1px 4px hsl(var(--primary) / 0.35);
 }
 
 .dark .macos-file-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.dark .macos-file-item.active {
+  box-shadow: 0 1px 6px hsl(var(--primary) / 0.45);
 }
 
 /* macOS 风格的工具栏 */
 .macos-toolbar {
-  background: rgba(250, 250, 252, 0.92);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  background: rgba(248, 248, 250, 0.92);
+  backdrop-filter: blur(32px) saturate(210%);
+  -webkit-backdrop-filter: blur(32px) saturate(210%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.08);
 }
 
 .dark .macos-toolbar {
-  background: rgba(16, 17, 20, 0.92);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  /* Apple titlebar dark: #242426 半透明，与 #1C1C1E 窗口背景区分 */
+  background: rgba(26, 26, 28, 0.92);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.5);
 }
 
 /* macOS 风格的拖拽提示 */
