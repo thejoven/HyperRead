@@ -153,11 +153,10 @@ export function useDirectory(): UseDirectoryReturn {
       if (data && data.files.length > 0) {
         setDirectoryData(data)
         setActualRootPath(data.rootPath)
-        // Clear enhanced drag mode cache as directory has been rescanned
+        // Always clear file content cache so re-opened files are read fresh from disk
+        setCacheBulk({})
         if (isEnhancedDragMode) {
-          setCacheBulk({})
           setIsEnhancedDragMode(false)
-          console.log('React: cleared enhanced drag mode cache after refresh')
         }
         console.log('React: directory refreshed successfully with', data.files.length, 'files')
       } else {

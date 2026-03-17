@@ -259,7 +259,16 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
 
   const handleRefresh = useCallback(async () => {
     await directory.handleRefresh(tabs.cache, tabs.setCacheBulk)
-  }, [directory, tabs])
+    // Reload the currently displayed file so stale cached content is replaced
+    if (fileData?.filePath && window.electronAPI?.readFile) {
+      try {
+        const data = await window.electronAPI.readFile(fileData.filePath)
+        startTransition(() => setFileData(data))
+      } catch {
+        // File may have been deleted; ignore
+      }
+    }
+  }, [directory, tabs, fileData, setFileData])
 
   // === Home Handler ===
   const handleGoHome = useCallback(() => {
