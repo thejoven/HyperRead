@@ -19,18 +19,10 @@
     "lint": "eslint"
   },
   "main": "electron/main.js",
-  "_unusedDependencies_NOTE": [
-    "@vercel/analytics — Electron 应用中无意义，可移除",
-    "react-mermaid — 项目直接使用 mermaid，此包冗余，可移除",
-    "remark-mermaid — src/ 中未使用，可移除"
-  ],
   "dependencies": {
-    "@copilotkit/react-core": "^1.53.0",
-    "@copilotkit/react-ui": "^1.53.0",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/typography": "^0.5.19",
-    "@vercel/analytics": "^1.6.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "epubjs": "^0.3.93",
@@ -42,11 +34,9 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
-    "react-mermaid": "^0.1.3",
     "rehype-highlight": "^7.0.2",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
-    "remark-mermaid": "^0.2.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0"
   },
@@ -93,9 +83,7 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "node_modules/**/*",
-      "!node_modules/.cache",
-      "!node_modules/.vite"
+      "package.json"
     ],
     "mac": {
       "category": "public.app-category.productivity",
