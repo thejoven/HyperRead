@@ -11,7 +11,7 @@ A beautiful macOS-style document reader supporting Markdown, PDF, and EPUB, buil
 
 <a href="https://www.producthunt.com/products/hyperread?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-hyperread" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1032883&theme=light&t=1761980700711" alt="HyperRead - HyperRead&#0032;Read&#0032;smarter&#0046;&#0032;Read&#0032;faster&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-[![Version](https://img.shields.io/badge/version-5.2.1-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.6.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -37,7 +37,7 @@ English | [简体中文](./README-zh.md)
 <td width="50%">
 
 - ⚙️ **Settings Center** - Centralized management of font size, multi-language, AI assistant, and shortcuts
-- 🤖 **AI Assistant** - Built-in AI assistant for document analysis and Q&A with conversation history
+- 🔌 **Plugin System** - Obsidian-style plugin API with sidebar panels, status bar, custom views, and npm support
 - 🔍 **Advanced Search** - Full-text search with highlighting across all markdown elements
 - ⌨️ **Keyboard Shortcuts** - Customizable shortcuts system with double-press support
 - 🖼️ **Image Preview & Zoom** - Click to zoom images with pan and drag controls
@@ -53,11 +53,11 @@ English | [简体中文](./README-zh.md)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.2.1-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.6.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. Download `HyperRead-5.2.1-arm64.dmg` installer
+1. Download `HyperRead-5.6.0-arm64.dmg` installer
 2. Double-click the DMG file
 3. Drag HyperRead to Applications folder
 4. First run may require permission in "System Preferences > Security & Privacy"
@@ -234,6 +234,71 @@ The project employs multiple performance optimization measures:
 - **Memory**: 4GB+ recommended
 - **Storage**: ~150MB installation space
 
+## 🔌 Plugin Development
+
+HyperRead supports an Obsidian-style plugin system. Plugins can add sidebar panels, status bar items, settings pages, custom file viewers, and react to application events.
+
+### Quickstart
+
+```bash
+cp -r plugin-template my-plugin
+cd my-plugin
+npm install
+npm run build
+# symlink for live dev:
+ln -s "$(pwd)" ~/.hyperread/plugins/my-plugin
+```
+
+### Minimal Plugin
+
+```javascript
+// src/main.js
+export default {
+  async onload(api) {
+    api.addStatusBarItem({ id: 'hello', text: '👋 Hello' })
+
+    api.on('document:open', (file) => {
+      const words = file.content.trim().split(/\s+/).length
+      api.addStatusBarItem({ id: 'wc', text: `Words: ${words}` })
+    })
+  },
+  async onunload() {}
+}
+```
+
+### Plugin Extension Points
+
+| API | Description |
+|-----|-------------|
+| `api.registerSidebarPanel(opts)` | Add a panel to the right sidebar |
+| `api.registerSettingsPanel(opts)` | Add a tab in Settings → Plugins |
+| `api.addStatusBarItem(opts)` | Add an item to the bottom status bar |
+| `api.registerViewType(opts)` | Custom renderer for file extensions |
+| `api.on(event, handler)` | Subscribe to app events (`document:open`, `theme:change`, …) |
+| `api.loadData() / saveData()` | Persist arbitrary JSON data |
+| `api.getSetting() / setSetting()` | Read/write plugin settings |
+
+### Documentation
+
+| Link | Description |
+|------|-------------|
+| [**Plugin Development Guide (English)**](./DOCS/plugin-system/plugin-development-en.md) | Full English guide — events, UI APIs, npm deps, TypeScript, hot reload, packaging |
+| [Plugin System Overview](./DOCS/plugin-system/README.md) | Architecture and core concepts (中文) |
+| [Developer Guide](./DOCS/plugin-system/developer-guide.md) | Step-by-step tutorial (中文) |
+| [API Reference](./DOCS/plugin-system/api-reference.md) | Full API type definitions (中文) |
+| [Quick Reference](./DOCS/plugin-system/quick-reference.md) | Cheat sheet (中文) |
+| [Word Count Template](./plugin-template/) | Minimal starter plugin |
+| [AI Assistant Demo](./demo-plugin/ai-assistant/) | Full-featured example plugin |
+
+### Installing a Plugin
+
+1. Open HyperRead → **Settings → Plugins**
+2. Click **Install Plugin**
+3. Select the plugin `.zip` file
+4. Toggle to enable
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions of any kind! Please follow these steps:
@@ -261,7 +326,14 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 
 ## 📝 What's New
 
-### 🎉 Version 5.2.1 (Latest)
+### 🎉 Version 5.6.0 (Latest)
+
+**Improvements:**
+- 🔌 **Plugin System Docs** - Added comprehensive English plugin development guide with full API reference, UI extension examples, npm dependency support, TypeScript, and hot reload workflow
+- 📖 **README Plugin Section** - Added Plugin Development section with quickstart, extension points table, and links to all docs
+- 🎨 **About Modal Redesign** - Polished macOS-style About dialog with hero header, gradient icon, version badges, icon-grid feature list, and improved social links
+
+### Version 5.2.1
 
 **Critical Fixes:**
 - 📁 **Native Directory Refresh** - Implemented robust system path tracking for dragged folders, enabling native "Refresh" functionality without re-dragging.

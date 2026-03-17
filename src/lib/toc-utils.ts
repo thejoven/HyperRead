@@ -15,12 +15,17 @@ export const generateHeadingId = (text: string): string => {
 }
 
 export const extractHeadings = (content: string): Heading[] => {
+  // Strip fenced code blocks (``` or ~~~) before scanning for headings
+  // to avoid matching # comments inside code as headings
+  const stripped = content.replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\1[ \t]*$/gm, (match) =>
+    match.replace(/^(?!`|~).+$/gm, '')
+  )
   const headingRegex = /^(#{1,6})\s+(.+)$/gm
   const headings: Heading[] = []
   const usedIds = new Set<string>()
   let match
 
-  while ((match = headingRegex.exec(content)) !== null) {
+  while ((match = headingRegex.exec(stripped)) !== null) {
     const level = match[1].length
     const text = match[2].trim()
     let id = generateHeadingId(text)
@@ -50,6 +55,46 @@ const stripMarkdown = (text: string) =>
     .replace(/_(.+?)_/g, '$1')
     .trim()
 
+const getScrollContainer = () =>
+  document.querySelector('.content-scroll') ||
+  document.querySelector('[class*="overflow-y-auto"]') ||
+  document.documentElement
+
+const getContentHeadings = (scrollContainer: Element | Document): NodeListOf<Element> => {
+  const root = scrollContainer === document.documentElement ? document : scrollContainer
+  return root.querySelectorAll('h1, h2, h3, h4, h5, h6')
+}
+
+const scrollElementIntoView = (element: HTMLElement, scrollContainer: Element | EventTarget) => {
+  const viewportHeight = window.innerHeight
+  const offsetTop = viewportHeight * 0.15
+
+  if (scrollContainer === document.documentElement) {
+    window.scrollTo({ top: Math.max(0, element.offsetTop - offsetTop), behavior: 'smooth' })
+  } else {
+    const containerEl = scrollContainer as Element
+    const containerRect = containerEl.getBoundingClientRect()
+    const elementRect = element.getBoundingClientRect()
+    const targetScroll = containerEl.scrollTop + elementRect.top - containerRect.top - offsetTop
+    containerEl.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' })
+  }
+}
+
+// Primary scroll method: use DOM index to avoid ID mismatches (most reliable)
+export const scrollToHeadingByIndex = (
+  index: number,
+  setActive?: (id: string) => void,
+  tocHeadingId?: string
+) => {
+  const scrollContainer = getScrollContainer()
+  const allHeadings = getContentHeadings(scrollContainer as Element)
+  const element = allHeadings[index] as HTMLElement | undefined
+  if (!element) return
+
+  scrollElementIntoView(element, scrollContainer)
+  setActive?.(tocHeadingId ?? element.id ?? '')
+}
+
 export const scrollToHeading = (headingId: string, setActive?: (id: string) => void, headingText?: string) => {
   let element: HTMLElement | null = document.getElementById(headingId)
 
@@ -67,22 +112,9 @@ export const scrollToHeading = (headingId: string, setActive?: (id: string) => v
 
   if (!element) return
 
-  const scrollContainer = document.querySelector('.content-scroll') ||
-    document.querySelector('[class*="overflow-y-auto"]') ||
-    document.documentElement
-
-  const viewportHeight = window.innerHeight
-  const offsetTop = viewportHeight * 0.15
-
-  if (scrollContainer === document.documentElement) {
-    window.scrollTo({ top: Math.max(0, element.offsetTop - offsetTop), behavior: 'smooth' })
-  } else {
-    const containerRect = scrollContainer.getBoundingClientRect()
-    const elementRect = element.getBoundingClientRect()
-    const currentScroll = scrollContainer.scrollTop
-    const targetScroll = currentScroll + elementRect.top - containerRect.top - offsetTop
-    scrollContainer.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' })
-  }
-
+  const scrollContainer = getScrollContainer()
+  scrollElementIntoView(element, scrollContainer)
   setActive?.(headingId)
 }
+
+export { getScrollContainer, getContentHeadings }

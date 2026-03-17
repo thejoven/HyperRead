@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Github, ExternalLink, Copy, Check } from 'lucide-react'
+import { X, Github, Copy, Check, BookOpen, FolderTree, BarChart2, Palette, Globe, Apple } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import packageJson from '../../package.json'
 
@@ -14,24 +13,17 @@ interface AboutModalProps {
 
 export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
   const t = useT()
-  // 复制状态
   const [copiedGithub, setCopiedGithub] = useState(false)
   const [copiedX, setCopiedX] = useState(false)
 
-  // ESC 键关闭弹窗
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
+      if (e.key === 'Escape' && isOpen) onClose()
     }
-
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown)
-      // 防止背景滚动
       document.body.style.overflow = 'hidden'
     }
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = 'unset'
@@ -40,188 +32,156 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
 
   if (!isOpen) return null
 
-  const handleGithubClick = async () => {
-    const url = 'https://github.com/thejoven/hyperread'
-    
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopiedGithub(true)
-      setTimeout(() => setCopiedGithub(false), 2000)
-    } catch (error) {
-      console.error('Failed to copy GitHub URL:', error)
-      // 备用方法
-      const textArea = document.createElement('textarea')
-      textArea.value = url
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
-      setCopiedGithub(true)
-      setTimeout(() => setCopiedGithub(false), 2000)
-    }
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose()
   }
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose()
+  const handleGithubClick = async () => {
+    const url = 'https://github.com/thejoven/hyperread'
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = url
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
     }
+    setCopiedGithub(true)
+    setTimeout(() => setCopiedGithub(false), 2000)
   }
 
   const handleXClick = async () => {
     const url = 'https://x.com/thejoven_com'
-    
     try {
       await navigator.clipboard.writeText(url)
-      setCopiedX(true)
-      setTimeout(() => setCopiedX(false), 2000)
-    } catch (error) {
-      console.error('Failed to copy X URL:', error)
-      // 备用方法
-      const textArea = document.createElement('textarea')
-      textArea.value = url
-      document.body.appendChild(textArea)
-      textArea.select()
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = url
+      document.body.appendChild(ta)
+      ta.select()
       document.execCommand('copy')
-      document.body.removeChild(textArea)
-      setCopiedX(true)
-      setTimeout(() => setCopiedX(false), 2000)
+      document.body.removeChild(ta)
     }
+    setCopiedX(true)
+    setTimeout(() => setCopiedX(false), 2000)
   }
 
+  const features = [
+    { icon: BookOpen,   label: t('about.featureList.dragDrop') },
+    { icon: FolderTree, label: t('about.featureList.fileTree') },
+    { icon: BarChart2,  label: t('about.featureList.charts') },
+    { icon: Palette,    label: t('about.featureList.themes') },
+    { icon: Globe,      label: t('about.featureList.multiLang') },
+    { icon: Apple,      label: t('about.featureList.macOS') },
+  ]
+
+  const platform = window.electronAPI?.platform === 'darwin' ? 'macOS' : window.electronAPI?.platform || 'Web'
+
   return (
-    <div 
-      className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 macos-fade-in p-4"
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 macos-fade-in p-4"
       onClick={handleBackdropClick}
     >
-      <Card className="w-[600px] max-w-[95vw] glass-effect border border-border/30 shadow-2xl macos-scale-in">
-        <CardHeader className="pb-4 relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="absolute top-4 right-4 h-7 w-7 p-0 hover:bg-muted/60 rounded-full transition-colors"
-            title={t('ui.buttons.close')}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        
-        <CardContent className="pt-0 pb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 左侧：应用信息 */}
-            <div className="space-y-4">
-              {/* 应用图标和名称 */}
-              <div className="text-center md:text-left space-y-3">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center mx-auto md:mx-0 shadow-lg overflow-hidden">
-                  <img 
-                    src="./logo.png" 
-                    alt="HyperRead Logo"
-                    className="w-16 h-16 object-contain"
-                    onError={(e) => {
-                      // 如果图片加载失败，显示默认emoji
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      target.parentElement!.innerHTML = '<span class="text-3xl">📚</span>'
-                    }}
-                  />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold macos-text-title">HyperRead</h2>
-                  <p className="text-sm text-muted-foreground macos-text mt-1">
-                    {t('app.subtitle')}
-                  </p>
-                </div>
-              </div>
+      <div className="relative w-[480px] max-w-[95vw] glass-effect rounded-2xl shadow-2xl overflow-hidden border border-border/20 macos-scale-in">
 
-              {/* 版本信息 */}
-              <div className="bg-muted/20 rounded-xl p-4 space-y-3">
-                <h3 className="text-sm font-semibold macos-text-title text-foreground">{t('about.appInfo')}</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">{t('about.version')}</span>
-                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v{packageJson.version}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">{t('about.platform')}</span>
-                    <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">
-                      {window.electronAPI?.platform === 'darwin' ? 'macOS' : window.electronAPI?.platform || 'Web'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Close button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 h-7 w-7 p-0 hover:bg-muted/60 rounded-full transition-colors"
+          title={t('ui.buttons.close')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
 
-            {/* 右侧：功能特性 */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold macos-text-title text-foreground mb-3">{t('about.features')}</h3>
-                <div className="space-y-2">
-                  {[
-                    t('about.featureList.dragDrop'),
-                    t('about.featureList.fileTree'),
-                    t('about.featureList.charts'),
-                    t('about.featureList.themes'),
-                    t('about.featureList.multiLang'),
-                    t('about.featureList.macOS')
-                  ].map((feature, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-sm text-muted-foreground macos-text">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* GitHub 链接和版权 */}
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <div className="text-xs text-muted-foreground">GitHub:</div>
-                  <Button
-                    onClick={handleGithubClick}
-                    className="w-full macos-button bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary hover:text-primary justify-between"
-                    variant="outline"
-                  >
-                    <div className="flex items-center">
-                      <Github className="w-4 h-4 mr-2" />
-                      <span className="macos-text font-medium text-sm">github.com/thejoven/hyperread</span>
-                    </div>
-                    {copiedGithub ? (
-                      <Check className="w-3.5 h-3.5 text-green-500" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5 opacity-70" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-xs text-muted-foreground">X (Twitter):</div>
-                  <Button
-                    onClick={handleXClick}
-                    className="w-full macos-button bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary hover:text-primary justify-between"
-                    variant="outline"
-                  >
-                    <div className="flex items-center">
-                      <X className="w-4 h-4 mr-2" />
-                      <span className="macos-text font-medium text-sm">x.com/thejoven_com</span>
-                    </div>
-                    {copiedX ? (
-                      <Check className="w-3.5 h-3.5 text-green-500" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5 opacity-70" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="text-center pt-2">
-                  <p className="text-xs text-muted-foreground/60 macos-text">
-                    © 2025 theJoven. All rights reserved.
-                  </p>
-                </div>
-              </div>
-            </div>
+        {/* Hero header */}
+        <div className="px-8 pt-10 pb-7 text-center bg-gradient-to-b from-primary/10 via-primary/5 to-transparent border-b border-border/10">
+          {/* App icon */}
+          <div className="w-20 h-20 mx-auto mb-4 rounded-[22px] shadow-lg bg-gradient-to-br from-primary/25 to-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-primary/20">
+            <img
+              src="./logo.png"
+              alt="HyperRead Logo"
+              className="w-16 h-16 object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+                target.parentElement!.innerHTML = '<span class="text-4xl">📚</span>'
+              }}
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          <h2 className="text-2xl font-bold macos-text-title tracking-tight">HyperRead</h2>
+          <p className="text-sm text-muted-foreground mt-1 macos-text">{t('app.subtitle')}</p>
+
+          {/* Version + platform badges */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+              v{packageJson.version}
+            </span>
+            <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-muted/60 text-muted-foreground border border-border/30">
+              {platform}
+            </span>
+          </div>
+        </div>
+
+        {/* Features grid */}
+        <div className="px-6 py-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            {t('about.features')}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {features.map(({ icon: Icon, label }, i) => (
+              <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted/20 hover:bg-muted/30 transition-colors">
+                <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <span className="text-xs text-muted-foreground leading-tight">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Social links + copyright */}
+        <div className="px-6 pb-6 space-y-2.5 border-t border-border/10 pt-4">
+          <Button
+            onClick={handleGithubClick}
+            variant="outline"
+            className="w-full h-9 macos-button justify-between group"
+          >
+            <div className="flex items-center gap-2">
+              <Github className="w-4 h-4" />
+              <span className="text-sm font-medium">github.com/thejoven/hyperread</span>
+            </div>
+            {copiedGithub
+              ? <Check className="w-3.5 h-3.5 text-green-500" />
+              : <Copy className="w-3.5 h-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
+            }
+          </Button>
+
+          <Button
+            onClick={handleXClick}
+            variant="outline"
+            className="w-full h-9 macos-button justify-between group"
+          >
+            <div className="flex items-center gap-2">
+              {/* X (Twitter) logo — simple SVG */}
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.766l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              <span className="text-sm font-medium">x.com/thejoven_com</span>
+            </div>
+            {copiedX
+              ? <Check className="w-3.5 h-3.5 text-green-500" />
+              : <Copy className="w-3.5 h-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
+            }
+          </Button>
+
+          <p className="text-center text-xs text-muted-foreground/50 pt-1">
+            © 2025 theJoven. All rights reserved.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

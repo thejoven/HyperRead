@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-5.2.1-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.6.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -34,7 +34,7 @@
 <td width="50%">
 
 - ⚙️ **设置中心** - 集中管理字体大小、多语言、AI 助手和快捷键等设置
-- 🤖 **AI 助手** - 内置 AI 助手，支持文档分析和问答，保存对话历史
+- 🔌 **插件系统** - Obsidian 风格的插件 API，支持侧边栏面板、状态栏、自定义视图和 npm 依赖
 - 🔍 **高级搜索** - 全文搜索，支持高亮显示和所有 Markdown 元素
 - ⌨️ **快捷键系统** - 可自定义快捷键系统，支持双击触发
 - 🖼️ **图片预览缩放** - 点击图片可放大预览，支持平移和拖拽控制
@@ -50,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.2.1-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.6.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-5.2.1-arm64.dmg` 安装包
+1. 下载 `HyperRead-5.6.0-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -231,6 +231,71 @@ npm run lint              # ESLint 检查
 - **内存**: 建议 4GB 以上
 - **存储**: 约 150MB 安装空间
 
+## 🔌 插件开发
+
+HyperRead 提供 Obsidian 风格的插件系统，插件可以添加侧边栏面板、状态栏项、设置页、自定义文件渲染器，并监听应用事件。
+
+### 快速开始
+
+```bash
+cp -r plugin-template my-plugin
+cd my-plugin
+npm install
+npm run build
+# 软链接用于实时开发
+ln -s "$(pwd)" ~/.hyperread/plugins/my-plugin
+```
+
+### 最小插件示例
+
+```javascript
+// src/main.js
+export default {
+  async onload(api) {
+    api.addStatusBarItem({ id: 'hello', text: '👋 Hello' })
+
+    api.on('document:open', (file) => {
+      const words = file.content.trim().split(/\s+/).length
+      api.addStatusBarItem({ id: 'wc', text: `字数: ${words}` })
+    })
+  },
+  async onunload() {}
+}
+```
+
+### 扩展点一览
+
+| API | 说明 |
+|-----|------|
+| `api.registerSidebarPanel(opts)` | 在右侧边栏添加面板 |
+| `api.registerSettingsPanel(opts)` | 在设置 → 插件中添加标签页 |
+| `api.addStatusBarItem(opts)` | 在底部状态栏添加项目 |
+| `api.registerViewType(opts)` | 为文件扩展名注册自定义渲染器 |
+| `api.on(event, handler)` | 订阅应用事件（`document:open`、`theme:change` 等） |
+| `api.loadData() / saveData()` | 持久化任意 JSON 数据 |
+| `api.getSetting() / setSetting()` | 读写插件设置 |
+
+### 插件开发文档
+
+| 链接 | 说明 |
+|------|------|
+| [**Plugin Development Guide (English)**](./DOCS/plugin-system/plugin-development-en.md) | 完整英文指南 |
+| [**插件系统概览**](./DOCS/plugin-system/README.md) | 架构、特性与核心概念 |
+| [**开发者指南**](./DOCS/plugin-system/developer-guide.md) | 从零创建插件的完整教程 |
+| [**API 参考手册**](./DOCS/plugin-system/api-reference.md) | 完整 API 类型定义 |
+| [**快速参考**](./DOCS/plugin-system/quick-reference.md) | API 速查表 |
+| [Word Count 模板](./plugin-template/) | 最小示例插件 |
+| [AI 助手示例](./demo-plugin/ai-assistant/) | 功能完整的示例插件 |
+
+### 安装插件
+
+1. 打开 HyperRead → **设置 → 插件**
+2. 点击 **安装插件**
+3. 选择插件 `.zip` 文件
+4. 启用插件
+
+---
+
 ## 🤝 贡献
 
 我们欢迎任何形式的贡献！请遵循以下步骤：
@@ -258,7 +323,14 @@ npm run lint              # ESLint 检查
 
 ## 📝 最新更新
 
-### 🎉 版本 5.2.1（最新）
+### 🎉 版本 5.6.0（最新）
+
+**改进：**
+- 🔌 **插件系统文档** - 新增完整英文插件开发指南，涵盖完整 API 参考、UI 扩展示例、npm 依赖、TypeScript 支持和热重载工作流
+- 📖 **README 插件章节** - 新增插件开发章节，包含快速开始、扩展点一览和文档链接
+- 🎨 **关于弹窗重设计** - 精致的 macOS 风格关于对话框，带渐变 Hero 头部、版本徽章、图标网格特性列表和优化的社交链接
+
+### 版本 5.2.1
 
 **关键修复：**
 - 📁 **原生目录刷新** - 为拖拽的文件夹实现了健壮的系统路径追踪，支持原生"刷新"功能而无需重新拖拽。

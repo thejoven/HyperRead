@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { extractHeadings, scrollToHeading, type Heading } from '@/lib/toc-utils'
+import { extractHeadings, scrollToHeadingByIndex, getScrollContainer, getContentHeadings, type Heading } from '@/lib/toc-utils'
 
 interface SegmentData extends Heading {
   proportion: number
@@ -31,9 +31,8 @@ export default function TocMinimap({ content, className }: TocMinimapProps) {
   const measureSegments = useCallback(() => {
     if (headings.length === 0) { setSegments([]); return }
 
-    const scrollContainer = document.querySelector('.content-scroll') ||
-      document.querySelector('[class*="overflow-y-auto"]') ||
-      document.documentElement
+    const scrollContainer = getScrollContainer()
+    const domHeadings = Array.from(getContentHeadings(scrollContainer as Element))
 
     const totalHeight = scrollContainer === document.documentElement
       ? document.documentElement.scrollHeight
@@ -41,8 +40,8 @@ export default function TocMinimap({ content, className }: TocMinimapProps) {
 
     if (totalHeight === 0) return
 
-    const positions: number[] = headings.map((h) => {
-      const el = document.getElementById(h.id)
+    const positions: number[] = headings.map((_h, i) => {
+      const el = domHeadings[i] as HTMLElement | undefined
       if (!el) return 0
       if (scrollContainer === document.documentElement) return el.offsetTop
       const containerRect = (scrollContainer as Element).getBoundingClientRect()
@@ -66,9 +65,7 @@ export default function TocMinimap({ content, className }: TocMinimapProps) {
   }, [measureSegments])
 
   useEffect(() => {
-    const scrollContainer = document.querySelector('.content-scroll') ||
-      document.querySelector('[class*="overflow-y-auto"]') ||
-      document.body
+    const scrollContainer = getScrollContainer()
 
     const observer = new ResizeObserver(() => {
       if (measureTimerRef.current) clearTimeout(measureTimerRef.current)
@@ -81,14 +78,18 @@ export default function TocMinimap({ content, className }: TocMinimapProps) {
   // Active heading tracking on scroll
   const updateActive = useCallback(() => {
     if (headings.length === 0) return
+
+    const scrollContainer = getScrollContainer()
+    const domHeadings = Array.from(getContentHeadings(scrollContainer as Element))
+
     const viewportHeight = window.innerHeight
     const activeZoneTop = viewportHeight * 0.2
     const activeZoneBottom = viewportHeight * 0.8
     let bestId = ''
     let closestDist = Infinity
 
-    headings.forEach((h) => {
-      const el = document.getElementById(h.id)
+    headings.forEach((h, i) => {
+      const el = domHeadings[i] as HTMLElement | undefined
       if (!el) return
       const rect = el.getBoundingClientRect()
       if (rect.top <= activeZoneBottom && rect.bottom >= activeZoneTop) {
@@ -109,8 +110,7 @@ export default function TocMinimap({ content, className }: TocMinimapProps) {
       scrollTimerRef.current = setTimeout(updateActive, 100)
     }
 
-    const scrollContainer = document.querySelector('.content-scroll') ||
-      document.querySelector('[class*="overflow-y-auto"]') || window
+    const scrollContainer = getScrollContainer()
 
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
     setTimeout(updateActive, 250)
@@ -185,7 +185,7 @@ export default function TocMinimap({ content, className }: TocMinimapProps) {
                     : 'bg-foreground/25'
               )}
               style={{ width: `${barWidth}px`, height: `${BAR_HEIGHT}px` }}
-              onClick={() => scrollToHeading(seg.id, setActiveId, seg.text)}
+              onClick={() => scrollToHeadingByIndex(i, setActiveId, seg.id)}
             />
           </div>
         )
