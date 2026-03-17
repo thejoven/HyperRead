@@ -14,8 +14,8 @@
     "start": "npm run build && npm run electron",
     "start-dev": "npm run build && npm run electron-dev",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
-    "dist": "npm run build && electron-builder",
-    "dist-all": "npm run build && electron-builder --mac --win --linux",
+    "dist": "npm run build && ELECTRON_MIRROR='' ELECTRON_BUILDER_BINARIES_MIRROR=https://github.com/electron-userland/electron-builder-binaries/releases/download/ electron-builder",
+    "dist-all": "npm run build && ELECTRON_MIRROR='' ELECTRON_BUILDER_BINARIES_MIRROR=https://github.com/electron-userland/electron-builder-binaries/releases/download/ electron-builder --mac --win --linux",
     "lint": "eslint"
   },
   "main": "electron/main.js",
