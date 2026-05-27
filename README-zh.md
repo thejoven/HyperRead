@@ -8,7 +8,7 @@
 
 一个美观的 macOS 风格文档阅读器，支持 Markdown、PDF、EPUB，基于 Electron 构建。
 
-[![Version](https://img.shields.io/badge/version-5.6.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.6.2-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -25,7 +25,7 @@
 <td width="50%">
 
 - 🎨 **macOS 原生界面** - 完美符合 macOS 设计风格，支持毛玻璃效果和流畅动画
-- 📁 **多格式支持** - 支持 Markdown (.md/.markdown)、PDF (.pdf)、EPUB (.epub) 文件
+- 📁 **多格式支持** - 支持 Markdown (.md/.markdown)、PDF (.pdf)、EPUB (.epub)、HTML (.html/.htm) 文件
 - 📖 **专业 EPUB 阅读器** - Apple Books 风格的阅读体验，支持精确分页
 - 🌳 **文件树浏览** - 递归扫描并展示目录结构中的所有文档文件，支持拖拽加载
 - 🎯 **高性能渲染** - 支持 Mermaid 图表、代码高亮、数学公式 (KaTeX)
@@ -50,11 +50,11 @@
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.6.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.6.2-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. 下载 `HyperRead-5.6.0-arm64.dmg` 安装包
+1. 下载 `HyperRead-5.6.2-arm64.dmg` 安装包
 2. 双击 DMG 文件
 3. 将 HyperRead 拖拽到 Applications 文件夹
 4. 首次运行可能需要在"系统偏好设置 > 安全性与隐私"中允许
@@ -83,7 +83,7 @@ npm run start        # 生产模式
 <td width="33%">
 
 **🖱️ 拖拽方式**
-直接将 `.md`、`.pdf` 或 `.epub` 文件，或文件夹拖拽到应用窗口
+直接将 `.md`、`.pdf`、`.epub` 或 `.html` 文件，或文件夹拖拽到应用窗口
 
 </td>
 <td width="33%">
@@ -323,9 +323,13 @@ export default {
 
 ## 📝 最新更新
 
-### 🎉 版本 5.6.0（最新）
+### 🎉 版本 5.6.2（最新）
 
 **改进：**
+- 📁 **HTML 文档支持** - 新增 `.html` 和 `.htm` 加载、文件关联和阅读视图支持
+- 🧭 **TOC Minimap** - 优化标题提取和长文档浮动导航体验
+- 🔌 **插件示例** - 新增 TOC Minimap 和 Article Notebook 示例插件及打包示例
+- 📊 **Mermaid 渲染** - 集成 `beautiful-mermaid` 并优化 Mermaid 图表渲染体验
 - 🔌 **插件系统文档** - 新增完整英文插件开发指南，涵盖完整 API 参考、UI 扩展示例、npm 依赖、TypeScript 支持和热重载工作流
 - 📖 **README 插件章节** - 新增插件开发章节，包含快速开始、扩展点一览和文档链接
 - 🎨 **关于弹窗重设计** - 精致的 macOS 风格关于对话框，带渐变 Hero 头部、版本徽章、图标网格特性列表和优化的社交链接

@@ -37,7 +37,14 @@ export interface ElectronAPI {
   isElectron: boolean
   platform: string
   // Enhanced drag-drop functions
-  handleFileContent: (data: { content: string; fileName: string; originalName: string; isDirectory: boolean }) => void
+  handleFileContent: (data: {
+    content: string
+    fileName: string
+    originalName: string
+    filePath?: string
+    fileType?: string
+    isDirectory: boolean
+  }) => void
   handleDirectoryContent: (data: { files: FileInfo[]; rootPath: string }) => void
   handleDirectoryDrop: (directoryName: string) => void
   handleMultipleFileContents: (data: { fileContents: Record<string, string>; totalFiles: number }) => void

@@ -3,8 +3,30 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Minus, Plus, BookOpen, Languages, Check, Keyboard, ChevronRight, ChevronDown, Settings2, Info, Github, Copy, Check as CheckIcon, X as XIcon, Puzzle, HelpCircle } from 'lucide-react'
+import {
+  Minus,
+  Plus,
+  BookOpen,
+  Languages,
+  Check,
+  Keyboard,
+  ChevronRight,
+  ChevronDown,
+  Settings2,
+  Info,
+  Github,
+  Copy,
+  Puzzle,
+  HelpCircle,
+  FileText,
+  FolderTree,
+  BarChart2,
+  Palette,
+  Globe2,
+  Apple,
+  Sparkles,
+  AtSign
+} from 'lucide-react'
 import packageJson from '../../package.json'
 import { useTranslation } from '@/lib/i18n'
 import { toast } from "sonner"
@@ -22,6 +44,8 @@ interface SettingsModalProps {
   onContentWidthChange: (width: 'narrow' | 'medium' | 'wide' | 'full') => void
   primaryColor: 'cyan' | 'blue' | 'purple' | 'green' | 'orange' | 'pink'
   onPrimaryColorChange: (color: 'cyan' | 'blue' | 'purple' | 'green' | 'orange' | 'pink') => void
+  showDocumentTitle: boolean
+  onShowDocumentTitleChange: (show: boolean) => void
 }
 
 // 设置类别定义
@@ -38,7 +62,18 @@ interface SettingsSubCategory {
   icon: React.ReactNode
 }
 
-export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeChange, contentWidth, onContentWidthChange, primaryColor, onPrimaryColorChange }: SettingsModalProps) {
+export default function SettingsModal({
+  isOpen,
+  onClose,
+  fontSize,
+  onFontSizeChange,
+  contentWidth,
+  onContentWidthChange,
+  primaryColor,
+  onPrimaryColorChange,
+  showDocumentTitle,
+  onShowDocumentTitleChange
+}: SettingsModalProps) {
   const { t, currentLanguage, languages, changeLanguage } = useTranslation()
   const { plugins, manager } = usePlugins()
   const [activeCategory, setActiveCategory] = useState('reading')
@@ -229,6 +264,32 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
           </div>
         </div>
 
+        {/* 侧栏文档标题显示 */}
+        <div className="flex items-center justify-between gap-4 py-2 px-3 bg-muted/20 rounded-lg">
+          <div className="flex-1">
+            <label className="text-sm font-medium text-foreground">{t('settings.reading.showDocumentTitle')}</label>
+            <p className="text-xs text-muted-foreground">{t('settings.reading.showDocumentTitleDesc')}</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showDocumentTitle}
+            onClick={() => onShowDocumentTitleChange(!showDocumentTitle)}
+            className={`relative h-6 w-11 flex-shrink-0 rounded-full border transition-colors ${
+              showDocumentTitle
+                ? 'border-primary/40 bg-primary'
+                : 'border-border/60 bg-muted/70 hover:bg-muted'
+            }`}
+            title={t('settings.reading.showDocumentTitle')}
+          >
+            <span
+              className={`absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-background shadow-sm transition-transform ${
+                showDocumentTitle ? 'translate-x-5' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
         {/* 主配色设置 */}
         <div className="py-2 px-3 bg-muted/20 rounded-lg">
           <div className="mb-3">
@@ -303,11 +364,9 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
     const version = packageJson.version
     const platform = (window as any).electronAPI?.platform === 'darwin' ? 'macOS' : (window as any).electronAPI?.platform || 'Web'
 
-    const copyToClipboard = async (text: string, onDone: () => void) => {
+    const copyToClipboard = async (text: string, setCopied: (copied: boolean) => void) => {
       try {
         await navigator.clipboard.writeText(text)
-        onDone()
-        setTimeout(onDone, 1500)
       } catch {
         const ta = document.createElement('textarea')
         ta.value = text
@@ -315,80 +374,165 @@ export default function SettingsModal({ isOpen, onClose, fontSize, onFontSizeCha
         ta.select()
         document.execCommand('copy')
         document.body.removeChild(ta)
-        onDone()
-        setTimeout(onDone, 1500)
       }
+
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
     }
 
+    const appInfo = [
+      { label: t('about.version'), value: `v${version}` },
+      { label: t('about.platform'), value: platform }
+    ]
+
+    const features = [
+      {
+        icon: FileText,
+        label: t('about.featureList.dragDrop'),
+        className: 'bg-sky-500/10 text-sky-600 dark:text-sky-300 border-sky-500/20'
+      },
+      {
+        icon: FolderTree,
+        label: t('about.featureList.fileTree'),
+        className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20'
+      },
+      {
+        icon: BarChart2,
+        label: t('about.featureList.charts'),
+        className: 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20'
+      },
+      {
+        icon: Palette,
+        label: t('about.featureList.themes'),
+        className: 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300 border-fuchsia-500/20'
+      },
+      {
+        icon: Globe2,
+        label: t('about.featureList.multiLang'),
+        className: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/20'
+      },
+      {
+        icon: Apple,
+        label: t('about.featureList.macOS'),
+        className: 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-200 border-zinc-500/20'
+      }
+    ]
+
+    const links = [
+      {
+        label: 'GitHub',
+        value: 'github.com/thejoven/hyperread',
+        url: 'https://github.com/thejoven/hyperread',
+        icon: Github,
+        copied: aboutCopiedGithub,
+        setCopied: setAboutCopiedGithub
+      },
+      {
+        label: 'X',
+        value: 'x.com/thejoven_com',
+        url: 'https://x.com/thejoven_com',
+        icon: AtSign,
+        copied: aboutCopiedX,
+        setCopied: setAboutCopiedX
+      }
+    ]
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="text-center md:text-left space-y-3">
-            <div className="w-20 h-20 flex items-center justify-center mx-auto md:mx-0">
-              <img src="./logo.png" alt="HyperRead Logo" className="w-20 h-20 object-contain"
-                onError={(e) => { const t=e.target as HTMLImageElement; t.style.display='none'; t.parentElement!.innerHTML='<span class="text-3xl">📚</span>' }} />
+      <div className="space-y-4">
+        <div className="relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-primary/15 via-background to-emerald-500/10 p-4 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+          <div className="flex items-start gap-4">
+            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/40 bg-background/80 shadow-lg shadow-primary/10 ring-1 ring-primary/15">
+              <img
+                src="./logo.png"
+                alt="HyperRead Logo"
+                className="h-12 w-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                  target.parentElement!.innerHTML = '<span class="text-xl font-semibold">HR</span>'
+                }}
+              />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold macos-text-title">HyperRead</h2>
-              <p className="text-sm text-muted-foreground macos-text mt-1">{t('app.subtitle')}</p>
+
+            <div className="min-w-0 flex-1">
+              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>{t('about.title')}</span>
+              </div>
+              <h2 className="macos-text-title text-2xl font-bold leading-tight tracking-normal text-foreground">
+                HyperRead
+              </h2>
+              <p className="macos-text mt-1 max-w-md text-sm leading-5 text-muted-foreground">
+                {t('about.description')}
+              </p>
             </div>
           </div>
 
-          <div className="bg-muted/20 rounded-xl p-4 space-y-3">
-            <h3 className="text-sm font-semibold macos-text-title text-foreground">{t('about.appInfo')}</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">{t('about.version')}</span>
-                <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">v{version}</span>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {appInfo.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-border/35 bg-background/65 px-3 py-2 shadow-sm"
+              >
+                <div className="flex items-center justify-between gap-2 sm:block">
+                  <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+                  <span className="font-mono text-sm font-semibold text-foreground sm:mt-0.5 sm:block">
+                    {item.value}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">{t('about.platform')}</span>
-                <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md">{platform}</span>
-              </div>
-            </div>
+            ))}
+            {links.map(({ label, value, url, icon: Icon, copied, setCopied }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => copyToClipboard(url, setCopied)}
+                className="rounded-lg border border-border/35 bg-background/65 px-3 py-2 text-left shadow-sm transition-colors hover:bg-background/90"
+                aria-label={`${label}: ${value}`}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                    <span className="truncate text-xs font-medium text-muted-foreground">{label}</span>
+                  </span>
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                  )}
+                </span>
+                <span className="mt-0.5 block truncate text-sm font-semibold text-foreground">{value}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-semibold macos-text-title text-foreground mb-3">{t('about.features')}</h3>
-            <div className="space-y-2">
-              {[ t('about.featureList.dragDrop'), t('about.featureList.fileTree'), t('about.featureList.charts'), t('about.featureList.themes'), t('about.featureList.multiLang'), t('about.featureList.macOS')].map((feature, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground macos-text">{feature}</span>
-                </div>
-              ))}
-            </div>
+        <div>
+          <div className="mb-2.5 flex items-center justify-between gap-3">
+            <h3 className="macos-text-title text-sm font-semibold text-foreground">{t('about.features')}</h3>
+            <span className="rounded-full border border-border/30 bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
+              {t('app.subtitle')}
+            </span>
           </div>
 
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground">GitHub:</div>
-              <Button onClick={() => copyToClipboard('https://github.com/thejoven/hyperread', () => setAboutCopiedGithub(v=>!v))} className="w-full macos-button bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary hover:text-primary justify-between" variant="outline">
-                <div className="flex items-center">
-                  <Github className="w-4 h-4 mr-2" />
-                  <span className="macos-text font-medium text-sm">github.com/thejoven/hyperread</span>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            {features.map(({ icon: Icon, label, className }) => (
+              <div
+                key={label}
+                className="flex min-h-[54px] items-start gap-2.5 rounded-lg border border-border/35 bg-muted/15 p-2.5 transition-colors hover:bg-muted/25"
+              >
+                <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border ${className}`}>
+                  <Icon className="h-4 w-4" />
                 </div>
-                {aboutCopiedGithub ? (<CheckIcon className="w-3.5 h-3.5 text-green-500" />) : (<Copy className="w-3.5 h-3.5 opacity-70" />)}
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground">X (Twitter):</div>
-              <Button onClick={() => copyToClipboard('https://x.com/thejoven_com', () => setAboutCopiedX(v=>!v))} className="w-full macos-button bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary hover:text-primary justify-between" variant="outline">
-                <div className="flex items-center">
-                  <XIcon className="w-4 h-4 mr-2" />
-                  <span className="macos-text font-medium text-sm">x.com/thejoven_com</span>
-                </div>
-                {aboutCopiedX ? (<CheckIcon className="w-3.5 h-3.5 text-green-500" />) : (<Copy className="w-3.5 h-3.5 opacity-70" />)}
-              </Button>
-            </div>
-
-            <div className="text-center pt-2">
-              <p className="text-xs text-muted-foreground/60 macos-text">© 2025 theJoven. All rights reserved.</p>
-            </div>
+                <span className="macos-text text-sm leading-5 text-foreground/85">{label}</span>
+              </div>
+            ))}
           </div>
+
+          <p className="macos-text pt-2 text-center text-xs text-muted-foreground/60">
+            © 2025 theJoven. All rights reserved.
+          </p>
         </div>
       </div>
     )

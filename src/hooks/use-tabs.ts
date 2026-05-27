@@ -5,7 +5,7 @@ import type { FileData } from '@/types/file'
 export interface TabInfo {
   filePath: string
   fileName: string
-  fileType?: 'markdown' | 'pdf' | 'epub' | 'text'
+  fileType?: 'markdown' | 'pdf' | 'epub' | 'html' | 'text'
 }
 
 export function useTabs() {
@@ -80,6 +80,31 @@ export function useTabs() {
     })
   }, [activeTab])
 
+  const closeOtherTabs = useCallback((filePath: string) => {
+    const targetTab = openTabs.find((t) => t.filePath === filePath)
+    if (!targetTab) return
+
+    const closedPaths = new Set(openTabs.filter((t) => t.filePath !== filePath).map((t) => t.filePath))
+    setOpenTabs([targetTab])
+    setActiveTab(filePath)
+    setCache((prev) => {
+      const next = new Map(prev)
+      closedPaths.forEach((path) => next.delete(path))
+      return next
+    })
+  }, [openTabs])
+
+  const closeAllTabs = useCallback(() => {
+    const closedPaths = new Set(openTabs.map((t) => t.filePath))
+    setOpenTabs([])
+    setActiveTab(null)
+    setCache((prev) => {
+      const next = new Map(prev)
+      closedPaths.forEach((path) => next.delete(path))
+      return next
+    })
+  }, [openTabs])
+
   const setCacheEntry = useCallback((filePath: string, content: string) => {
     setCache((prev) => {
       const next = new Map(prev)
@@ -107,10 +132,11 @@ export function useTabs() {
     resetTabsWithCache,
     activateTab,
     closeTab,
+    closeOtherTabs,
+    closeAllTabs,
     clearTabs,
     setCacheEntry,
     setCacheBulk,
     setActiveTab,
   }
 }
-

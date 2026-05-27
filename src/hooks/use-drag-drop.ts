@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import type { FileInfo, DirectoryData } from '@/types/directory'
 import type { FileData } from '@/types/file'
+import { extractMarkdownTitle } from '@/lib/markdown-title'
 
-export type FileType = 'markdown' | 'pdf' | 'epub'
+export type FileType = 'markdown' | 'pdf' | 'epub' | 'html'
 
 interface DraggedFile {
   file: File
@@ -36,7 +37,9 @@ function isSupportedFile(fileName: string): boolean {
   return lowerName.endsWith('.md') ||
          lowerName.endsWith('.markdown') ||
          lowerName.endsWith('.pdf') ||
-         lowerName.endsWith('.epub')
+         lowerName.endsWith('.epub') ||
+         lowerName.endsWith('.html') ||
+         lowerName.endsWith('.htm')
 }
 
 // Helper function to get file type
@@ -44,6 +47,7 @@ function getFileType(fileName: string): FileType {
   const lowerName = fileName.toLowerCase()
   if (lowerName.endsWith('.pdf')) return 'pdf'
   if (lowerName.endsWith('.epub')) return 'epub'
+  if (lowerName.endsWith('.html') || lowerName.endsWith('.htm')) return 'html'
   // Default to markdown for supported text files
   return 'markdown'
 }
@@ -184,7 +188,7 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
       console.log(`React: Found ${allFiles.length} supported files in ${directories.length} directories`)
 
       if (allFiles.length === 0) {
-        toast.error('未找到支持的文件。请拖拽 Markdown (.md/.markdown)、PDF (.pdf) 或 EPUB (.epub) 文件，或包含这些文件的文件夹。')
+        toast.error('未找到支持的文件。请拖拽 Markdown、PDF、EPUB 或 HTML 文件，或包含这些文件的文件夹。')
         return
       }
 
@@ -202,42 +206,19 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
           content = await readFileContent(fileData.file)
         }
 
+        let actualPath = fileData.systemPath || fileData.fullPath
+        actualPath = actualPath.replace(/\\/g, '/')
+
         onSingleFileDrop({
           content: content,
-          fileName: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
-          filePath: fileData.fullPath,
+          fileName: fileData.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
+          filePath: actualPath,
           fileType: fileType
         })
         console.log(`React: Loaded single ${fileType} file:`, fileData.name)
       } else {
         // Multiple files or directory mode
         console.log('React: Setting up directory mode with enhanced caching')
-
-        // Create file infos
-        const fileInfos: FileInfo[] = allFiles.map(fileData => {
-          // relativePath is based on the virtual path structure for display/tree
-          const relativePath = fileData.fullPath.replace(/^\//, '')
-          const directory = relativePath.includes('/') ?
-            relativePath.substring(0, relativePath.lastIndexOf('/')) : '.'
-
-          // Use the system path if available (crucial for Electron to read the actual file)
-          // Otherwise fall back to virtual path (which might fail in Electron fs.readFile)
-          let actualPath = fileData.systemPath || fileData.fullPath
-          
-          // Normalize path separators to forward slashes for consistency
-          if (actualPath) {
-            actualPath = actualPath.replace(/\\/g, '/')
-          }
-
-          return {
-            name: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
-            fileName: fileData.name,
-            fullPath: actualPath,
-            relativePath: relativePath,
-            directory: directory,
-            fileType: getFileType(fileData.name)
-          }
-        })
 
         // Cache all file contents using system path as key if available
         const fileContentsCache: Record<string, string> = {}
@@ -263,6 +244,35 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
             console.error(`React: Failed to read content for ${fileData.name}:`, error)
           }
         }
+
+        // Create file infos after caching so Markdown titles can be extracted for the sidebar
+        const fileInfos: FileInfo[] = allFiles.map(fileData => {
+          const relativePath = fileData.fullPath.replace(/^\//, '')
+          const directory = relativePath.includes('/') ?
+            relativePath.substring(0, relativePath.lastIndexOf('/')) : '.'
+
+          let actualPath = fileData.systemPath || fileData.fullPath
+
+          if (actualPath) {
+            actualPath = actualPath.replace(/\\/g, '/')
+          }
+
+          const fileType = getFileType(fileData.name)
+          const cachedContent = fileContentsCache[actualPath]
+          const documentTitle = fileType === 'markdown' && cachedContent
+            ? extractMarkdownTitle(cachedContent)
+            : undefined
+
+          return {
+            name: fileData.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
+            fileName: fileData.name,
+            fullPath: actualPath,
+            relativePath: relativePath,
+            directory: directory,
+            fileType: fileType,
+            ...(documentTitle ? { documentTitle } : {})
+          }
+        })
 
         // Calculate system root path if possible
         let systemRootPath: string | null = null
@@ -351,7 +361,7 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
             const fileType = getFileType(firstFile.name)
             firstFileData = {
               content: content,
-              fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
+              fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
               filePath: cacheKey, // Use the system path (or virtual if system missing)
               fileType: fileType
             }

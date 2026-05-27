@@ -8,6 +8,7 @@ interface Settings {
   contentWidth: ContentWidth
   primaryColor: PrimaryColor
   isSidebarCollapsed: boolean
+  showDocumentTitle: boolean
   sidebarWidth: number
   rightSidebarWidth: number
 }
@@ -17,6 +18,7 @@ interface UseSettingsReturn extends Settings {
   setContentWidth: (width: ContentWidth) => void
   setPrimaryColor: (color: PrimaryColor) => void
   setIsSidebarCollapsed: (collapsed: boolean) => void
+  setShowDocumentTitle: (show: boolean) => void
   toggleSidebar: () => void
   setSidebarWidth: (width: number) => void
   setRightSidebarWidth: (width: number) => void
@@ -28,6 +30,7 @@ const STORAGE_KEYS = {
   contentWidth: 'docs-content-width',
   primaryColor: 'docs-primary-color',
   sidebarCollapsed: 'docs-sidebar-collapsed',
+  showDocumentTitle: 'docs-show-document-title',
   sidebarWidth: 'docs-sidebar-width',
   rightSidebarWidth: 'docs-right-sidebar-width',
 } as const
@@ -37,6 +40,7 @@ const DEFAULTS = {
   contentWidth: 'medium' as ContentWidth,
   primaryColor: 'cyan' as PrimaryColor,
   sidebarCollapsed: false,
+  showDocumentTitle: false,
   sidebarWidth: 288,
   rightSidebarWidth: 320,
 } as const
@@ -60,6 +64,11 @@ export function useSettings(): UseSettingsReturn {
   const [isSidebarCollapsed, setIsSidebarCollapsedState] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.sidebarCollapsed)
     return saved ? JSON.parse(saved) : DEFAULTS.sidebarCollapsed
+  })
+
+  const [showDocumentTitle, setShowDocumentTitleState] = useState<boolean>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.showDocumentTitle)
+    return saved ? JSON.parse(saved) : DEFAULTS.showDocumentTitle
   })
 
   const [sidebarWidth, setSidebarWidthState] = useState<number>(() => {
@@ -112,6 +121,11 @@ export function useSettings(): UseSettingsReturn {
     setIsSidebarCollapsed(!isSidebarCollapsed)
   }
 
+  const setShowDocumentTitle = (show: boolean) => {
+    setShowDocumentTitleState(show)
+    localStorage.setItem(STORAGE_KEYS.showDocumentTitle, JSON.stringify(show))
+  }
+
   // Save sidebar width
   const setSidebarWidth = (width: number) => {
     setSidebarWidthState(width)
@@ -153,12 +167,14 @@ export function useSettings(): UseSettingsReturn {
     contentWidth,
     primaryColor,
     isSidebarCollapsed,
+    showDocumentTitle,
     sidebarWidth,
     rightSidebarWidth,
     setFontSize,
     setContentWidth,
     setPrimaryColor,
     setIsSidebarCollapsed,
+    setShowDocumentTitle,
     toggleSidebar,
     setSidebarWidth,
     setRightSidebarWidth,

@@ -2,7 +2,7 @@ export interface FileData {
   content: string
   fileName: string
   filePath: string
-  fileType?: 'markdown' | 'pdf' | 'epub' | 'text'
+  fileType?: 'markdown' | 'pdf' | 'epub' | 'html' | 'text'
 }
 
 export interface PdfData {
@@ -11,4 +11,3 @@ export interface PdfData {
   filePath: string
   fileType: 'pdf'
 }
-

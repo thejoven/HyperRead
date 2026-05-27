@@ -1,195 +1,228 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
+import { ListTree, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { extractHeadings, scrollToHeadingByIndex, getScrollContainer, getContentHeadings, type Heading } from '@/lib/toc-utils'
-
-interface SegmentData extends Heading {
-  proportion: number
-}
+import {
+  getContentHeadings,
+  scrollToHeadingByIndex,
+  type Heading,
+} from '@/lib/toc-utils'
 
 interface TocMinimapProps {
-  content: string
+  headings: Heading[]
+  scrollContainerRef: RefObject<HTMLDivElement | null>
   className?: string
 }
 
-const MAX_BAR_WIDTH = 56  // px
-const MIN_BAR_WIDTH = 6   // px
-const BAR_HEIGHT = 4      // px
-const BAR_GAP = 3         // px
+function TocMinimap({ headings, scrollContainerRef, className }: TocMinimapProps) {
+  const [activeId, setActiveId] = useState(headings[0]?.id ?? '')
+  const [isOpen, setIsOpen] = useState(false)
+  const panelId = useId()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const navRef = useRef<HTMLElement>(null)
 
-export default function TocMinimap({ content, className }: TocMinimapProps) {
-  const headings = useMemo(() => extractHeadings(content), [content])
-  const [segments, setSegments] = useState<SegmentData[]>([])
-  const [activeId, setActiveId] = useState('')
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-  const [isHovered, setIsHovered] = useState(false)
-  const measureTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const scrollTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Measure DOM heading positions and calculate proportions
-  const measureSegments = useCallback(() => {
-    if (headings.length === 0) { setSegments([]); return }
-
-    const scrollContainer = getScrollContainer()
-    const domHeadings = Array.from(getContentHeadings(scrollContainer as Element))
-
-    const totalHeight = scrollContainer === document.documentElement
-      ? document.documentElement.scrollHeight
-      : (scrollContainer as Element).scrollHeight
-
-    if (totalHeight === 0) return
-
-    const positions: number[] = headings.map((_h, i) => {
-      const el = domHeadings[i] as HTMLElement | undefined
-      if (!el) return 0
-      if (scrollContainer === document.documentElement) return el.offsetTop
-      const containerRect = (scrollContainer as Element).getBoundingClientRect()
-      const elRect = el.getBoundingClientRect()
-      return (scrollContainer as Element).scrollTop + elRect.top - containerRect.top
-    })
-
-    const rawSegments = headings.map((h, i) => {
-      const start = positions[i]
-      const end = i + 1 < headings.length ? positions[i + 1] : totalHeight
-      return { ...h, proportion: Math.max(0, end - start) / totalHeight }
-    })
-
-    setSegments(rawSegments)
+  const headingIndexById = useMemo(() => {
+    return new Map(headings.map((heading, index) => [heading.id, index]))
   }, [headings])
 
-  useEffect(() => {
-    if (measureTimerRef.current) clearTimeout(measureTimerRef.current)
-    measureTimerRef.current = setTimeout(measureSegments, 300)
-    return () => { if (measureTimerRef.current) clearTimeout(measureTimerRef.current) }
-  }, [measureSegments])
+  const updateActiveHeading = useCallback(() => {
+    const scrollContainer = scrollContainerRef.current
+    if (!scrollContainer || headings.length === 0) return
 
-  useEffect(() => {
-    const scrollContainer = getScrollContainer()
+    const domHeadings = getContentHeadings(scrollContainer)
+    const containerRect = scrollContainer.getBoundingClientRect()
+    const activationLine = containerRect.top + Math.min(120, scrollContainer.clientHeight * 0.22)
+    let currentId = domHeadings[0]?.id ?? headings[0]?.id ?? ''
 
-    const observer = new ResizeObserver(() => {
-      if (measureTimerRef.current) clearTimeout(measureTimerRef.current)
-      measureTimerRef.current = setTimeout(measureSegments, 150)
-    })
-    observer.observe(scrollContainer as Element)
-    return () => observer.disconnect()
-  }, [measureSegments])
-
-  // Active heading tracking on scroll
-  const updateActive = useCallback(() => {
-    if (headings.length === 0) return
-
-    const scrollContainer = getScrollContainer()
-    const domHeadings = Array.from(getContentHeadings(scrollContainer as Element))
-
-    const viewportHeight = window.innerHeight
-    const activeZoneTop = viewportHeight * 0.2
-    const activeZoneBottom = viewportHeight * 0.8
-    let bestId = ''
-    let closestDist = Infinity
-
-    headings.forEach((h, i) => {
-      const el = domHeadings[i] as HTMLElement | undefined
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      if (rect.top <= activeZoneBottom && rect.bottom >= activeZoneTop) {
-        const dist = Math.abs(rect.top - viewportHeight / 2)
-        if (dist < closestDist) { closestDist = dist; bestId = h.id }
-      } else if (rect.top <= activeZoneTop) {
-        bestId = h.id
+    for (const heading of domHeadings) {
+      const rect = heading.getBoundingClientRect()
+      if (rect.top <= activationLine) {
+        currentId = heading.id
+      } else {
+        break
       }
-    })
-
-    if (bestId) setActiveId(bestId)
-  }, [headings])
-
-  useEffect(() => {
-    const handleScroll = () => {
-      updateActive()
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
-      scrollTimerRef.current = setTimeout(updateActive, 100)
     }
 
-    const scrollContainer = getScrollContainer()
+    if (currentId) {
+      setActiveId(currentId)
+    }
+  }, [headings, scrollContainerRef])
 
+  useEffect(() => {
+    setActiveId(headings[0]?.id ?? '')
+    setIsOpen(false)
+    const frame = window.requestAnimationFrame(updateActiveHeading)
+    return () => window.cancelAnimationFrame(frame)
+  }, [headings, updateActiveHeading])
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current
+    if (!scrollContainer || headings.length === 0) return
+
+    let frame = 0
+    const handleScroll = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        updateActiveHeading()
+      })
+    }
+
+    const resizeObserver = new ResizeObserver(handleScroll)
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-    setTimeout(updateActive, 250)
+    resizeObserver.observe(scrollContainer)
 
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll)
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+      resizeObserver.disconnect()
+      if (frame) window.cancelAnimationFrame(frame)
     }
-  }, [updateActive])
+  }, [headings.length, scrollContainerRef, updateActiveHeading])
 
+  useEffect(() => {
+    if (!isOpen || !activeId || !navRef.current) return
 
-  if (headings.length === 0) return null
+    const activeLink = Array.from(navRef.current.querySelectorAll<HTMLElement>('[data-heading-id]'))
+      .find((item) => item.dataset.headingId === activeId)
+    activeLink?.scrollIntoView({ block: 'nearest' })
+  }, [activeId, isOpen])
 
-  // Normalize widths with average as midpoint — prevents extreme long/short bars.
-  // Clamp each proportion to [avg*0.2, avg*4], then scale to [MIN_BAR_WIDTH, MAX_BAR_WIDTH].
-  const avgProportion = segments.length > 0
-    ? segments.reduce((s, seg) => s + seg.proportion, 0) / segments.length
-    : 0.001
-  const clampLo = avgProportion * 0.2
-  const clampHi = avgProportion * 4
-  const getBarWidth = (proportion: number) => {
-    const clamped = Math.max(clampLo, Math.min(clampHi, proportion))
-    const t = clampHi > clampLo ? (clamped - clampLo) / (clampHi - clampLo) : 0.5
-    return Math.max(MIN_BAR_WIDTH, Math.round(MIN_BAR_WIDTH + t * (MAX_BAR_WIDTH - MIN_BAR_WIDTH)))
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen])
+
+  if (headings.length === 0) {
+    return null
   }
+
+  const activeIndex = Math.max(0, headings.findIndex((heading) => heading.id === activeId))
 
   return (
     <div
+      ref={rootRef}
       className={cn(
-        'absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col items-end',
-        'transition-opacity duration-200',
-        isHovered ? 'opacity-90' : 'opacity-30',
+        'pointer-events-none absolute bottom-4 right-4 z-40 flex flex-col items-end gap-2',
         className
       )}
-      style={{ gap: `${BAR_GAP}px`, pointerEvents: 'auto' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setHoveredIndex(null) }}
     >
-      {segments.map((seg, i) => {
-        const isActive = seg.id === activeId
-        const isSegHovered = hoveredIndex === i
-        const barWidth = getBarWidth(seg.proportion)
-
-        return (
-          <div
-            key={`${seg.id}-${i}`}
-            className="relative flex items-center justify-end pointer-events-auto"
-            onMouseEnter={() => setHoveredIndex(i)}
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            {/* Tooltip */}
-            {isSegHovered && (
-              <div
-                className={cn(
-                  'absolute right-full mr-2 px-2 py-1 rounded-full text-xs whitespace-nowrap pointer-events-none',
-                  'bg-background/95 backdrop-blur-sm border border-border/60 shadow-md text-foreground'
-                )}
-                style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}
-              >
-                {seg.text}
+      {isOpen && (
+        <aside
+          id={panelId}
+          className={cn(
+            'pointer-events-auto flex w-[min(320px,calc(100vw-1.5rem))] max-h-[min(24rem,calc(100vh-7rem))] flex-col overflow-hidden',
+            'rounded-lg border border-border/50 bg-background/95 shadow-2xl shadow-black/15 backdrop-blur-xl',
+            'ring-1 ring-white/40 dark:bg-background/90 dark:shadow-black/35 dark:ring-white/5'
+          )}
+          aria-label="文档目录"
+        >
+          <div className="flex h-10 flex-shrink-0 items-center gap-2 border-b border-border/20 px-2.5">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <ListTree className="h-[15px] w-[15px]" strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-foreground">目录</span>
+                <span className="rounded bg-muted/80 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">
+                  {activeIndex + 1}/{headings.length}
+                </span>
               </div>
-            )}
-
-            {/* Bar capsule */}
-            <div
-              className={cn(
-                'rounded-full cursor-pointer transition-all duration-150',
-                isActive
-                  ? 'bg-primary'
-                  : isSegHovered
-                    ? 'bg-primary/60'
-                    : 'bg-foreground/25'
-              )}
-              style={{ width: `${barWidth}px`, height: `${BAR_HEIGHT}px` }}
-              onClick={() => scrollToHeadingByIndex(i, setActiveId, seg.id)}
-            />
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title="关闭目录"
+              aria-label="关闭目录"
+            >
+              <X className="h-[15px] w-[15px]" strokeWidth={1.8} />
+            </button>
           </div>
-        )
-      })}
+
+          <nav ref={navRef} className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1.5">
+            <ol className="space-y-px">
+              {headings.map((heading, index) => {
+                const isActive = heading.id === activeId
+                const indent = Math.min(Math.max(heading.level - 1, 0), 4) * 9
+
+                return (
+                  <li key={`${heading.id}-${index}`}>
+                    <button
+                      type="button"
+                      data-heading-id={heading.id}
+                      onClick={() => {
+                        const targetIndex = headingIndexById.get(heading.id) ?? index
+                        scrollToHeadingByIndex(targetIndex, scrollContainerRef.current, setActiveId)
+                        if (window.innerWidth < 768) {
+                          setIsOpen(false)
+                        }
+                      }}
+                      className={cn(
+                        'group relative flex min-h-7 w-full items-start gap-1.5 rounded-md py-1.5 pr-2 text-left text-[11px] leading-4 transition-colors',
+                        isActive
+                          ? 'bg-primary/10 font-medium text-primary shadow-[inset_2px_0_0_hsl(var(--primary))]'
+                          : 'text-muted-foreground hover:bg-muted/65 hover:text-foreground',
+                        heading.level <= 2 && !isActive && 'font-medium text-foreground/80'
+                      )}
+                      style={{ paddingLeft: `${8 + indent}px` }}
+                      title={heading.text}
+                    >
+                      <span
+                        className={cn(
+                          'mt-[6px] h-1 w-1 flex-shrink-0 rounded-full transition-colors',
+                          isActive ? 'bg-primary' : 'bg-muted-foreground/25 group-hover:bg-muted-foreground/65'
+                        )}
+                      />
+                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {heading.text}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          </nav>
+        </aside>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        className={cn(
+          'pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-border/55 bg-background/95 text-foreground',
+          'shadow-lg shadow-black/10 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:text-primary hover:shadow-xl',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/45',
+          isOpen && 'border-primary/35 text-primary shadow-xl'
+        )}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        title={isOpen ? '收起目录' : '展开目录'}
+        aria-label={isOpen ? '收起目录' : '展开目录'}
+      >
+        <ListTree className="h-[18px] w-[18px]" strokeWidth={1.8} />
+      </button>
     </div>
   )
 }
+
+export default memo(TocMinimap)

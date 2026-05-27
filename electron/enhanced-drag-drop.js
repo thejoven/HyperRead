@@ -10,7 +10,9 @@ function setupEnhancedDragDrop() {
     return lowerName.endsWith('.md') ||
            lowerName.endsWith('.markdown') ||
            lowerName.endsWith('.pdf') ||
-           lowerName.endsWith('.epub')
+           lowerName.endsWith('.epub') ||
+           lowerName.endsWith('.html') ||
+           lowerName.endsWith('.htm')
   }
 
   // 获取文件类型
@@ -18,6 +20,7 @@ function setupEnhancedDragDrop() {
     const lowerName = fileName.toLowerCase()
     if (lowerName.endsWith('.pdf')) return 'pdf'
     if (lowerName.endsWith('.epub')) return 'epub'
+    if (lowerName.endsWith('.html') || lowerName.endsWith('.htm')) return 'html'
     return 'markdown'
   }
 
@@ -182,7 +185,7 @@ function setupEnhancedDragDrop() {
       console.log('Directories found:', directories)
 
       if (allFiles.length === 0) {
-        alert('未找到支持的文件。请拖拽 Markdown (.md/.markdown)、PDF (.pdf) 或 EPUB (.epub) 文件，或包含这些文件的文件夹。')
+        alert('未找到支持的文件。请拖拽 Markdown、PDF、EPUB 或 HTML 文件，或包含这些文件的文件夹。')
         return
       }
 
@@ -194,7 +197,7 @@ function setupEnhancedDragDrop() {
         if (window.electronAPI?.handleFileContent) {
           window.electronAPI.handleFileContent({
             content: content,
-            fileName: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
+            fileName: fileData.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
             originalName: fileData.name,
             fileType: fileData.fileType,
             isDirectory: false
@@ -204,7 +207,7 @@ function setupEnhancedDragDrop() {
         // 多个文件或目录模式（包括只有一个文件的文件夹）
         console.log('Creating file infos for directory mode...')
         const fileInfos = allFiles.map(fileData => ({
-          name: fileData.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
+          name: fileData.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
           fileName: fileData.name,
           fullPath: fileData.fullPath,
           relativePath: fileData.fullPath.replace(/^\//, ''),
@@ -266,7 +269,7 @@ function setupEnhancedDragDrop() {
               console.log('Loading first file content for display:', firstFile.name)
               window.reactDirectHandlers.handleFileContentDirect({
                 content: fileContentsCache[firstFile.fullPath],
-                fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
+                fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
                 originalName: firstFile.name,
                 fileType: firstFile.fileType,
                 isDirectory: true
@@ -309,7 +312,7 @@ function setupEnhancedDragDrop() {
               console.log('Loading first file content for display:', firstFile.name)
               window.electronAPI.handleFileContent({
                 content: fileContentsCache[firstFile.fullPath],
-                fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub)$/i, ''),
+                fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
                 originalName: firstFile.name,
                 fileType: firstFile.fileType,
                 isDirectory: true

@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import mermaid from 'mermaid'
-import { Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Move, Hand, Home } from 'lucide-react'
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { renderMermaidSVG, type RenderOptions } from 'beautiful-mermaid'
+import { Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Hand, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface MermaidDiagramProps {
@@ -10,26 +10,141 @@ interface MermaidDiagramProps {
   id?: string
 }
 
+type RenderedMermaid =
+  | { svg: string; error: null }
+  | { svg: null; error: Error }
+
+const beautifulMermaidOptions = {
+  bg: 'hsl(var(--card))',
+  fg: 'hsl(var(--foreground))',
+  line: 'hsl(var(--muted-foreground))',
+  accent: 'hsl(var(--primary))',
+  muted: 'hsl(var(--muted-foreground))',
+  surface: 'hsl(var(--secondary))',
+  border: 'hsl(var(--border))',
+  transparent: true,
+  padding: 48,
+  nodeSpacing: 36,
+  layerSpacing: 52,
+} satisfies RenderOptions
+
+const googleFontImportPattern =
+  /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=[^']+'\);\s*/g
+
+const normalizeError = (error: unknown) => (
+  error instanceof Error ? error : new Error(String(error))
+)
+
+const prepareSvg = (svg: string) => {
+  const localFontSvg = svg.replace(googleFontImportPattern, '')
+
+  if (localFontSvg.includes('role="img"')) {
+    return localFontSvg
+  }
+
+  return localFontSvg.replace('<svg ', '<svg role="img" aria-label="Mermaid diagram" ')
+}
+
+const renderBeautifulMermaid = (chart: string): RenderedMermaid => {
+  try {
+    return {
+      svg: prepareSvg(renderMermaidSVG(chart, beautifulMermaidOptions)),
+      error: null,
+    }
+  } catch (error) {
+    return {
+      svg: null,
+      error: normalizeError(error),
+    }
+  }
+}
+
+const applyTransform = (
+  element: HTMLDivElement | null,
+  x: number,
+  y: number,
+  zoom: number,
+  transition: boolean,
+) => {
+  if (!element) return
+
+  const safeZoom = Math.max(0.1, Math.min(5, zoom))
+  element.style.transform = `translate(${x}px, ${y}px) scale(${safeZoom})`
+  element.style.transformOrigin = 'center center'
+  element.style.transition = transition ? 'transform 0.2s ease' : 'none'
+  element.style.visibility = 'visible'
+  element.style.opacity = '1'
+}
+
+function MermaidError({ chart, error }: { chart: string; error: Error }) {
+  return (
+    <div className="p-4 border border-red-200 bg-red-50 rounded-lg dark:border-red-900/60 dark:bg-red-950/30">
+      <p className="text-red-600 text-sm font-medium dark:text-red-300">Mermaid 图表渲染失败</p>
+      <p className="text-xs text-red-500 mt-2 whitespace-pre-wrap dark:text-red-300/80">{error.message}</p>
+      <pre className="text-xs text-red-500 mt-2 whitespace-pre-wrap dark:text-red-300/80">{chart}</pre>
+    </div>
+  )
+}
+
+function MermaidOutput({
+  chart,
+  error,
+  fullscreen = false,
+  isLegacyFallback,
+  isLoading,
+  svg,
+}: {
+  chart: string
+  error: Error | null
+  fullscreen?: boolean
+  isLegacyFallback: boolean
+  isLoading: boolean
+  svg: string | null
+}) {
+  if (svg) {
+    const rendererClassName = isLegacyFallback ? 'legacy-mermaid-container' : 'beautiful-mermaid-container'
+    const fullscreenClassName = fullscreen ? 'mermaid-svg-container--fullscreen' : ''
+
+    return (
+      <div
+        className={`mermaid-container mermaid-svg-container ${rendererClassName} ${fullscreenClassName}`}
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        正在渲染 Mermaid 图表...
+      </div>
+    )
+  }
+
+  return <MermaidError chart={chart} error={error ?? new Error('Unknown Mermaid rendering error')} />
+}
+
 export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
-  const ref = useRef<HTMLDivElement>(null)
   const fullscreenRef = useRef<HTMLDivElement>(null)
   const fullscreenContainerRef = useRef<HTMLDivElement>(null)
+  const fallbackIdRef = useRef(id || `mermaid-${Math.random().toString(36).slice(2, 9)}`)
+  const fallbackRenderCountRef = useRef(0)
+
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
   const [panX, setPanX] = useState(0)
   const [panY, setPanY] = useState(0)
   const [isDragEnabled, setIsDragEnabled] = useState(false)
-
-  // Simple drag state - no complex refs needed
   const [isDragging, setIsDragging] = useState(false)
   const [justFinishedDragging, setJustFinishedDragging] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => (
+    typeof document === 'undefined' ? false : document.documentElement.classList.contains('dark')
+  ))
+  const [fallbackSvg, setFallbackSvg] = useState<string | null>(null)
+  const [fallbackError, setFallbackError] = useState<Error | null>(null)
 
-  // Detect dark mode
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const beautifulResult = useMemo(() => renderBeautifulMermaid(chart), [chart])
 
-  const chartId = id || `mermaid-${Math.random().toString(36).substr(2, 9)}`
-
-  // Detect dark mode changes
   useEffect(() => {
     const checkDarkMode = () => {
       setIsDarkMode(document.documentElement.classList.contains('dark'))
@@ -37,98 +152,97 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
 
     checkDarkMode()
 
-    // Watch for theme changes
     const observer = new MutationObserver(checkDarkMode)
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class'],
     })
 
     return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
-    // Initialize mermaid with different configs for regular vs fullscreen
-    const initializeMermaid = (useMaxWidth = true) => {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: isDarkMode ? 'dark' : 'default',
-        securityLevel: 'loose',
-        flowchart: {
-          useMaxWidth: useMaxWidth,
-          htmlLabels: true
-        },
-        sequence: {
-          useMaxWidth: useMaxWidth,
-          mirrorActors: false
-        },
-        gantt: {
-          useMaxWidth: useMaxWidth
-        }
-      })
+    if (beautifulResult.svg) {
+      setFallbackSvg(null)
+      setFallbackError(null)
+      return
     }
 
-    // Initialize with width constraints for regular view
-    initializeMermaid(true)
+    let cancelled = false
+    setFallbackSvg(null)
+    setFallbackError(null)
 
-    const renderChart = async (container: HTMLDivElement, fullscreen = false) => {
+    const renderWithLegacyMermaid = async () => {
       try {
-        // Clear any existing content
-        container.innerHTML = ''
+        const { default: mermaid } = await import('mermaid')
 
-        // Validate and render the chart
+        if (cancelled) return
+
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDarkMode ? 'dark' : 'default',
+          securityLevel: 'loose',
+          flowchart: {
+            useMaxWidth: true,
+            htmlLabels: true,
+          },
+          sequence: {
+            useMaxWidth: true,
+            mirrorActors: false,
+          },
+          gantt: {
+            useMaxWidth: true,
+          },
+        })
+
         await mermaid.parse(chart)
-        const renderChartId = `${chartId}-${fullscreen ? 'fullscreen' : 'normal'}`
-        const { svg } = await mermaid.render(renderChartId, chart)
 
-        container.innerHTML = svg
+        const renderId = `${fallbackIdRef.current}-${fallbackRenderCountRef.current}`
+        fallbackRenderCountRef.current += 1
+        const { svg } = await mermaid.render(renderId, chart)
 
-        // Add some styling to the SVG
-        const svgElement = container.querySelector('svg')
-        if (svgElement) {
-          svgElement.style.maxWidth = '100%'
-          svgElement.style.height = 'auto'
-          svgElement.style.display = 'block'
-          svgElement.style.margin = '0 auto'
+        if (!cancelled) {
+          setFallbackSvg(prepareSvg(svg))
         }
       } catch (error) {
-        console.error('Mermaid rendering error:', error)
-        container.innerHTML = `
-          <div class="p-4 border border-red-200 bg-red-50 rounded-lg">
-            <p class="text-red-600 text-sm font-medium">Mermaid 图表渲染失败</p>
-            <pre class="text-xs text-red-500 mt-2 whitespace-pre-wrap">${chart}</pre>
-          </div>
-        `
+        if (!cancelled) {
+          setFallbackError(normalizeError(error))
+        }
       }
     }
 
-    const renderRegularChart = () => {
-      if (ref.current) {
-        renderChart(ref.current, false)
-      }
+    void renderWithLegacyMermaid()
+
+    return () => {
+      cancelled = true
     }
+  }, [beautifulResult.svg, chart, isDarkMode])
 
-    renderRegularChart()
-  }, [chart, chartId, isDarkMode])
-
-  // Handle fullscreen toggle
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen)
-    // Reset zoom, pan, and drag state when toggling fullscreen
+  const resetInteraction = useCallback(() => {
     setZoomLevel(1)
     setPanX(0)
     setPanY(0)
     setIsDragEnabled(false)
     setIsDragging(false)
-  }
+    setJustFinishedDragging(false)
+  }, [])
 
-  // Zoom functions
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev)
+    resetInteraction()
+  }, [resetInteraction])
+
+  const closeFullscreen = useCallback(() => {
+    setIsFullscreen(false)
+    resetInteraction()
+  }, [resetInteraction])
+
   const zoomIn = () => {
-    setZoomLevel(prev => Math.min(prev * 1.2, 5)) // Max zoom 5x
+    setZoomLevel(prev => Math.min(prev * 1.2, 5))
   }
 
   const zoomOut = () => {
-    setZoomLevel(prev => Math.max(prev / 1.2, 0.1)) // Min zoom 0.1x
+    setZoomLevel(prev => Math.max(prev / 1.2, 0.1))
   }
 
   const resetZoom = () => {
@@ -137,134 +251,76 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     setPanY(0)
   }
 
-  // Reset to original position (center)
   const resetPosition = () => {
     setPanX(0)
     setPanY(0)
   }
 
-  // Toggle drag mode
   const toggleDragMode = () => {
-    setIsDragEnabled(!isDragEnabled)
+    setIsDragEnabled(prev => !prev)
     setIsDragging(false)
   }
 
-  // Safe transform application with bounds checking
-  const applyTransform = (x: number, y: number, zoom: number) => {
-    if (fullscreenRef.current) {
-      const svgElement = fullscreenRef.current.querySelector('svg')
-      if (svgElement) {
-        // Ensure zoom is within reasonable bounds
-        const safeZoom = Math.max(0.1, Math.min(5, zoom))
-
-        svgElement.style.transform = `translate(${x}px, ${y}px) scale(${safeZoom})`
-        svgElement.style.transformOrigin = 'center center'
-        svgElement.style.transition = isDragging ? 'none' : 'transform 0.2s ease'
-
-        // Ensure the element remains visible
-        svgElement.style.visibility = 'visible'
-        svgElement.style.opacity = '1'
-      }
-    }
-  }
-
-  // Apply transform when zoom or pan changes (but not during or right after dragging)
   useEffect(() => {
     if (isFullscreen && !isDragging && !justFinishedDragging) {
-      if (fullscreenRef.current) {
-        const svgElement = fullscreenRef.current.querySelector('svg')
-        if (svgElement) {
-          const safeZoom = Math.max(0.1, Math.min(5, zoomLevel))
-          svgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${safeZoom})`
-          svgElement.style.transformOrigin = 'center center'
-          svgElement.style.transition = 'transform 0.2s ease'
-          svgElement.style.visibility = 'visible'
-          svgElement.style.opacity = '1'
-        }
-      }
+      applyTransform(fullscreenRef.current, panX, panY, zoomLevel, true)
     }
   }, [zoomLevel, panX, panY, isFullscreen, isDragging, justFinishedDragging])
 
-  // Stable drag handler with proper state management
   useEffect(() => {
     if (!isFullscreen || !fullscreenContainerRef.current || !isDragEnabled) return
 
     const container = fullscreenContainerRef.current
-    let dragState = {
+    const dragState = {
       isActive: false,
       startX: 0,
       startY: 0,
       startPanX: 0,
-      startPanY: 0
+      startPanY: 0,
+      currentPanX: panX,
+      currentPanY: panY,
     }
 
-    const handleMouseDown = (e: MouseEvent) => {
+    const handleMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) return
+
       dragState.isActive = true
-      dragState.startX = e.clientX
-      dragState.startY = e.clientY
+      dragState.startX = event.clientX
+      dragState.startY = event.clientY
       dragState.startPanX = panX
       dragState.startPanY = panY
 
       setIsDragging(true)
-      e.preventDefault()
+      event.preventDefault()
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (event: MouseEvent) => {
       if (!dragState.isActive) return
 
-      const deltaX = e.clientX - dragState.startX
-      const deltaY = e.clientY - dragState.startY
+      const nextPanX = dragState.startPanX + event.clientX - dragState.startX
+      const nextPanY = dragState.startPanY + event.clientY - dragState.startY
 
-      const newPanX = dragState.startPanX + deltaX
-      const newPanY = dragState.startPanY + deltaY
-
-      // Apply transform directly during drag for smoothness
-      if (fullscreenRef.current) {
-        const svgElement = fullscreenRef.current.querySelector('svg')
-        if (svgElement) {
-          const safeZoom = Math.max(0.1, Math.min(5, zoomLevel))
-          svgElement.style.transform = `translate(${newPanX}px, ${newPanY}px) scale(${safeZoom})`
-          svgElement.style.transformOrigin = 'center center'
-          svgElement.style.transition = 'none'
-          svgElement.style.visibility = 'visible'
-          svgElement.style.opacity = '1'
-        }
-      }
+      dragState.currentPanX = nextPanX
+      dragState.currentPanY = nextPanY
+      applyTransform(fullscreenRef.current, nextPanX, nextPanY, zoomLevel, false)
     }
 
-    const handleMouseUp = (e: MouseEvent) => {
+    const handleMouseUp = () => {
       if (!dragState.isActive) return
 
-      const deltaX = e.clientX - dragState.startX
-      const deltaY = e.clientY - dragState.startY
-      const finalPanX = dragState.startPanX + deltaX
-      const finalPanY = dragState.startPanY + deltaY
+      const finalPanX = dragState.currentPanX
+      const finalPanY = dragState.currentPanY
 
-      // Apply final transform without transition to avoid flash
-      if (fullscreenRef.current) {
-        const svgElement = fullscreenRef.current.querySelector('svg')
-        if (svgElement) {
-          const safeZoom = Math.max(0.1, Math.min(5, zoomLevel))
-          svgElement.style.transform = `translate(${finalPanX}px, ${finalPanY}px) scale(${safeZoom})`
-          svgElement.style.transformOrigin = 'center center'
-          svgElement.style.transition = 'none' // Keep no transition to prevent flash
-          svgElement.style.visibility = 'visible'
-          svgElement.style.opacity = '1'
-        }
-      }
+      applyTransform(fullscreenRef.current, finalPanX, finalPanY, zoomLevel, false)
 
-      // Mark as just finished dragging to prevent immediate re-render
       setJustFinishedDragging(true)
-
-      // Update React state silently (this won't cause re-render of transform)
       setPanX(finalPanX)
       setPanY(finalPanY)
 
       dragState.isActive = false
       setIsDragging(false)
 
-      // Clear the "just finished" flag after a brief moment
-      setTimeout(() => {
+      window.setTimeout(() => {
         setJustFinishedDragging(false)
       }, 100)
     }
@@ -280,115 +336,32 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     }
   }, [isFullscreen, isDragEnabled, panX, panY, zoomLevel])
 
-  // Render fullscreen chart when modal opens
-  useEffect(() => {
-    if (isFullscreen && fullscreenRef.current) {
-      const renderFullscreenChart = async () => {
-        if (fullscreenRef.current) {
-          try {
-            // Clear any existing content
-            fullscreenRef.current.innerHTML = ''
-
-            // Re-initialize mermaid without width constraints for fullscreen
-            mermaid.initialize({
-              startOnLoad: false,
-              theme: isDarkMode ? 'dark' : 'default',
-              securityLevel: 'loose',
-              flowchart: {
-                useMaxWidth: false,
-                htmlLabels: true
-              },
-              sequence: {
-                useMaxWidth: false,
-                mirrorActors: false
-              },
-              gantt: {
-                useMaxWidth: false
-              }
-            })
-
-            // Validate and render the chart
-            await mermaid.parse(chart)
-            const renderChartId = `${chartId}-fullscreen-${Date.now()}`
-            const { svg } = await mermaid.render(renderChartId, chart)
-
-            fullscreenRef.current.innerHTML = svg
-
-            // Add minimal styling to the SVG for fullscreen - allow natural size
-            const svgElement = fullscreenRef.current.querySelector('svg')
-            if (svgElement) {
-              svgElement.style.display = 'block'
-              svgElement.style.margin = '0'
-              svgElement.style.maxWidth = 'none'
-              svgElement.style.width = 'auto'
-              svgElement.style.height = 'auto'
-              svgElement.style.position = 'relative'
-
-              // Apply initial transform
-              svgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`
-              svgElement.style.transformOrigin = 'center center'
-              svgElement.style.transition = 'transform 0.2s ease'
-            }
-          } catch (error) {
-            console.error('Mermaid fullscreen rendering error:', error)
-            if (fullscreenRef.current) {
-              fullscreenRef.current.innerHTML = `
-                <div class="p-4 border border-red-200 bg-red-50 rounded-lg">
-                  <p class="text-red-600 text-sm font-medium">Mermaid 图表渲染失败</p>
-                  <pre class="text-xs text-red-500 mt-2 whitespace-pre-wrap">${chart}</pre>
-                </div>
-              `
-            }
-          }
-        }
-      }
-
-      // Give the modal time to render, then render the chart
-      const timer = setTimeout(renderFullscreenChart, 200)
-      return () => clearTimeout(timer)
-    }
-  }, [isFullscreen, chart, chartId, panX, panY, zoomLevel, isDarkMode])
-
-  // Re-initialize mermaid when exiting fullscreen
-  useEffect(() => {
-    if (!isFullscreen) {
-      // Re-initialize mermaid with width constraints for regular view
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: isDarkMode ? 'dark' : 'default',
-        securityLevel: 'loose',
-        flowchart: {
-          useMaxWidth: true,
-          htmlLabels: true
-        },
-        sequence: {
-          useMaxWidth: true,
-          mirrorActors: false
-        },
-        gantt: {
-          useMaxWidth: true
-        }
-      })
-    }
-  }, [isFullscreen, isDarkMode])
-
-  // Handle escape key to close fullscreen
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false)
+        closeFullscreen()
       }
     }
 
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [isFullscreen])
+  }, [closeFullscreen, isFullscreen])
+
+  const activeSvg = beautifulResult.svg ?? fallbackSvg
+  const isLegacyFallback = !beautifulResult.svg && Boolean(fallbackSvg)
+  const activeError = fallbackError ?? (beautifulResult.svg ? null : beautifulResult.error)
+  const isFallbackLoading = !beautifulResult.svg && !fallbackSvg && !fallbackError
+  const fullscreenTransformStyle: CSSProperties = {
+    minWidth: 'max-content',
+    minHeight: 'max-content',
+    transform: `translate(${panX}px, ${panY}px) scale(${zoomLevel})`,
+    transformOrigin: 'center center',
+    transition: isDragging ? 'none' : 'transform 0.2s ease',
+  }
 
   return (
     <>
-      {/* Regular diagram view */}
       <div className="relative group my-6 p-4 bg-card border border-border rounded-lg overflow-x-auto">
-        {/* Expand button */}
         <Button
           variant="ghost"
           size="sm"
@@ -398,61 +371,63 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
         >
           <Maximize2 className="h-4 w-4" />
         </Button>
-        <div ref={ref} className="mermaid-container" />
+        <MermaidOutput
+          chart={chart}
+          error={activeError}
+          isLegacyFallback={isLegacyFallback}
+          isLoading={isFallbackLoading}
+          svg={activeSvg}
+        />
       </div>
 
-      {/* Fullscreen modal */}
       {isFullscreen && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm">
           <div className="relative bg-background w-full h-full flex flex-col">
-            {/* Header with only close button */}
             <div className="flex items-center justify-end p-4 border-b border-border bg-background z-10 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={toggleFullscreen}
+                onClick={closeFullscreen}
                 title="关闭全屏"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Chart content - centered container */}
             <div
               ref={fullscreenContainerRef}
               className="flex-1 overflow-hidden flex items-center justify-center"
               style={{
                 cursor: isDragEnabled ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                userSelect: isDragEnabled ? 'none' : 'auto'
+                userSelect: isDragEnabled ? 'none' : 'auto',
               }}
             >
               <div className="relative">
-                <div
-                  ref={fullscreenRef}
-                  className="mermaid-container"
-                  style={{
-                    minWidth: 'max-content',
-                    minHeight: 'max-content'
-                  }}
-                />
+                <div ref={fullscreenRef} style={fullscreenTransformStyle}>
+                  <MermaidOutput
+                    chart={chart}
+                    error={activeError}
+                    fullscreen
+                    isLegacyFallback={isLegacyFallback}
+                    isLoading={isFallbackLoading}
+                    svg={activeSvg}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Zoom and Pan controls - fixed position outside scroll container */}
             <div className="fixed bottom-4 left-4 flex flex-col gap-2 bg-background/90 backdrop-blur-sm border border-border rounded-lg p-2 shadow-lg z-20">
-              {/* Drag toggle button */}
               <Button
-                variant={isDragEnabled ? "default" : "ghost"}
+                variant={isDragEnabled ? 'default' : 'ghost'}
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={toggleDragMode}
-                title={isDragEnabled ? "关闭拖拽模式" : "开启拖拽模式"}
+                title={isDragEnabled ? '关闭拖拽模式' : '开启拖拽模式'}
               >
                 <Hand className={`h-4 w-4 ${isDragEnabled ? 'text-primary-foreground' : ''}`} />
               </Button>
 
-              {/* Reset position button */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -463,10 +438,8 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
                 <Home className="h-4 w-4" />
               </Button>
 
-              {/* Separator */}
               <div className="h-px bg-border mx-1" />
 
-              {/* Zoom controls */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -495,7 +468,6 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
                 <RotateCcw className="h-4 w-4" />
               </Button>
 
-              {/* Status display */}
               <div className="text-xs text-center text-muted-foreground px-1">
                 {Math.round(zoomLevel * 100)}%
               </div>
@@ -505,7 +477,6 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
                 </div>
               )}
             </div>
-
           </div>
         </div>
       )}

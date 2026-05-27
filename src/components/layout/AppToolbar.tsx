@@ -15,6 +15,8 @@ interface AppToolbarProps {
   activeTab: string | null
   onActivateTab: (path: string) => void
   onCloseTab: (path: string) => void
+  onCloseAllTabs: () => void
+  onCloseOtherTabs: (path: string) => void
   onOpenFile: () => void
   onOpenDirectory: () => void
   onOpenSettings: () => void
@@ -31,6 +33,8 @@ export default function AppToolbar({
   activeTab,
   onActivateTab,
   onCloseTab,
+  onCloseAllTabs,
+  onCloseOtherTabs,
   onOpenFile,
   onOpenDirectory,
   onOpenSettings,
@@ -86,6 +90,8 @@ export default function AppToolbar({
             activeTab={activeTab}
             onActivate={onActivateTab}
             onClose={onCloseTab}
+            onCloseAll={onCloseAllTabs}
+            onCloseOthers={onCloseOtherTabs}
           />
         </div>
         <div className="w-2 flex-shrink-0"></div>

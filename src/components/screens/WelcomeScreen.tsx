@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Folder, File, BookOpen, Image as ImageIcon, Box, Plus } from 'lucide-react'
+import { FileText, Folder, File, BookOpen, Image as ImageIcon, Box, Plus, FileCode } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import type { RecentItem } from '@/lib/recent-items'
 
@@ -25,6 +25,8 @@ function getFileIcon(fileName: string, type: 'file' | 'directory') {
   switch (ext) {
     case 'pdf': return <FileText className="h-[18px] w-[18px] text-red-400/80 dark:text-red-400/60 stroke-[1.5]" />
     case 'epub': return <BookOpen className="h-[18px] w-[18px] text-orange-400/80 dark:text-orange-400/60 stroke-[1.5]" />
+    case 'html':
+    case 'htm': return <FileCode className="h-[18px] w-[18px] text-amber-400/80 dark:text-amber-400/60 stroke-[1.5]" />
     case 'md':
     case 'markdown': return <FileText className="h-[18px] w-[18px] text-emerald-400/80 dark:text-emerald-400/60 stroke-[1.5]" />
     case 'png':

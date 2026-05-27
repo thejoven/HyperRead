@@ -8,6 +8,7 @@ import type { ContentWidth } from '@/hooks/use-settings'
 
 const PdfViewerSimple = React.lazy(() => import('@/components/PdfViewerSimple'))
 const EpubViewer = React.lazy(() => import('@/components/EpubViewer'))
+const HtmlViewer = React.lazy(() => import('@/components/HtmlViewer'))
 
 function LoadingFallback() {
   return (
@@ -77,6 +78,20 @@ export default function DocumentContent({
           className={`h-full ${className}`}
           fontSize={fontSize}
           contentWidth={contentWidth}
+        />
+      </Suspense>
+    )
+  }
+
+  // HTML Viewer
+  if (fileData.fileType === 'html') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <HtmlViewer
+          content={fileData.content}
+          fileName={fileData.fileName}
+          filePath={fileData.filePath}
+          className={`h-full ${className}`}
         />
       </Suspense>
     )

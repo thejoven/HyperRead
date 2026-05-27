@@ -1,6 +1,6 @@
 {
   "name": "hyperread",
-  "version": "5.6.1",
+  "version": "5.6.2",
   "description": "HyperRead — Read smarter. Read faster. A beautiful macOS-style Markdown, PDF, and EPUB reader built with Electron",
   "author": "thejoven",
   "license": "AGPL-3.0",
@@ -23,6 +23,7 @@
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/typography": "^0.5.19",
+    "beautiful-mermaid": "^1.1.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "epubjs": "^0.3.93",
@@ -77,6 +78,18 @@
         "ext": "epub",
         "name": "EPUB Document",
         "description": "EPUB电子书",
+        "icon": "logo/logo.png"
+      },
+      {
+        "ext": "html",
+        "name": "HTML Document",
+        "description": "HTML文档",
+        "icon": "logo/logo.png"
+      },
+      {
+        "ext": "htm",
+        "name": "HTML Document",
+        "description": "HTML文档",
         "icon": "logo/logo.png"
       }
     ],
@@ -137,6 +150,16 @@
             "CFBundleTypeRole": "Viewer",
             "CFBundleTypeIconFile": "logo.png",
             "LSHandlerRank": "Alternative"
+          },
+          {
+            "CFBundleTypeName": "HTML Document",
+            "CFBundleTypeExtensions": [
+              "html",
+              "htm"
+            ],
+            "CFBundleTypeRole": "Viewer",
+            "CFBundleTypeIconFile": "logo.png",
+            "LSHandlerRank": "Alternative"
           }
         ]
       }
@@ -182,11 +205,11 @@
       "desktop": {
         "entry": {
           "Name": "HyperRead",
-          "Comment": "现代化的Markdown文档阅读器",
+          "Comment": "现代化的文档阅读器",
           "GenericName": "Markdown Reader",
-          "Keywords": "markdown;reader;document;text;",
+          "Keywords": "markdown;html;reader;document;text;",
           "StartupWMClass": "HyperRead",
-          "MimeType": "text/markdown;text/x-markdown;text/plain;application/pdf;application/epub+zip;"
+          "MimeType": "text/markdown;text/x-markdown;text/plain;text/html;application/pdf;application/epub+zip;"
         }
       }
     }

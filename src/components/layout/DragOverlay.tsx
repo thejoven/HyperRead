@@ -14,7 +14,7 @@ export default function DragOverlay({ visible }: DragOverlayProps) {
       <div className="text-center glass-effect p-8 rounded-2xl">
         <FolderOpen className="h-24 w-24 mx-auto mb-4 text-primary" />
         <h3 className="text-2xl font-bold text-primary macos-text-title">释放文件</h3>
-        <p className="text-sm text-primary/70 mt-2 macos-text">支持 Markdown 文件和文件夹</p>
+        <p className="text-sm text-primary/70 mt-2 macos-text">支持 Markdown、PDF、EPUB、HTML 文件和文件夹</p>
       </div>
     </div>
   )

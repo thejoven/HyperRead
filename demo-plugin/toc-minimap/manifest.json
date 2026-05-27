@@ -1,0 +1,9 @@
+{
+  "id": "toc-minimap",
+  "name": "目录导航",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead Demo",
+  "description": "在文档右侧显示浮动目录导航条，点击可快速跳转到对应标题",
+  "main": "main.js"
+}

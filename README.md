@@ -11,7 +11,7 @@ A beautiful macOS-style document reader supporting Markdown, PDF, and EPUB, buil
 
 <a href="https://www.producthunt.com/products/hyperread?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-hyperread" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1032883&theme=light&t=1761980700711" alt="HyperRead - HyperRead&#0032;Read&#0032;smarter&#0046;&#0032;Read&#0032;faster&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-[![Version](https://img.shields.io/badge/version-5.6.0-blue.svg)](https://github.com/thejoven/HyperRead/releases)
+[![Version](https://img.shields.io/badge/version-5.6.2-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
@@ -28,7 +28,7 @@ English | [简体中文](./README-zh.md)
 <td width="50%">
 
 - 🎨 **Native macOS Interface** - Perfect macOS design with blur effects and smooth animations
-- 📁 **Multi-Format Support** - Supports Markdown (.md/.markdown), PDF (.pdf), EPUB (.epub) files
+- 📁 **Multi-Format Support** - Supports Markdown (.md/.markdown), PDF (.pdf), EPUB (.epub), HTML (.html/.htm) files
 - 📖 **Professional EPUB Reader** - Apple Books-style reading experience with accurate pagination
 - 🌳 **File Tree Explorer** - Recursively scan and display all document files in directory structure with drag & drop
 - 🎯 **High Performance Rendering** - Support for Mermaid charts, code highlighting, math formulas (KaTeX)
@@ -53,11 +53,11 @@ English | [简体中文](./README-zh.md)
 
 <div align="center">
 
-[![Download](https://img.shields.io/badge/Download-HyperRead%205.6.0-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
+[![Download](https://img.shields.io/badge/Download-HyperRead%205.6.2-blue?style=for-the-badge&logo=apple)](https://github.com/thejoven/HyperRead/releases/latest)
 
 </div>
 
-1. Download `HyperRead-5.6.0-arm64.dmg` installer
+1. Download `HyperRead-5.6.2-arm64.dmg` installer
 2. Double-click the DMG file
 3. Drag HyperRead to Applications folder
 4. First run may require permission in "System Preferences > Security & Privacy"
@@ -86,7 +86,7 @@ npm run start        # Production mode
 <td width="33%">
 
 **🖱️ Drag & Drop**
-Directly drag `.md`, `.pdf`, or `.epub` files, or folders to the application window
+Directly drag `.md`, `.pdf`, `.epub`, or `.html` files, or folders to the application window
 
 </td>
 <td width="33%">
@@ -278,6 +278,30 @@ export default {
 | `api.loadData() / saveData()` | Persist arbitrary JSON data |
 | `api.getSetting() / setSetting()` | Read/write plugin settings |
 
+### Plugin List
+
+| Plugin | What it demonstrates | Related docs |
+|--------|----------------------|--------------|
+| [Word Count Template][tpl] | Minimal structure and status bar updates | [Quick Start][quick] |
+| [Word Count Demo][wc] | Word, character, and line counts in the status bar | [Status Bar][bar] |
+| [AI Assistant][ai] | Sidebar chat, settings, npm dependencies, and persistence | [Guide][guide] |
+| [Document Assistant][doc] | Sidebar document summary and Q&A | [Sidebar Panel][side] |
+| [TOC Minimap][toc] | Floating heading navigation and click-to-jump behavior | [UI Extensions][ui] |
+| [Article Notebook][notes] | Per-article notes, highlights, and AI handoff | [Data Persistence][data] |
+
+[tpl]: ./plugin-template/
+[wc]: ./demo-plugin/word-count/
+[ai]: ./demo-plugin/ai-assistant/
+[doc]: ./demo-plugin/doc-assistant/
+[toc]: ./demo-plugin/toc-minimap/
+[notes]: ./demo-plugin/article-notebook/
+[quick]: ./DOCS/plugin-system/plugin-development-en.md#quick-start
+[bar]: ./DOCS/plugin-system/plugin-development-en.md#status-bar
+[guide]: ./DOCS/plugin-system/plugin-development-en.md
+[side]: ./DOCS/plugin-system/plugin-development-en.md#sidebar-panel
+[ui]: ./DOCS/plugin-system/plugin-development-en.md#ui-extensions
+[data]: ./DOCS/plugin-system/plugin-development-en.md#data-persistence
+
 ### Documentation
 
 | Link | Description |
@@ -326,9 +350,13 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 
 ## 📝 What's New
 
-### 🎉 Version 5.6.0 (Latest)
+### 🎉 Version 5.6.2 (Latest)
 
 **Improvements:**
+- 📁 **HTML Document Support** - Added `.html` and `.htm` loading, file association, and viewer support
+- 🧭 **TOC Minimap** - Improved heading extraction and floating document navigation for long reads
+- 🔌 **Plugin Demos** - Added TOC Minimap and Article Notebook demo plugins with packaged examples
+- 📊 **Mermaid Rendering** - Refined Mermaid diagram rendering with the new `beautiful-mermaid` integration
 - 🔌 **Plugin System Docs** - Added comprehensive English plugin development guide with full API reference, UI extension examples, npm dependency support, TypeScript, and hot reload workflow
 - 📖 **README Plugin Section** - Added Plugin Development section with quickstart, extension points table, and links to all docs
 - 🎨 **About Modal Redesign** - Polished macOS-style About dialog with hero header, gradient icon, version badges, icon-grid feature list, and improved social links

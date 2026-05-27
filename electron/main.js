@@ -79,6 +79,121 @@ function debounce(fn, delay) {
   }
 }
 
+const SCANNABLE_DOCUMENT_EXTENSIONS = new Set(['.md', '.markdown', '.pdf', '.epub', '.html', '.htm'])
+const OPENABLE_DOCUMENT_EXTENSIONS = new Set([...SCANNABLE_DOCUMENT_EXTENSIONS, '.txt'])
+
+function getFileTypeFromExtension(ext) {
+  if (ext === '.pdf') return 'pdf'
+  if (ext === '.epub') return 'epub'
+  if (ext === '.html' || ext === '.htm') return 'html'
+  if (ext === '.md' || ext === '.markdown') return 'markdown'
+  return 'text'
+}
+
+function cleanMarkdownTitle(rawTitle) {
+  return rawTitle
+    .replace(/^\uFEFF/, '')
+    .trim()
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[`*_~]/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function extractMarkdownTitle(content) {
+  const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/)
+  let startIndex = 0
+
+  if (lines[0]?.trim() === '---') {
+    let frontmatterTitle
+
+    for (let index = 1; index < lines.length; index++) {
+      const line = lines[index].trim()
+
+      if (/^(---|\.\.\.)\s*$/.test(line)) {
+        startIndex = index + 1
+        if (frontmatterTitle) return frontmatterTitle
+        break
+      }
+
+      const titleMatch = line.match(/^title:\s*(.+?)\s*$/i)
+      if (titleMatch) {
+        const cleaned = cleanMarkdownTitle(titleMatch[1])
+        if (cleaned) frontmatterTitle = cleaned
+      }
+    }
+
+    if (frontmatterTitle) return frontmatterTitle
+  }
+
+  let inFence = false
+  let fenceMarker = ''
+
+  for (let index = startIndex; index < lines.length; index++) {
+    const line = lines[index]
+    const fenceMatch = line.trimStart().match(/^(`{3,}|~{3,})/)
+
+    if (fenceMatch) {
+      const marker = fenceMatch[1][0]
+      if (!inFence) {
+        inFence = true
+        fenceMarker = marker
+      } else if (marker === fenceMarker) {
+        inFence = false
+        fenceMarker = ''
+      }
+      continue
+    }
+
+    if (inFence) continue
+
+    const atxHeading = line.match(/^\s{0,3}#\s+(.+?)\s*#*\s*$/)
+    if (atxHeading) {
+      const cleaned = cleanMarkdownTitle(atxHeading[1])
+      if (cleaned) return cleaned
+    }
+
+    const setextTitle = line.trim()
+    const setextUnderline = lines[index + 1]?.match(/^\s{0,3}=+\s*$/)
+    if (setextTitle && setextUnderline) {
+      const cleaned = cleanMarkdownTitle(setextTitle)
+      if (cleaned) return cleaned
+    }
+  }
+
+  return undefined
+}
+
+async function readMarkdownTitle(filePath) {
+  const maxBytes = 64 * 1024
+  let fileHandle
+
+  try {
+    fileHandle = await fs.promises.open(filePath, 'r')
+    const buffer = Buffer.alloc(maxBytes)
+    const { bytesRead } = await fileHandle.read(buffer, 0, maxBytes, 0)
+    return extractMarkdownTitle(buffer.subarray(0, bytesRead).toString('utf8'))
+  } catch (error) {
+    console.warn('Main: failed to extract markdown title:', filePath, error.message)
+    return undefined
+  } finally {
+    if (fileHandle) {
+      await fileHandle.close()
+    }
+  }
+}
+
+function isScannableDocumentPath(filePath) {
+  return SCANNABLE_DOCUMENT_EXTENSIONS.has(path.extname(filePath).toLowerCase())
+}
+
+function isOpenableDocumentPath(filePath) {
+  return OPENABLE_DOCUMENT_EXTENSIONS.has(path.extname(filePath).toLowerCase())
+}
+
 function createWindow() {
   // 加载窗口状态
   windowStateKeeper.load()
@@ -196,16 +311,26 @@ function createWindow() {
               })
             }
           `)
-        } else if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
-          console.log('Main: markdown file detected via URL:', filePath)
-          const content = await fs.promises.readFile(filePath, 'utf-8')
-          const fileName = path.basename(filePath, path.extname(filePath))
+        } else if (isOpenableDocumentPath(filePath)) {
+          console.log('Main: document file detected via URL:', filePath)
+          const ext = path.extname(filePath).toLowerCase()
+          const fileType = getFileTypeFromExtension(ext)
+          const fileName = path.basename(filePath, ext)
+          let content = filePath
+          if (fileType === 'epub') {
+            const epubData = await fs.promises.readFile(filePath)
+            content = epubData.toString('base64')
+          } else if (fileType !== 'pdf') {
+            content = await fs.promises.readFile(filePath, 'utf-8')
+          }
           mainWindow.webContents.executeJavaScript(`
             if (window.electronAPI?.handleFileContent) {
               window.electronAPI.handleFileContent({
                 content: ${JSON.stringify(content)},
                 fileName: ${JSON.stringify(fileName)},
                 originalName: ${JSON.stringify(path.basename(filePath))},
+                filePath: ${JSON.stringify(filePath)},
+                fileType: ${JSON.stringify(fileType)},
                 isDirectory: false
               })
             }
@@ -218,7 +343,7 @@ function createWindow() {
   })
 }
 
-// 递归扫描目录中的 Markdown 和 PDF 文件
+// 递归扫描目录中的支持文档文件
 async function scanDirectory(dirPath) {
   const documentFiles = []
 
@@ -235,23 +360,22 @@ async function scanDirectory(dirPath) {
             await scanRecursive(fullPath)
           }
         } else if (entry.isFile()) {
-          // 检查是否是 Markdown、PDF 或 EPUB 文件
           const ext = path.extname(entry.name).toLowerCase()
-          if (ext === '.md' || ext === '.markdown' || ext === '.pdf' || ext === '.epub') {
+          if (SCANNABLE_DOCUMENT_EXTENSIONS.has(ext)) {
             const relativePath = path.relative(dirPath, fullPath)
-            let fileType = 'markdown'
-            if (ext === '.pdf') {
-              fileType = 'pdf'
-            } else if (ext === '.epub') {
-              fileType = 'epub'
-            }
+            const fileType = getFileTypeFromExtension(ext)
+            const documentTitle = fileType === 'markdown'
+              ? await readMarkdownTitle(fullPath)
+              : undefined
+
             documentFiles.push({
               name: path.basename(entry.name, path.extname(entry.name)),
               fileName: entry.name,
               fullPath: fullPath,
               relativePath: relativePath,
               directory: path.dirname(relativePath) || '.',
-              fileType: fileType
+              fileType: fileType,
+              ...(documentTitle ? { documentTitle } : {})
             })
           }
         }
@@ -275,9 +399,10 @@ ipcMain.handle('read-file', async (event, filePath) => {
 
     const ext = path.extname(filePath).toLowerCase()
     const fileName = path.basename(filePath, ext)
+    const fileType = getFileTypeFromExtension(ext)
 
     // 处理PDF文件 - 直接返回文件路径，不转换为 base64
-    if (ext === '.pdf') {
+    if (fileType === 'pdf') {
       console.log('Main: PDF file path returned:', fileName)
       return {
         content: filePath, // 直接返回文件路径
@@ -288,7 +413,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
     }
 
     // 处理EPUB文件 - 读取文件并返回base64数据
-    if (ext === '.epub') {
+    if (fileType === 'epub') {
       console.log('Main: Reading EPUB file:', filePath)
       const epubData = await fs.promises.readFile(filePath)
       const base64Data = epubData.toString('base64')
@@ -308,7 +433,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
       content,
       fileName,
       filePath,
-      fileType: ext === '.md' || ext === '.markdown' ? 'markdown' : 'text'
+      fileType
     }
   } catch (error) {
     console.error('Main: read-file error:', error)
@@ -316,7 +441,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
   }
 })
 
-// 扫描目录中的 Markdown 文件
+// 扫描目录中的支持文档文件
 ipcMain.handle('scan-directory', async (event, dirPath) => {
   try {
     console.log('Main: scan-directory called with:', dirPath)
@@ -330,7 +455,7 @@ ipcMain.handle('scan-directory', async (event, dirPath) => {
     }
 
     const files = await scanDirectory(dirPath)
-    console.log(`Main: found ${files.length} markdown files`)
+    console.log(`Main: found ${files.length} supported document files`)
     return { files, rootPath: dirPath }
   } catch (error) {
     console.error('Main: scan-directory error:', error)
@@ -342,10 +467,11 @@ ipcMain.handle('open-file-dialog', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
     filters: [
-      { name: 'Documents', extensions: ['md', 'markdown', 'pdf', 'epub'] },
+      { name: 'Documents', extensions: ['md', 'markdown', 'pdf', 'epub', 'html', 'htm'] },
       { name: 'Markdown Files', extensions: ['md', 'markdown'] },
       { name: 'PDF Files', extensions: ['pdf'] },
-      { name: 'EPUB Files', extensions: ['epub'] }
+      { name: 'EPUB Files', extensions: ['epub'] },
+      { name: 'HTML Files', extensions: ['html', 'htm'] }
     ]
   })
 
@@ -353,9 +479,10 @@ ipcMain.handle('open-file-dialog', async () => {
     const filePath = result.filePaths[0]
     const ext = path.extname(filePath).toLowerCase()
     const fileName = path.basename(filePath, ext)
+    const fileType = getFileTypeFromExtension(ext)
 
     // 处理PDF文件 - 直接返回文件路径
-    if (ext === '.pdf') {
+    if (fileType === 'pdf') {
       return {
         content: filePath, // 直接返回文件路径
         fileName,
@@ -365,7 +492,7 @@ ipcMain.handle('open-file-dialog', async () => {
     }
 
     // 处理EPUB文件 - 读取文件并返回base64数据
-    if (ext === '.epub') {
+    if (fileType === 'epub') {
       const epubData = await fs.promises.readFile(filePath)
       const base64Data = epubData.toString('base64')
       console.log('Main: EPUB file read from dialog, size:', epubData.length, 'bytes')
@@ -377,13 +504,13 @@ ipcMain.handle('open-file-dialog', async () => {
       }
     }
 
-    // 处理Markdown文件
+    // 处理Markdown、HTML和文本文件
     const content = await fs.promises.readFile(filePath, 'utf-8')
     return {
       content,
       fileName,
       filePath,
-      fileType: 'markdown'
+      fileType
     }
   }
 
@@ -425,9 +552,9 @@ ipcMain.handle('classify-files', async (event, fileData) => {
     for (const file of fileData) {
       console.log('Main: processing file:', file)
 
-      if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+      if (isOpenableDocumentPath(file.name)) {
         markdownFiles.push(file)
-        console.log('Main: found markdown file:', file.name)
+        console.log('Main: found supported document file:', file.name)
       } else if (file.type === '' && !file.name.includes('.')) {
         // 尝试构建可能的路径
         let possiblePath = file.path || file.fullPath
@@ -464,7 +591,7 @@ ipcMain.handle('classify-files', async (event, fileData) => {
       }
     }
 
-    console.log('Main: classification result - directories:', directories.length, 'markdown files:', markdownFiles.length)
+    console.log('Main: classification result - directories:', directories.length, 'document files:', markdownFiles.length)
     return { directories, markdownFiles }
   } catch (error) {
     console.error('Main: classify-files error:', error)
@@ -580,7 +707,7 @@ function getFileFromArgs(argv) {
   // 过滤掉electron本身的参数，查找文件路径
   const args = argv.slice(1) // 跳过第一个参数（electron可执行文件路径）
   for (const arg of args) {
-    if (arg && !arg.startsWith('-') && (arg.endsWith('.md') || arg.endsWith('.markdown') || arg.endsWith('.txt') || arg.endsWith('.pdf') || arg.endsWith('.epub'))) {
+    if (arg && !arg.startsWith('-') && isOpenableDocumentPath(arg)) {
       if (fs.existsSync(arg)) {
         return arg
       }
@@ -612,7 +739,7 @@ async function openFileInRenderer(filePath) {
         console.log('Main: EPUB file path sent for association:', filePath)
       } else {
         content = await fs.promises.readFile(filePath, 'utf8')
-        fileType = ext === '.md' || ext === '.markdown' ? 'markdown' : 'text'
+        fileType = getFileTypeFromExtension(ext)
       }
 
       mainWindow.webContents.executeJavaScript(`
@@ -621,6 +748,7 @@ async function openFileInRenderer(filePath) {
             content: ${JSON.stringify(content)},
             fileName: ${JSON.stringify(fileName)},
             originalName: ${JSON.stringify(originalName)},
+            filePath: ${JSON.stringify(filePath)},
             fileType: ${JSON.stringify(fileType)}
           })
         }

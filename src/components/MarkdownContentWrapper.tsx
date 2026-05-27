@@ -1,8 +1,9 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useMemo, useRef } from 'react'
 import DocumentViewer from './DocumentViewer'
 import TocMinimap from './TocMinimap'
+import { extractHeadings } from '@/lib/toc-utils'
 
 interface MarkdownContentWrapperProps {
   content: string
@@ -23,9 +24,12 @@ function MarkdownContentWrapper({
   searchOptions,
   className = ''
 }: MarkdownContentWrapperProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const headings = useMemo(() => extractHeadings(content), [content])
+
   return (
-    <div className="h-full relative flex flex-col">
-      <div className="flex-1 overflow-y-auto content-scroll">
+    <div className="h-full relative flex min-w-0">
+      <div ref={scrollContainerRef} className="flex-1 min-w-0 overflow-y-auto content-scroll">
         <div className={className}>
           <DocumentViewer
             content={content}
@@ -37,7 +41,7 @@ function MarkdownContentWrapper({
           />
         </div>
       </div>
-      <TocMinimap content={content} />
+      <TocMinimap headings={headings} scrollContainerRef={scrollContainerRef} />
     </div>
   )
 }

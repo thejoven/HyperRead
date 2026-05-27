@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, memo, useMemo, Suspense } from 'react'
+import React, { useCallback, useEffect, useRef, memo, Suspense } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -8,6 +8,7 @@ import rehypeRaw from 'rehype-raw'
 import LocalImage from './LocalImage'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { createHeadingIdFactory, createHeadingSlug, scrollToHeadingById } from '@/lib/toc-utils'
 import { LinkProvider, useLinkContext } from './LinkContext'
 
 const MermaidDiagram = React.lazy(() => import('./MermaidDiagram'))
@@ -112,43 +113,33 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
     if (typeof node === 'string') return node
     if (typeof node === 'number') return String(node)
     if (Array.isArray(node)) return node.map(extractPlainText).join('')
-    if (node && typeof node === 'object' && 'props' in (node as React.ReactElement)) {
-      return extractPlainText((node as React.ReactElement).props?.children)
+    if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+      return extractPlainText(node.props.children)
     }
     return ''
   }
 
-  // Generate heading ID - accepts React children or raw string
-  const usedHeadingIds = useRef(new Set<string>())
-
-  const generateHeadingId = (children: React.ReactNode | string): string => {
+  const createHeadingId = createHeadingIdFactory()
+  const getHeadingId = (children: React.ReactNode | string): string => {
     const text = typeof children === 'string' ? children : extractPlainText(children)
-    if (!text) return ''
-    let id = text
-      .toLowerCase()
-      .replace(/[^\w\s\u4e00-\u9fff-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-
-    let counter = 1
-    let uniqueId = id
-    while (usedHeadingIds.current.has(uniqueId)) {
-      uniqueId = `${id}-${counter}`
-      counter++
-    }
-    usedHeadingIds.current.add(uniqueId)
-    return uniqueId
+    return createHeadingId(text)
   }
 
-  // Reset used IDs when content changes
-  useEffect(() => {
-    usedHeadingIds.current.clear()
-  }, [content])
+  const scrollToAnchor = useCallback((hash: string): boolean => {
+    const decodedHash = decodeURIComponent(hash)
+    const rawId = decodedHash.startsWith('#') ? decodedHash.slice(1) : decodedHash
+
+    return (
+      scrollToHeadingById(rawId, articleRef.current) ||
+      scrollToHeadingById(createHeadingSlug(rawId), articleRef.current)
+    )
+  }, [])
   
   // Global click handler for all anchor links within the article
   useEffect(() => {
     const handleAnchorClick = (event: MouseEvent) => {
+      if (event.defaultPrevented) return
+
       const target = event.target as HTMLElement
       const anchor = target.closest('a')
       
@@ -161,52 +152,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
           event.preventDefault()
           
           try {
-            // Decode the URL-encoded hash and find the element
-            const decodedHash = decodeURIComponent(hash)
-            let element = null
-            
-            // Try direct querySelector first
-            try {
-              element = document.querySelector(decodedHash)
-            } catch (e) {
-              // querySelector failed, try other methods
-            }
-            
-            // If direct query fails, try with getElementById using the ID without #
-            if (!element && decodedHash.startsWith('#')) {
-              const id = decodedHash.substring(1)
-              element = document.getElementById(id)
-            }
-            
-            // If still not found, try to find by the generated ID format
-            if (!element && decodedHash.startsWith('#')) {
-              const originalText = decodedHash.substring(1)
-              const generatedId = generateHeadingId(originalText)
-              element = document.getElementById(generatedId)
-            }
-            
-            if (element) {
-              // Find the scrollable container
-              const scrollContainer = element.closest('.content-scroll') || 
-                                   element.closest('[class*="overflow-y-auto"]') ||
-                                   document.documentElement
-              
-              if (scrollContainer === document.documentElement) {
-                // Use standard scrollIntoView for document
-                element.scrollIntoView({ behavior: 'smooth' })
-              } else {
-                // Calculate position and scroll the container
-                const containerRect = scrollContainer.getBoundingClientRect()
-                const elementRect = element.getBoundingClientRect()
-                const currentScroll = scrollContainer.scrollTop
-                const targetScroll = currentScroll + elementRect.top - containerRect.top - 100 // 100px offset
-                
-                scrollContainer.scrollTo({
-                  top: targetScroll,
-                  behavior: 'smooth'
-                })
-              }
-            }
+            scrollToAnchor(hash)
           } catch (error) {
             console.warn('Failed to navigate to anchor:', hash, error)
           }
@@ -221,7 +167,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
         article.removeEventListener('click', handleAnchorClick)
       }
     }
-  }, [content])
+  }, [content, scrollToAnchor])
   
   // Reset scroll position when content changes
   useEffect(() => {
@@ -241,10 +187,9 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
     }
   }, [content])
   
-  // Memoize the ReactMarkdown components object to avoid re-creating on every render
-  const markdownComponents = useMemo(() => ({
+  const markdownComponents = {
     h1: ({ children }: { children?: React.ReactNode }) => {
-      const id = generateHeadingId(children)
+      const id = getHeadingId(children)
       return (
         <h1
           id={id}
@@ -256,7 +201,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h2: ({ children }: { children?: React.ReactNode }) => {
-      const id = generateHeadingId(children)
+      const id = getHeadingId(children)
       return (
         <h2
           id={id}
@@ -268,7 +213,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h3: ({ children }: { children?: React.ReactNode }) => {
-      const id = generateHeadingId(children)
+      const id = getHeadingId(children)
       return (
         <h3
           id={id}
@@ -280,7 +225,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h4: ({ children }: { children?: React.ReactNode }) => {
-      const id = generateHeadingId(children)
+      const id = getHeadingId(children)
       return (
         <h4
           id={id}
@@ -292,7 +237,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h5: ({ children }: { children?: React.ReactNode }) => {
-      const id = generateHeadingId(children)
+      const id = getHeadingId(children)
       return (
         <h5
           id={id}
@@ -304,7 +249,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       )
     },
     h6: ({ children }: { children?: React.ReactNode }) => {
-      const id = generateHeadingId(children)
+      const id = getHeadingId(children)
       return (
         <h6
           id={id}
@@ -466,23 +411,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
             onClick={(e) => {
               e.preventDefault()
               try {
-                const decodedHref = decodeURIComponent(href)
-                let element = document.querySelector(decodedHref)
-
-                if (!element && decodedHref.startsWith('#')) {
-                  const id = decodedHref.substring(1)
-                  element = document.getElementById(id)
-                }
-
-                if (!element && decodedHref.startsWith('#')) {
-                  const originalText = decodedHref.substring(1)
-                  const generatedId = generateHeadingId(originalText)
-                  element = document.getElementById(generatedId)
-                }
-
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth' })
-                }
+                scrollToAnchor(href)
               } catch (error) {
                 console.warn('Failed to navigate to anchor:', href, error)
               }
@@ -526,10 +455,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
 
               if (anchor) {
                 setTimeout(() => {
-                  const element = document.getElementById(anchor)
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' })
-                  }
+                  scrollToAnchor(anchor)
                 }, 100)
               }
             }}
@@ -573,7 +499,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
         />
       )
     }
-  }), [searchQuery, searchOptions, fontSize, filePath, onFileNavigation])
+  }
 
   return (
     <div className="relative">

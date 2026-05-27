@@ -1,7 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import { X, FileText, FolderOpen, Search, Keyboard, Bot, BookOpen, FileType, Zap } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  X,
+  FileText,
+  FolderOpen,
+  Search,
+  Keyboard,
+  Bot,
+  BookOpen,
+  FileType,
+  Zap,
+  PanelLeft,
+  PanelRight,
+  Settings2,
+  Palette,
+  Puzzle,
+  Clock3,
+  Files,
+  RotateCcw,
+  Sparkles,
+  Highlighter,
+  ListTree,
+  ShieldCheck
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useTranslation } from '@/lib/i18n'
@@ -11,9 +34,103 @@ interface HelpDialogProps {
   onClose: () => void
 }
 
+type SectionId =
+  | 'getting-started'
+  | 'file-management'
+  | 'reading'
+  | 'search'
+  | 'plugins'
+  | 'ai-assistant'
+  | 'shortcuts'
+
+interface GuideSection {
+  id: SectionId
+  label: string
+  summary: string
+  icon: LucideIcon
+}
+
+interface GuideCard {
+  title: string
+  description: string
+  icon: LucideIcon
+  accent: string
+  tags?: string[]
+}
+
+interface ShortcutItem {
+  keys: string[]
+  desc: string
+}
+
+const cardAccents = [
+  'bg-sky-500/10 text-sky-600 dark:text-sky-300 border-sky-500/20',
+  'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20',
+  'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20',
+  'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300 border-fuchsia-500/20',
+  'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/20',
+  'bg-zinc-500/10 text-zinc-700 dark:text-zinc-200 border-zinc-500/20'
+]
+
+function Keycap({ children }: { children: string }) {
+  return (
+    <kbd className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-border/60 bg-background/90 px-1.5 font-mono text-[11px] font-semibold text-foreground shadow-sm">
+      {children}
+    </kbd>
+  )
+}
+
+function GuideCardItem({ item }: { item: GuideCard }) {
+  const Icon = item.icon
+
+  return (
+    <div className="group rounded-lg border border-border/35 bg-muted/15 p-3.5 transition-colors hover:bg-muted/25">
+      <div className="flex items-start gap-3">
+        <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border ${item.accent}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h4 className="macos-text-title text-sm font-semibold leading-5 text-foreground">{item.title}</h4>
+          <p className="macos-text mt-1 text-sm leading-5 text-muted-foreground">{item.description}</p>
+          {item.tags && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {item.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-md border border-border/30 bg-background/65 px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ShortcutTile({ shortcut }: { shortcut: ShortcutItem }) {
+  return (
+    <div className="rounded-lg border border-border/35 bg-muted/15 p-3 transition-colors hover:bg-muted/25">
+      <div className="mb-2 flex flex-wrap items-center gap-1">
+        {shortcut.keys.map((key, index) => (
+          <span key={`${key}-${index}`} className="inline-flex items-center gap-1">
+            <Keycap>{key}</Keycap>
+            {index < shortcut.keys.length - 1 && (
+              <span className="text-xs font-medium text-muted-foreground">+</span>
+            )}
+          </span>
+        ))}
+      </div>
+      <p className="text-xs leading-4 text-muted-foreground">{shortcut.desc}</p>
+    </div>
+  )
+}
+
 export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
   const { t } = useTranslation()
-  const [activeSection, setActiveSection] = useState('getting-started')
+  const [activeSection, setActiveSection] = useState<SectionId>('getting-started')
 
   if (!isOpen) return null
 
@@ -23,334 +140,424 @@ export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
     }
   }
 
-  const sections = [
-    { id: 'getting-started', label: t('help.sections.gettingStarted'), icon: <Zap className="w-4 h-4" /> },
-    { id: 'file-management', label: t('help.sections.fileManagement'), icon: <FolderOpen className="w-4 h-4" /> },
-    { id: 'reading', label: t('help.sections.reading'), icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'search', label: t('help.sections.search'), icon: <Search className="w-4 h-4" /> },
-    { id: 'ai-assistant', label: t('help.sections.aiAssistant'), icon: <Bot className="w-4 h-4" /> },
-    { id: 'shortcuts', label: t('help.sections.shortcuts'), icon: <Keyboard className="w-4 h-4" /> }
+  const sections: GuideSection[] = [
+    {
+      id: 'getting-started',
+      label: t('help.sections.gettingStarted'),
+      summary: t('help.sectionSummaries.gettingStarted'),
+      icon: Zap
+    },
+    {
+      id: 'file-management',
+      label: t('help.sections.fileManagement'),
+      summary: t('help.sectionSummaries.fileManagement'),
+      icon: FolderOpen
+    },
+    {
+      id: 'reading',
+      label: t('help.sections.reading'),
+      summary: t('help.sectionSummaries.reading'),
+      icon: BookOpen
+    },
+    {
+      id: 'search',
+      label: t('help.sections.search'),
+      summary: t('help.sectionSummaries.search'),
+      icon: Search
+    },
+    {
+      id: 'plugins',
+      label: t('help.sections.plugins'),
+      summary: t('help.sectionSummaries.plugins'),
+      icon: Puzzle
+    },
+    {
+      id: 'ai-assistant',
+      label: t('help.sections.aiAssistant'),
+      summary: t('help.sectionSummaries.aiAssistant'),
+      icon: Bot
+    },
+    {
+      id: 'shortcuts',
+      label: t('help.sections.shortcuts'),
+      summary: t('help.sectionSummaries.shortcuts'),
+      icon: Keyboard
+    }
   ]
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'getting-started':
-        return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold mb-1.5">{t('help.gettingStarted.title')}</h3>
-              <p className="text-sm text-muted-foreground">{t('help.gettingStarted.description')}</p>
-            </div>
+  const active = sections.find((section) => section.id === activeSection) ?? sections[0]
 
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 bg-primary/10 text-primary rounded-md flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                    1
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium mb-1">{t('help.gettingStarted.step1.title')}</h4>
-                    <p className="text-sm text-muted-foreground">{t('help.gettingStarted.step1.description')}</p>
-                  </div>
-                </div>
-              </div>
+  const highlights = [
+    { label: t('help.highlights.formats'), value: 'Markdown / PDF / EPUB / HTML' },
+    { label: t('help.highlights.workflow'), value: t('help.highlights.workflowValue') },
+    { label: t('help.highlights.customizable'), value: t('help.highlights.customizableValue') }
+  ]
 
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 bg-primary/10 text-primary rounded-md flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                    2
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium mb-1">{t('help.gettingStarted.step2.title')}</h4>
-                    <p className="text-sm text-muted-foreground">{t('help.gettingStarted.step2.description')}</p>
-                  </div>
-                </div>
-              </div>
+  const cardsBySection: Record<Exclude<SectionId, 'shortcuts'>, GuideCard[]> = {
+    'getting-started': [
+      {
+        title: t('help.gettingStarted.step1.title'),
+        description: t('help.gettingStarted.step1.description'),
+        icon: FileText,
+        accent: cardAccents[0],
+        tags: ['Cmd/Ctrl + O', t('help.tags.singleFile')]
+      },
+      {
+        title: t('help.gettingStarted.step2.title'),
+        description: t('help.gettingStarted.step2.description'),
+        icon: FolderOpen,
+        accent: cardAccents[1],
+        tags: ['Cmd/Ctrl + Shift + O', t('help.tags.folder')]
+      },
+      {
+        title: t('help.gettingStarted.step3.title'),
+        description: t('help.gettingStarted.step3.description'),
+        icon: Sparkles,
+        accent: cardAccents[2],
+        tags: [t('help.tags.theme'), t('help.tags.readingWidth')]
+      },
+      {
+        title: t('help.gettingStarted.step4.title'),
+        description: t('help.gettingStarted.step4.description'),
+        icon: Clock3,
+        accent: cardAccents[3],
+        tags: [t('help.tags.recent'), t('help.tags.tabs')]
+      }
+    ],
+    'file-management': [
+      {
+        title: t('help.fileManagement.dragDrop.title'),
+        description: t('help.fileManagement.dragDrop.description'),
+        icon: Files,
+        accent: cardAccents[0],
+        tags: [t('help.tags.dragDrop'), t('help.tags.folder')]
+      },
+      {
+        title: t('help.fileManagement.folderMode.title'),
+        description: t('help.fileManagement.folderMode.description'),
+        icon: ListTree,
+        accent: cardAccents[1],
+        tags: [t('help.tags.fileTree'), t('help.tags.filter')]
+      },
+      {
+        title: t('help.fileManagement.supportedFormats.title'),
+        description: t('help.fileManagement.supportedFormats.description'),
+        icon: FileType,
+        accent: cardAccents[2],
+        tags: ['.md', '.pdf', '.epub', '.html']
+      },
+      {
+        title: t('help.fileManagement.recentAndTabs.title'),
+        description: t('help.fileManagement.recentAndTabs.description'),
+        icon: Clock3,
+        accent: cardAccents[3],
+        tags: [t('help.tags.recent'), t('help.tags.tabs')]
+      }
+    ],
+    reading: [
+      {
+        title: t('help.reading.markdown.title'),
+        description: t('help.reading.markdown.description'),
+        icon: Highlighter,
+        accent: cardAccents[0],
+        tags: ['Mermaid', t('help.tags.codeHighlight')]
+      },
+      {
+        title: t('help.reading.fontSize.title'),
+        description: t('help.reading.fontSize.description'),
+        icon: Settings2,
+        accent: cardAccents[1],
+        tags: ['12-24px', 'Cmd/Ctrl + +/-']
+      },
+      {
+        title: t('help.reading.contentWidth.title'),
+        description: t('help.reading.contentWidth.description'),
+        icon: PanelLeft,
+        accent: cardAccents[2],
+        tags: [t('settings.reading.widthNarrow'), t('settings.reading.widthMedium'), t('settings.reading.widthWide'), t('settings.reading.widthFull')]
+      },
+      {
+        title: t('help.reading.themeAndSidebar.title'),
+        description: t('help.reading.themeAndSidebar.description'),
+        icon: Palette,
+        accent: cardAccents[3],
+        tags: ['Cmd/Ctrl + B', 'Cmd/Ctrl + Shift + T']
+      },
+      {
+        title: t('help.reading.epubPdf.title'),
+        description: t('help.reading.epubPdf.description'),
+        icon: BookOpen,
+        accent: cardAccents[4],
+        tags: ['EPUB', 'PDF', t('help.tags.progress')]
+      }
+    ],
+    search: [
+      {
+        title: t('help.search.inDocument.title'),
+        description: t('help.search.inDocument.description'),
+        icon: Search,
+        accent: cardAccents[0],
+        tags: [t('help.tags.doubleShift'), 'Enter', 'Shift + Enter']
+      },
+      {
+        title: t('help.search.inSidebar.title'),
+        description: t('help.search.inSidebar.description'),
+        icon: PanelLeft,
+        accent: cardAccents[1],
+        tags: [t('help.tags.fileTree'), t('help.tags.filter')]
+      },
+      {
+        title: t('help.search.options.title'),
+        description: t('help.search.options.description'),
+        icon: Settings2,
+        accent: cardAccents[2],
+        tags: [t('search.options.caseSensitive'), t('search.options.wholeWord'), t('search.options.regex')]
+      },
+      {
+        title: t('help.search.global.title'),
+        description: t('help.search.global.description'),
+        icon: RotateCcw,
+        accent: cardAccents[3],
+        tags: [t('help.tags.index'), t('help.tags.folder')]
+      }
+    ],
+    plugins: [
+      {
+        title: t('help.plugins.install.title'),
+        description: t('help.plugins.install.description'),
+        icon: Puzzle,
+        accent: cardAccents[0],
+        tags: ['.zip', 'manifest.json', 'main.js']
+      },
+      {
+        title: t('help.plugins.manage.title'),
+        description: t('help.plugins.manage.description'),
+        icon: Settings2,
+        accent: cardAccents[1],
+        tags: [t('help.tags.enable'), t('help.tags.disable'), t('help.tags.uninstall')]
+      },
+      {
+        title: t('help.plugins.ui.title'),
+        description: t('help.plugins.ui.description'),
+        icon: PanelRight,
+        accent: cardAccents[2],
+        tags: [t('help.tags.toolbar'), t('help.tags.sidebar'), t('help.tags.viewer')]
+      },
+      {
+        title: t('help.plugins.safety.title'),
+        description: t('help.plugins.safety.description'),
+        icon: ShieldCheck,
+        accent: cardAccents[3],
+        tags: [t('help.tags.localData'), t('help.tags.settings')]
+      }
+    ],
+    'ai-assistant': [
+      {
+        title: t('help.aiAssistant.setup.title'),
+        description: t('help.aiAssistant.setup.description'),
+        icon: Bot,
+        accent: cardAccents[0],
+        tags: [t('help.tags.rightPanel'), t('help.tags.pluginPanel')]
+      },
+      {
+        title: t('help.aiAssistant.usage.title'),
+        description: t('help.aiAssistant.usage.description'),
+        icon: Sparkles,
+        accent: cardAccents[1],
+        tags: ['Cmd/Ctrl + Shift + A', t('help.tags.currentDocument')]
+      },
+      {
+        title: t('help.aiAssistant.context.title'),
+        description: t('help.aiAssistant.context.description'),
+        icon: FileText,
+        accent: cardAccents[2],
+        tags: [t('help.tags.summary'), t('help.tags.translation'), t('help.tags.extraction')]
+      }
+    ]
+  }
 
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 bg-primary/10 text-primary rounded-md flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                    3
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium mb-1">{t('help.gettingStarted.step3.title')}</h4>
-                    <p className="text-sm text-muted-foreground">{t('help.gettingStarted.step3.description')}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'file-management':
-        return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold mb-1.5">{t('help.fileManagement.title')}</h3>
-              <p className="text-sm text-muted-foreground">{t('help.fileManagement.description')}</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 bg-muted/60 rounded-md flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 text-foreground/70" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium mb-1">{t('help.fileManagement.dragDrop.title')}</h4>
-                    <p className="text-sm text-muted-foreground">{t('help.fileManagement.dragDrop.description')}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 bg-muted/60 rounded-md flex items-center justify-center flex-shrink-0">
-                    <FolderOpen className="w-4 h-4 text-foreground/70" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium mb-1">{t('help.fileManagement.folderMode.title')}</h4>
-                    <p className="text-sm text-muted-foreground">{t('help.fileManagement.folderMode.description')}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 bg-muted/60 rounded-md flex items-center justify-center flex-shrink-0">
-                    <FileType className="w-4 h-4 text-foreground/70" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium mb-1">{t('help.fileManagement.supportedFormats.title')}</h4>
-                    <p className="text-sm text-muted-foreground">{t('help.fileManagement.supportedFormats.description')}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'reading':
-        return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold mb-1.5">{t('help.reading.title')}</h3>
-              <p className="text-sm text-muted-foreground">{t('help.reading.description')}</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.reading.fontSize.title')}</h4>
-                <p className="text-sm text-muted-foreground">{t('help.reading.fontSize.description')}</p>
-              </div>
-
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.reading.contentWidth.title')}</h4>
-                <p className="text-sm text-muted-foreground">{t('help.reading.contentWidth.description')}</p>
-              </div>
-
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.reading.sidebar.title')}</h4>
-                <p className="text-sm text-muted-foreground">{t('help.reading.sidebar.description')}</p>
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'search':
-        return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold mb-1.5">{t('help.search.title')}</h3>
-              <p className="text-sm text-muted-foreground">{t('help.search.description')}</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.search.inDocument.title')}</h4>
-                <p className="text-sm text-muted-foreground mb-2.5">{t('help.search.inDocument.description')}</p>
-                <kbd className="inline-flex items-center gap-1 px-2 py-0.5 bg-background/80 border border-border/60 rounded text-xs font-mono">
-                  <span className="text-muted-foreground">⌘/Ctrl</span>
-                  <span className="text-muted-foreground">+</span>
-                  <span>F</span>
-                </kbd>
-              </div>
-
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.search.inSidebar.title')}</h4>
-                <p className="text-sm text-muted-foreground">{t('help.search.inSidebar.description')}</p>
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'ai-assistant':
-        return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold mb-1.5">{t('help.aiAssistant.title')}</h3>
-              <p className="text-sm text-muted-foreground">{t('help.aiAssistant.description')}</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.aiAssistant.setup.title')}</h4>
-                <p className="text-sm text-muted-foreground">{t('help.aiAssistant.setup.description')}</p>
-              </div>
-
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.aiAssistant.usage.title')}</h4>
-                <p className="text-sm text-muted-foreground mb-2.5">{t('help.aiAssistant.usage.description')}</p>
-                <kbd className="inline-flex items-center gap-1 px-2 py-0.5 bg-background/80 border border-border/60 rounded text-xs font-mono">
-                  <span className="text-muted-foreground">⌘/Ctrl</span>
-                  <span className="text-muted-foreground">+</span>
-                  <span>K</span>
-                </kbd>
-              </div>
-
-              <div className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                <h4 className="text-sm font-medium mb-1">{t('help.aiAssistant.roles.title')}</h4>
-                <p className="text-sm text-muted-foreground">{t('help.aiAssistant.roles.description')}</p>
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'shortcuts':
-        return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold mb-1.5">{t('help.shortcuts.title')}</h3>
-              <p className="text-sm text-muted-foreground">{t('help.shortcuts.description')}</p>
-            </div>
-
-            {/* General Shortcuts */}
-            <div>
-              <h4 className="text-sm font-medium mb-2 text-foreground/80">{t('help.shortcuts.general') || '通用快捷键'}</h4>
-              <div className="grid grid-cols-2 gap-2.5">
-                {[
-                  { key: ['⌘/Ctrl', 'O'], desc: t('help.shortcuts.list.openFile') },
-                  { key: ['⌘/Ctrl', 'F'], desc: t('help.shortcuts.list.search') },
-                  { key: ['⌘/Ctrl', 'K'], desc: t('help.shortcuts.list.aiAssistant') },
-                  { key: ['⌘/Ctrl', ','], desc: t('help.shortcuts.list.settings') },
-                  { key: ['⌘/Ctrl', 'B'], desc: t('help.shortcuts.list.toggleSidebar') },
-                  { key: ['⌘/Ctrl', '+'], desc: t('help.shortcuts.list.increaseFontSize') },
-                  { key: ['⌘/Ctrl', '-'], desc: t('help.shortcuts.list.decreaseFontSize') },
-                  { key: ['⌘/Ctrl', '0'], desc: t('help.shortcuts.list.resetFontSize') }
-                ].map((shortcut, index) => (
-                  <div key={index} className="p-2.5 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                    <div className="flex items-center gap-1 mb-1.5">
-                      {shortcut.key.map((k, i) => (
-                        <span key={i} className="inline-flex items-center">
-                          <kbd className="inline-flex items-center px-1.5 py-0.5 bg-background/80 border border-border/60 rounded text-xs font-mono">
-                            {k}
-                          </kbd>
-                          {i < shortcut.key.length - 1 && <span className="mx-0.5 text-muted-foreground text-xs">+</span>}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{shortcut.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* EPUB Reading Shortcuts */}
-            <div>
-              <h4 className="text-sm font-medium mb-2 text-foreground/80">{t('help.shortcuts.epubReading') || 'EPUB 阅读快捷键'}</h4>
-              <div className="grid grid-cols-2 gap-2.5">
-                {[
-                  { key: ['←'], desc: t('help.shortcuts.list.prevPage') || '上一页' },
-                  { key: ['→'], desc: t('help.shortcuts.list.nextPage') || '下一页' },
-                  { key: ['K'], desc: t('help.shortcuts.list.prevPageVim') || '上一页 (Vim)' },
-                  { key: ['J'], desc: t('help.shortcuts.list.nextPageVim') || '下一页 (Vim)' },
-                  { key: ['Space'], desc: t('help.shortcuts.list.nextPageSpace') || '下一页' },
-                  { key: ['Shift', 'Space'], desc: t('help.shortcuts.list.prevPageSpace') || '上一页' },
-                  { key: ['Home'], desc: t('help.shortcuts.list.firstPage') || '跳到首页' },
-                  { key: ['End'], desc: t('help.shortcuts.list.lastPage') || '跳到末页' }
-                ].map((shortcut, index) => (
-                  <div key={index} className="p-2.5 bg-muted/30 rounded-lg border border-border/40 hover:border-border/60 transition-colors">
-                    <div className="flex items-center gap-1 mb-1.5">
-                      {shortcut.key.map((k, i) => (
-                        <span key={i} className="inline-flex items-center">
-                          <kbd className="inline-flex items-center px-1.5 py-0.5 bg-background/80 border border-border/60 rounded text-xs font-mono">
-                            {k}
-                          </kbd>
-                          {i < shortcut.key.length - 1 && <span className="mx-0.5 text-muted-foreground text-xs">+</span>}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{shortcut.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )
-
-      default:
-        return null
+  const shortcutGroups = [
+    {
+      title: t('help.shortcuts.groups.navigation'),
+      items: [
+        { keys: ['Cmd/Ctrl', 'O'], desc: t('help.shortcuts.list.openFile') },
+        { keys: ['Cmd/Ctrl', 'Shift', 'O'], desc: t('help.shortcuts.list.openFolder') },
+        { keys: ['F5'], desc: t('help.shortcuts.list.refresh') },
+        { keys: ['Cmd/Ctrl', ','], desc: t('help.shortcuts.list.settings') }
+      ]
+    },
+    {
+      title: t('help.shortcuts.groups.viewSearch'),
+      items: [
+        { keys: ['Shift', 'Shift'], desc: t('help.shortcuts.list.search') },
+        { keys: ['Enter'], desc: t('help.shortcuts.list.nextResult') },
+        { keys: ['Shift', 'Enter'], desc: t('help.shortcuts.list.prevResult') },
+        { keys: ['Cmd/Ctrl', 'B'], desc: t('help.shortcuts.list.toggleSidebar') }
+      ]
+    },
+    {
+      title: t('help.shortcuts.groups.reading'),
+      items: [
+        { keys: ['Cmd/Ctrl', '='], desc: t('help.shortcuts.list.increaseFontSize') },
+        { keys: ['Cmd/Ctrl', '-'], desc: t('help.shortcuts.list.decreaseFontSize') },
+        { keys: ['Cmd/Ctrl', '0'], desc: t('help.shortcuts.list.resetFontSize') },
+        { keys: ['Cmd/Ctrl', 'Shift', 'T'], desc: t('help.shortcuts.list.toggleTheme') }
+      ]
+    },
+    {
+      title: t('help.shortcuts.groups.epub'),
+      items: [
+        { keys: ['Left'], desc: t('help.shortcuts.list.prevPage') },
+        { keys: ['Right'], desc: t('help.shortcuts.list.nextPage') },
+        { keys: ['Space'], desc: t('help.shortcuts.list.nextPageSpace') },
+        { keys: ['Shift', 'Space'], desc: t('help.shortcuts.list.prevPageSpace') },
+        { keys: ['Home'], desc: t('help.shortcuts.list.firstPage') },
+        { keys: ['End'], desc: t('help.shortcuts.list.lastPage') }
+      ]
     }
+  ] satisfies Array<{ title: string; items: ShortcutItem[] }>
+
+  const renderContent = () => {
+    if (activeSection === 'shortcuts') {
+      return (
+        <div className="space-y-5">
+          {shortcutGroups.map((group) => (
+            <section key={group.title}>
+              <h4 className="macos-text-title mb-2.5 text-sm font-semibold text-foreground">{group.title}</h4>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {group.items.map((shortcut) => (
+                  <ShortcutTile key={`${group.title}-${shortcut.keys.join('-')}`} shortcut={shortcut} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {cardsBySection[activeSection].map((item) => (
+          <GuideCardItem key={item.title} item={item} />
+        ))}
+      </div>
+    )
+  }
+
+  const ActiveIcon = active.icon
+  const activeTranslationKey: Record<SectionId, string> = {
+    'getting-started': 'gettingStarted',
+    'file-management': 'fileManagement',
+    reading: 'reading',
+    search: 'search',
+    plugins: 'plugins',
+    'ai-assistant': 'aiAssistant',
+    shortcuts: 'shortcuts'
   }
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[60] macos-fade-in p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-md macos-fade-in"
       onClick={handleBackdropClick}
     >
-      <Card className="w-[860px] h-[640px] glass-effect border border-border/30 shadow-2xl macos-scale-in overflow-hidden flex flex-col">
-        {/* 标题栏 */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/20 bg-muted/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-primary/10 rounded-md flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-primary" />
+      <Card className="flex h-[680px] w-[940px] max-w-[96vw] flex-col overflow-hidden border border-border/30 shadow-2xl glass-effect macos-scale-in">
+        <div className="flex items-center justify-between border-b border-border/20 bg-muted/10 px-5 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+              <BookOpen className="h-4 w-4" />
             </div>
-            <h2 className="text-sm font-semibold !m-0 !p-0 leading-none">{t('help.title')}</h2>
+            <div className="min-w-0">
+              <h2 className="macos-text-title text-sm font-semibold leading-none text-foreground">{t('help.title')}</h2>
+              <p className="mt-1 truncate text-xs text-muted-foreground">{t('help.subtitle')}</p>
+            </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-7 w-7 p-0 rounded-md hover:bg-muted/50"
+            className="h-7 w-7 rounded-md p-0 hover:bg-muted/50"
+            title={t('ui.buttons.close')}
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* 主体内容区 */}
         <div className="flex flex-1 overflow-hidden">
-          {/* 左侧导航 */}
-          <div className="w-52 bg-muted/20 border-r border-border/20 flex-shrink-0 overflow-y-auto">
+          <aside className="w-60 flex-shrink-0 overflow-y-auto border-r border-border/20 bg-muted/20">
             <div className="p-3">
+              <div className="mb-3 rounded-lg border border-border/30 bg-background/55 p-3">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {t('help.navTitle')}
+                </p>
+                <p className="macos-text mt-1 text-sm leading-5 text-foreground/80">{t('help.navDescription')}</p>
+              </div>
+
               <nav className="space-y-1">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`
-                      w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all
-                      ${activeSection === section.id
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'hover:bg-muted/40 text-foreground border border-transparent'
-                      }
-                    `}
-                  >
-                    <div className={activeSection === section.id ? 'text-primary' : 'text-muted-foreground'}>
-                      {section.icon}
-                    </div>
-                    <span className="text-sm font-medium">{section.label}</span>
-                  </button>
-                ))}
+                {sections.map((section) => {
+                  const Icon = section.icon
+                  const isActive = activeSection === section.id
+
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveSection(section.id)}
+                      className={`
+                        w-full rounded-lg border px-3 py-2.5 text-left transition-colors
+                        ${isActive
+                          ? 'border-primary/25 bg-primary/10 text-primary'
+                          : 'border-transparent text-foreground hover:bg-muted/45'
+                        }
+                      `}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="text-sm font-medium">{section.label}</span>
+                      </span>
+                      <span className={`mt-1 block text-xs leading-4 ${isActive ? 'text-primary/75' : 'text-muted-foreground'}`}>
+                        {section.summary}
+                      </span>
+                    </button>
+                  )
+                })}
               </nav>
             </div>
-          </div>
+          </aside>
 
-          {/* 右侧内容区 */}
-          <div className="flex-1 bg-background overflow-y-auto">
-            <div className="p-6">
+          <main className="flex-1 overflow-y-auto bg-background content-scroll">
+            <div className="space-y-5 p-5">
+              <section className="relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-primary/10 via-background to-emerald-500/10 p-5 shadow-sm">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
+                    <ActiveIcon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>{active.label}</span>
+                    </div>
+                    <h3 className="macos-text-title text-2xl font-bold leading-tight tracking-normal text-foreground">
+                      {t(`help.${activeTranslationKey[activeSection]}.title`)}
+                    </h3>
+                    <p className="macos-text mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {t(`help.${activeTranslationKey[activeSection]}.description`)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                  {highlights.map((item) => (
+                    <div key={item.label} className="rounded-lg border border-border/35 bg-background/65 px-3 py-2 shadow-sm">
+                      <div className="text-xs font-medium text-muted-foreground">{item.label}</div>
+                      <div className="mt-0.5 truncate text-sm font-semibold text-foreground">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
               {renderContent()}
             </div>
-          </div>
+          </main>
         </div>
       </Card>
     </div>

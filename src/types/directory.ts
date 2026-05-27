@@ -4,7 +4,8 @@ export interface FileInfo {
   fullPath: string
   relativePath: string
   directory: string
-  fileType?: 'markdown' | 'pdf' | 'epub'
+  fileType?: 'markdown' | 'pdf' | 'epub' | 'html'
+  documentTitle?: string
 }
 
 export interface DirectoryData {

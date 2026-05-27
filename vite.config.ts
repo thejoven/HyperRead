@@ -69,6 +69,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           // 分离大型依赖
+          'beautiful-mermaid': ['beautiful-mermaid'],
           'mermaid': ['mermaid'],
           'highlight': ['highlight.js'],
           'pdfjs': ['pdfjs-dist'],
@@ -77,9 +78,11 @@ export default defineConfig({
           'markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight', 'rehype-raw'],
         },
         compact: true,
-        chunkFileNames: 'assets/chunk-[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
+        // Electron loads the renderer through file://. Stable asset names keep
+        // lazy chunks available if dist is rebuilt while a window is still open.
+        chunkFileNames: 'assets/chunk-[name].js',
+        entryFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
       },
     },
     chunkSizeWarningLimit: 1000,

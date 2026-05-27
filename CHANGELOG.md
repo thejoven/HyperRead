@@ -5,6 +5,18 @@ All notable changes to HyperRead will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.2] - 2026-05-27
+
+### Added
+- HTML document support for `.html` and `.htm` files, including app metadata and platform file associations.
+- New HTML viewer path for rendering local HTML content in the reader.
+- TOC Minimap and Article Notebook demo plugins, including packaged examples.
+
+### Changed
+- Improved Mermaid diagram rendering with the `beautiful-mermaid` integration.
+- Refined table-of-contents extraction, minimap behavior, drag-and-drop handling, and document tab metadata.
+- Updated README feature and plugin documentation for the new document and plugin capabilities.
+
 ## [5.1.1] - 2025-12-29
 
 ### 🐛 Bug Fixes

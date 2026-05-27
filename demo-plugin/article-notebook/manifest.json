@@ -1,0 +1,10 @@
+{
+  "id": "article-notebook",
+  "name": "文章记事本",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead Demo",
+  "description": "右侧栏文章记事本，支持按文章保存笔记、框选高亮、文本笔记，并发送上下文到 AI 助手。",
+  "main": "main.js",
+  "styles": "styles.css"
+}

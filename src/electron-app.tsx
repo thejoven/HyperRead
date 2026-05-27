@@ -127,8 +127,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
   })
 
   // === Tab Handlers ===
-  const handleActivateTab = useCallback(async (filePath: string) => {
-    await tabs.activateTab(filePath)
+  const setFileDataFromTab = useCallback(async (filePath: string) => {
     const tab = tabs.openTabs.find(t => t.filePath === filePath)
     const cached = tabs.cache.get(filePath)
     if (cached && tab) {
@@ -141,24 +140,36 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         setFileData(data)
       })
     }
-  }, [tabs])
+  }, [tabs, setFileData])
+
+  const handleActivateTab = useCallback(async (filePath: string) => {
+    await tabs.activateTab(filePath)
+    await setFileDataFromTab(filePath)
+  }, [tabs, setFileDataFromTab])
 
   const handleCloseTab = useCallback((path: string) => {
+    const closingActiveLastTab = tabs.activeTab === path && tabs.openTabs.length === 1
     tabs.closeTab(path, async (fp) => {
-      const tab = tabs.openTabs.find(t => t.filePath === fp)
-      const cached = tabs.cache.get(fp)
-      if (cached && tab) {
-        startTransition(() => {
-          setFileData({ content: cached, fileName: tab.fileName, filePath: fp, fileType: tab.fileType })
-        })
-      } else if (window.electronAPI?.readFile) {
-        const data = await window.electronAPI.readFile(fp)
-        startTransition(() => {
-          setFileData(data)
-        })
-      }
+      await setFileDataFromTab(fp)
     })
-  }, [tabs])
+    if (closingActiveLastTab) {
+      startTransition(() => {
+        setFileData(null)
+      })
+    }
+  }, [tabs, setFileData, setFileDataFromTab])
+
+  const handleCloseAllTabs = useCallback(() => {
+    tabs.closeAllTabs()
+    startTransition(() => {
+      setFileData(null)
+    })
+  }, [tabs, setFileData])
+
+  const handleCloseOtherTabs = useCallback(async (path: string) => {
+    tabs.closeOtherTabs(path)
+    await setFileDataFromTab(path)
+  }, [tabs, setFileDataFromTab])
 
   // === File/Directory Handlers ===
   const loadFile = useCallback(async (filePath: string) => {
@@ -236,7 +247,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         const dirName = data.rootPath.split('/').filter(Boolean).pop() || data.rootPath
         addRecentItem({ type: 'directory', filePath: data.rootPath, fileName: dirName })
       } else if (data && data.files.length === 0) {
-        toast.error('该文件夹中没有找到 Markdown 文件')
+        toast.error('该文件夹中没有找到支持的文件')
       }
     } catch (error) {
       console.error('Failed to open directory:', error)
@@ -387,6 +398,20 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [settings])
 
+  // === Plugin Panel Activation Bridge ===
+  useEffect(() => {
+    const handleOpenPluginPanel = (event: Event) => {
+      const panelId = (event as CustomEvent<{ panelId?: string }>).detail?.panelId
+      if (!panelId) return
+
+      setIsRightSidebarCollapsed(false)
+      setActivePluginPanel(panelId)
+    }
+
+    window.addEventListener('hyperread:open-plugin-panel', handleOpenPluginPanel)
+    return () => window.removeEventListener('hyperread:open-plugin-panel', handleOpenPluginPanel)
+  }, [])
+
   // === File Association Listener ===
   useEffect(() => {
     const handleFileAssociation = (e: CustomEvent) => {
@@ -443,6 +468,8 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         activeTab={tabs.activeTab}
         onActivateTab={handleActivateTab}
         onCloseTab={handleCloseTab}
+        onCloseAllTabs={handleCloseAllTabs}
+        onCloseOtherTabs={handleCloseOtherTabs}
         onOpenFile={handleOpenFile}
         onOpenDirectory={handleOpenDirectory}
         onOpenSettings={() => setShowSettings(true)}
@@ -477,6 +504,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
                   isRefreshing={directory.isRefreshing}
                   width={settings.sidebarWidth}
                   onWidthChange={settings.setSidebarWidth}
+                  showDocumentTitle={settings.showDocumentTitle}
                 />
               </div>
 
@@ -619,6 +647,8 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         onContentWidthChange={settings.setContentWidth}
         primaryColor={settings.primaryColor}
         onPrimaryColorChange={settings.setPrimaryColor}
+        showDocumentTitle={settings.showDocumentTitle}
+        onShowDocumentTitleChange={settings.setShowDocumentTitle}
       />
 
       {/* Plugin Status Bar */}

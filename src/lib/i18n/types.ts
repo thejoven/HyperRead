@@ -89,6 +89,8 @@ export interface Translations {
       widthFullDesc: string
       primaryColor: string
       primaryColorDesc: string
+      showDocumentTitle: string
+      showDocumentTitleDesc: string
       colorCyan: string
       colorBlue: string
       colorPurple: string

@@ -323,33 +323,56 @@ a:hover {
   user-select: text;
 }
 
-/* Mermaid diagram dark mode enhancements */
-.dark .mermaid-container svg {
+/* Mermaid diagram rendering */
+.mermaid-svg-container svg {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.mermaid-svg-container--fullscreen svg {
+  height: auto;
+  margin: 0;
+  max-width: none;
+  width: auto;
+}
+
+.beautiful-mermaid-container svg {
+  overflow: visible;
+}
+
+.beautiful-mermaid-container svg text {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif !important;
+}
+
+/* Legacy Mermaid fallback dark mode enhancements */
+.dark .legacy-mermaid-container svg {
   background: transparent !important;
 }
 
-.dark .mermaid-container .node rect,
-.dark .mermaid-container .node circle,
-.dark .mermaid-container .node ellipse,
-.dark .mermaid-container .node polygon {
+.dark .legacy-mermaid-container .node rect,
+.dark .legacy-mermaid-container .node circle,
+.dark .legacy-mermaid-container .node ellipse,
+.dark .legacy-mermaid-container .node polygon {
   fill: hsl(240 2% 17%) !important;
   stroke: hsl(var(--primary)) !important;
 }
 
-.dark .mermaid-container .node .label,
-.dark .mermaid-container text,
-.dark .mermaid-container .nodeLabel,
-.dark .mermaid-container .edgeLabel {
+.dark .legacy-mermaid-container .node .label,
+.dark .legacy-mermaid-container text,
+.dark .legacy-mermaid-container .nodeLabel,
+.dark .legacy-mermaid-container .edgeLabel {
   fill: hsl(0 0% 92%) !important;
   color: hsl(0 0% 92%) !important;
 }
 
-.dark .mermaid-container .edgePath .path,
-.dark .mermaid-container .flowchart-link {
+.dark .legacy-mermaid-container .edgePath .path,
+.dark .legacy-mermaid-container .flowchart-link {
   stroke: hsl(var(--primary) / 0.8) !important;
 }
 
-.dark .mermaid-container .marker {
+.dark .legacy-mermaid-container .marker {
   fill: hsl(var(--primary)) !important;
   stroke: hsl(var(--primary)) !important;
 }

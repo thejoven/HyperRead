@@ -2,20 +2,11 @@
 
 import { useState, useMemo, memo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw, FileType, BookOpen } from 'lucide-react'
+import { FileText, Folder, FolderOpen, ChevronRight, ChevronDown, Search, RefreshCw, FileType, BookOpen, FileCode } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { useResize } from '@/hooks/use-resize'
-
-interface FileInfo {
-  name: string
-  fileName: string
-  fullPath: string
-  relativePath: string
-  directory: string
-  fileType?: 'markdown' | 'pdf' | 'epub'
-}
+import type { FileInfo } from '@/types/directory'
 
 interface FileListProps {
   files: FileInfo[]
@@ -27,6 +18,7 @@ interface FileListProps {
   isRefreshing?: boolean
   width?: number
   onWidthChange?: (width: number) => void
+  showDocumentTitle?: boolean
 }
 
 interface TreeNode {
@@ -38,16 +30,29 @@ interface TreeNode {
 }
 
 // 搜索缓存
-let searchCache: { term: string; tree: TreeNode[]; result: TreeNode[] } | null = null
+let searchCache: { term: string; tree: TreeNode[]; showDocumentTitle: boolean; result: TreeNode[] } | null = null
 
-function filterTree(tree: TreeNode[], searchTerm: string): TreeNode[] {
+function isMarkdownFile(file: FileInfo): boolean {
+  return file.fileType === 'markdown' || /\.(md|markdown)$/i.test(file.fileName)
+}
+
+function getFileDisplayName(file: FileInfo, showDocumentTitle: boolean): string {
+  if (showDocumentTitle && isMarkdownFile(file) && file.documentTitle) {
+    return file.documentTitle
+  }
+
+  return file.name
+}
+
+function filterTree(tree: TreeNode[], searchTerm: string, showDocumentTitle: boolean): TreeNode[] {
   const trimmedTerm = searchTerm.trim()
   if (!trimmedTerm) return tree
 
   // 检查缓存
   if (searchCache &&
       searchCache.term === trimmedTerm &&
-      searchCache.tree === tree) {
+      searchCache.tree === tree &&
+      searchCache.showDocumentTitle === showDocumentTitle) {
     return searchCache.result
   }
 
@@ -56,11 +61,12 @@ function filterTree(tree: TreeNode[], searchTerm: string): TreeNode[] {
 
   for (const node of tree) {
     if (node.type === 'file') {
-      if (node.name.toLowerCase().includes(lowerSearchTerm)) {
+      const displayName = node.file ? getFileDisplayName(node.file, showDocumentTitle) : node.name
+      if (displayName.toLowerCase().includes(lowerSearchTerm) || node.name.toLowerCase().includes(lowerSearchTerm)) {
         filtered.push(node)
       }
     } else if (node.type === 'directory' && node.children) {
-      const filteredChildren = filterTree(node.children, trimmedTerm)
+      const filteredChildren = filterTree(node.children, trimmedTerm, showDocumentTitle)
       if (filteredChildren.length > 0) {
         filtered.push({
           ...node,
@@ -71,7 +77,7 @@ function filterTree(tree: TreeNode[], searchTerm: string): TreeNode[] {
   }
 
   // 更新缓存
-  searchCache = { term: trimmedTerm, tree, result: filtered }
+  searchCache = { term: trimmedTerm, tree, showDocumentTitle, result: filtered }
 
   return filtered
 }
@@ -165,11 +171,13 @@ const TreeNodeComponent = memo(({
   node, 
   currentFile, 
   onFileSelect, 
+  showDocumentTitle,
   level = 0 
 }: { 
   node: TreeNode
   currentFile?: string
   onFileSelect: (file: FileInfo) => void
+  showDocumentTitle: boolean
   level?: number 
 }) => {
   const [isExpanded, setIsExpanded] = useState(level < 2) // 默认展开前两级
@@ -178,6 +186,8 @@ const TreeNodeComponent = memo(({
     const isActive = currentFile === node.file.fullPath
     const isPdf = node.file.fileType === 'pdf' || node.file.fileName.toLowerCase().endsWith('.pdf')
     const isEpub = node.file.fileType === 'epub' || node.file.fileName.toLowerCase().endsWith('.epub')
+    const isHtml = node.file.fileType === 'html' || /\.(html|htm)$/i.test(node.file.fileName)
+    const displayName = getFileDisplayName(node.file, showDocumentTitle)
 
     return (
       <div className="flex items-center group">
@@ -200,12 +210,16 @@ const TreeNodeComponent = memo(({
             <BookOpen className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
               isActive ? 'text-white' : 'text-blue-500'
             }`} />
+          ) : isHtml ? (
+            <FileCode className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+              isActive ? 'text-white' : 'text-amber-500'
+            }`} />
           ) : (
             <FileText className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
               isActive ? 'text-white' : 'text-muted-foreground'
             }`} />
           )}
-          <span className="truncate text-xs macos-text">{node.file.name}</span>
+          <span className="truncate text-xs macos-text" title={displayName}>{displayName}</span>
         </Button>
       </div>
     )
@@ -240,12 +254,13 @@ const TreeNodeComponent = memo(({
         </div>
         {isExpanded && (
           <div className="space-y-1 mt-1 macos-fade-in">
-            {node.children.map((child, index) => (
+            {node.children.map((child) => (
               <TreeNodeComponent
                 key={child.path}
                 node={child}
                 currentFile={currentFile}
                 onFileSelect={onFileSelect}
+                showDocumentTitle={showDocumentTitle}
                 level={level + 1}
               />
             ))}
@@ -260,20 +275,22 @@ const TreeNodeComponent = memo(({
 
 export default function FileList({
   files,
-  rootPath,
   currentFile,
   onFileSelect,
-  isCollapsed = false,
   onRefresh,
   isRefreshing = false,
   width = 288,
-  onWidthChange
+  onWidthChange,
+  showDocumentTitle = false
 }: FileListProps) {
   const t = useT()
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const tree = useMemo(() => buildTree(files), [files])
-  const filteredTree = useMemo(() => filterTree(tree, debouncedSearchTerm), [tree, debouncedSearchTerm])
+  const filteredTree = useMemo(
+    () => filterTree(tree, debouncedSearchTerm, showDocumentTitle),
+    [tree, debouncedSearchTerm, showDocumentTitle]
+  )
 
   // 搜索防抖
   useEffect(() => {
@@ -382,6 +399,7 @@ export default function FileList({
                   node={node}
                   currentFile={currentFile}
                   onFileSelect={onFileSelect}
+                  showDocumentTitle={showDocumentTitle}
                 />
               ))
             ) : searchTerm ? (
@@ -395,6 +413,7 @@ export default function FileList({
                   node={node}
                   currentFile={currentFile}
                   onFileSelect={onFileSelect}
+                  showDocumentTitle={showDocumentTitle}
                 />
               ))
             )}

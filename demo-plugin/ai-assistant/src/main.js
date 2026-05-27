@@ -711,6 +711,9 @@ function createState(api) {
     api,
     sidebarHandle: null,
     settingsHandle: null,
+    _externalPromptQueue: [],
+    _externalSubmitPrompt: null,
+    _externalPromptHandler: null,
     // Injected style element
     _styleEl: null,
   }
@@ -731,13 +734,40 @@ function hashContent(content) {
   return h.toString(36)
 }
 
+function getConfigError(config) {
+  if (!String(config.apiKey || '').trim()) return '请填写 API Key'
+  if (!String(config.model || '').trim()) return '请填写模型名称'
+
+  const apiUrl = String(config.apiUrl || '').trim()
+  if (!apiUrl) return '请填写 API URL'
+
+  try {
+    const url = new URL(apiUrl)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return 'API URL 必须以 http:// 或 https:// 开头'
+    }
+  } catch {
+    return 'API URL 必须是完整地址，例如 https://api.openai.com/v1/chat/completions'
+  }
+
+  return null
+}
+
+function isConfigured(config) {
+  return getConfigError(config) === null
+}
+
+function getValidatedApiUrl(config) {
+  const error = getConfigError(config)
+  if (error) throw new Error(error)
+  return String(config.apiUrl).trim()
+}
+
 async function loadData(state) {
   const d = await state.api.loadData()
   state.conversations = d.conversations || {}
   state.config = { ...state.config, ...(d.config || {}) }
-  if (state.config.apiKey && state.config.apiUrl && state.config.model) {
-    state.config.isConfigured = true
-  }
+  state.config.isConfigured = isConfigured(state.config)
   state.roles = (d.roles && d.roles.length) ? d.roles : defaultRoles()
 }
 
@@ -811,7 +841,8 @@ class AiService {
 
   async send(messages) {
     if (!this.config.isConfigured) throw new Error('未配置 AI 服务')
-    const res = await fetch(this.config.apiUrl, {
+    const apiUrl = getValidatedApiUrl(this.config)
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1178,6 +1209,29 @@ function buildChatPanel(container, state) {
     }
   }
 
+  const submitExternalPrompt = (text) => {
+    const prompt = String(text || '').trim()
+    if (!prompt) return
+
+    textarea.value = prompt
+    autoResize()
+
+    if (!state.config.isConfigured || state.isLoading) {
+      textarea.focus()
+      return
+    }
+
+    doSend()
+  }
+
+  state._externalSubmitPrompt = submitExternalPrompt
+  if (state._externalPromptQueue.length > 0) {
+    const queuedPrompts = state._externalPromptQueue.splice(0)
+    queuedPrompts.forEach((prompt, index) => {
+      window.setTimeout(() => submitExternalPrompt(prompt), index * 80)
+    })
+  }
+
   textarea.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend() }
   })
@@ -1224,6 +1278,9 @@ function buildChatPanel(container, state) {
 
   return () => {
     state.api.off('document:open', onDocOpen)
+    if (state._externalSubmitPrompt === submitExternalPrompt) {
+      state._externalSubmitPrompt = null
+    }
   }
 }
 
@@ -1294,8 +1351,14 @@ function buildSettingsPanel(container, state) {
 
   const testBtn = h('button', 'ai-btn', '测试连接')
   testBtn.onclick = async () => {
-    const cfg = { apiKey: apiKeyInp.value, apiUrl: apiUrlInp.value, model: modelInp.value, isConfigured: true }
-    if (!cfg.apiKey || !cfg.apiUrl || !cfg.model) { setStatus('error', '请填写所有字段'); return }
+    const cfg = {
+      apiKey: apiKeyInp.value.trim(),
+      apiUrl: apiUrlInp.value.trim(),
+      model: modelInp.value.trim(),
+      isConfigured: true,
+    }
+    const configError = getConfigError(cfg)
+    if (configError) { setStatus('error', configError); return }
     testBtn.disabled = true; testBtn.textContent = '测试中...'
     setStatus('info', '正在连接...')
     const ok = await new AiService(cfg).test()
@@ -1305,14 +1368,15 @@ function buildSettingsPanel(container, state) {
 
   const saveBtn = h('button', 'ai-btn primary', '保存')
   saveBtn.onclick = () => {
-    state.config = {
+    const nextConfig = {
       apiKey: apiKeyInp.value.trim(),
       apiUrl: apiUrlInp.value.trim(),
       model: modelInp.value.trim(),
-      isConfigured: !!(apiKeyInp.value.trim() && apiUrlInp.value.trim() && modelInp.value.trim()),
     }
+    const configError = getConfigError(nextConfig)
+    state.config = { ...nextConfig, isConfigured: !configError }
     saveData(state)
-    setStatus('success', '✓ 配置已保存')
+    setStatus(configError ? 'error' : 'success', configError || '✓ 配置已保存')
   }
 
   btnRow.append(testBtn, saveBtn)
@@ -1515,6 +1579,23 @@ const plugin = {
       render: (container) => buildSettingsPanel(container, this.state),
     })
 
+    this.state._externalPromptHandler = (event) => {
+      const detail = event.detail || {}
+      const prompt = String(detail.text || detail.prompt || '').trim()
+      if (!prompt) return
+
+      window.dispatchEvent(new CustomEvent('hyperread:open-plugin-panel', {
+        detail: { panelId: 'ai-assistant' }
+      }))
+
+      if (this.state?._externalSubmitPrompt) {
+        this.state._externalSubmitPrompt(prompt)
+      } else {
+        this.state?._externalPromptQueue.push(prompt)
+      }
+    }
+    window.addEventListener('hyperread:ai-assistant:send', this.state._externalPromptHandler)
+
     // Track current document
     api.on('document:open', (fileData) => {
       this.state.currentDocument = fileData
@@ -1526,6 +1607,9 @@ const plugin = {
   async onunload() {
     if (this.state) {
       await saveData(this.state)
+      if (this.state._externalPromptHandler) {
+        window.removeEventListener('hyperread:ai-assistant:send', this.state._externalPromptHandler)
+      }
       if (this.state._styleEl?.parentNode) {
         this.state._styleEl.parentNode.removeChild(this.state._styleEl)
       }
