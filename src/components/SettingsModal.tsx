@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -34,6 +34,7 @@ import ShortcutSettings from './ShortcutSettings'
 import HelpDialog from './HelpDialog'
 import PluginSettingsRenderer from './PluginSettingsRenderer'
 import { usePlugins } from '@/contexts/PluginContext'
+import type { DefaultDocumentAppAssociation, DefaultDocumentAppStatus } from '@/types/electron'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -62,6 +63,45 @@ interface SettingsSubCategory {
   icon: React.ReactNode
 }
 
+const DEFAULT_APP_COPY = {
+  zh: {
+    category: '默认应用',
+    title: '默认打开方式',
+    description: '将 HyperRead 设为 Markdown 与 PDF 文档的默认应用。',
+    setButton: '设为默认',
+    settingButton: '设置中...',
+    alreadyDefault: '已是默认',
+    refresh: '刷新状态',
+    unsupported: '此操作仅支持 macOS。',
+    devMode: '开发模式仅可查看状态；请安装打包后的 HyperRead.app 后再设置默认打开方式。',
+    unavailable: '当前环境不支持默认打开方式设置。',
+    loadFailed: '读取默认打开方式失败。',
+    success: '已将 HyperRead 设为默认打开方式',
+    failed: '设置默认打开方式失败',
+    statusDefault: 'HyperRead',
+    statusOther: '当前：{handler}',
+    statusUnknown: '未设置'
+  },
+  en: {
+    category: 'Default App',
+    title: 'Default Open With',
+    description: 'Set HyperRead as the default app for Markdown and PDF documents.',
+    setButton: 'Set as Default',
+    settingButton: 'Setting...',
+    alreadyDefault: 'Already Default',
+    refresh: 'Refresh Status',
+    unsupported: 'This action is only available on macOS.',
+    devMode: 'Development mode can only inspect status. Install the packaged HyperRead.app before setting defaults.',
+    unavailable: 'Default document app settings are unavailable in this environment.',
+    loadFailed: 'Failed to read default document app status.',
+    success: 'HyperRead is now the default document app',
+    failed: 'Failed to set default document app',
+    statusDefault: 'HyperRead',
+    statusOther: 'Current: {handler}',
+    statusUnknown: 'Not set'
+  }
+}
+
 export default function SettingsModal({
   isOpen,
   onClose,
@@ -76,9 +116,12 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const { t, currentLanguage, languages, changeLanguage } = useTranslation()
   const { plugins, manager } = usePlugins()
+  const defaultAppCopy = currentLanguage === 'zh' ? DEFAULT_APP_COPY.zh : DEFAULT_APP_COPY.en
   const [activeCategory, setActiveCategory] = useState('reading')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['general']))
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false)
+  const [defaultAppStatus, setDefaultAppStatus] = useState<DefaultDocumentAppStatus | null>(null)
+  const [isDefaultAppBusy, setIsDefaultAppBusy] = useState(false)
 
   // 关于页复制状态
   const [aboutCopiedGithub, setAboutCopiedGithub] = useState(false)
@@ -105,6 +148,11 @@ export default function SettingsModal({
           id: 'shortcuts',
           label: t('settings.categories.shortcuts'),
           icon: <Keyboard className="w-3.5 h-3.5" />
+        },
+        {
+          id: 'defaultApps',
+          label: defaultAppCopy.category,
+          icon: <FileText className="w-3.5 h-3.5" />
         }
       ]
     },
@@ -134,6 +182,39 @@ export default function SettingsModal({
     })
   }
 
+  const loadDefaultDocumentAppStatus = useCallback(async () => {
+    if (!window.electronAPI?.getDefaultDocumentAppStatus) {
+      setDefaultAppStatus({
+        supported: false,
+        isPackaged: false,
+        bundleId: 'com.thejoven.hyperread',
+        associations: [],
+        isDefault: false,
+        success: false,
+        error: defaultAppCopy.unavailable
+      })
+      return
+    }
+
+    setIsDefaultAppBusy(true)
+    try {
+      const status = await window.electronAPI.getDefaultDocumentAppStatus()
+      setDefaultAppStatus(status)
+    } catch (error) {
+      setDefaultAppStatus({
+        supported: window.electronAPI?.platform === 'darwin',
+        isPackaged: false,
+        bundleId: 'com.thejoven.hyperread',
+        associations: [],
+        isDefault: false,
+        success: false,
+        error: error instanceof Error ? error.message : defaultAppCopy.loadFailed
+      })
+    } finally {
+      setIsDefaultAppBusy(false)
+    }
+  }, [defaultAppCopy])
+
   // ESC 键关闭弹窗
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -152,6 +233,12 @@ export default function SettingsModal({
       document.body.style.overflow = 'unset'
     }
   }, [isOpen, onClose])
+
+  useEffect(() => {
+    if (isOpen && activeCategory === 'defaultApps') {
+      void loadDefaultDocumentAppStatus()
+    }
+  }, [activeCategory, isOpen, loadDefaultDocumentAppStatus])
 
   if (!isOpen) return null
 
@@ -357,6 +444,138 @@ export default function SettingsModal({
   // 渲染快捷键设置内容
   const renderShortcutSettings = () => {
     return <ShortcutSettings />
+  }
+
+  const handleSetDefaultDocumentApp = async () => {
+    if (!window.electronAPI?.setDefaultDocumentApp) {
+      toast.error(defaultAppCopy.unavailable)
+      return
+    }
+
+    setIsDefaultAppBusy(true)
+    try {
+      const status = await window.electronAPI.setDefaultDocumentApp()
+      setDefaultAppStatus(status)
+
+      if (status.success) {
+        toast.success(defaultAppCopy.success)
+      } else {
+        toast.error(status.error || defaultAppCopy.failed)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : defaultAppCopy.failed)
+    } finally {
+      setIsDefaultAppBusy(false)
+    }
+  }
+
+  const renderDefaultAppSettings = () => {
+    const isMac = window.electronAPI?.platform === 'darwin'
+    const fallbackAssociations: DefaultDocumentAppAssociation[] = [
+      { extension: 'md', label: 'Markdown', isDefault: false },
+      { extension: 'markdown', label: 'Markdown', isDefault: false },
+      { extension: 'pdf', label: 'PDF', isDefault: false }
+    ]
+    const associations: DefaultDocumentAppAssociation[] = defaultAppStatus?.associations?.length
+      ? defaultAppStatus.associations
+      : fallbackAssociations
+    const canSetDefault = isMac && !isDefaultAppBusy && !defaultAppStatus?.isDefault
+
+    return (
+      <div className="space-y-3">
+        <div className="py-3 px-3 bg-muted/20 rounded-lg">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <label className="text-sm font-medium text-foreground">{defaultAppCopy.title}</label>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {defaultAppCopy.description}
+              </p>
+            </div>
+            <Button
+              variant={defaultAppStatus?.isDefault ? 'outline' : 'default'}
+              size="sm"
+              onClick={handleSetDefaultDocumentApp}
+              disabled={!canSetDefault}
+              className="h-8 flex-shrink-0 gap-1.5 px-3 text-xs"
+              title={defaultAppCopy.setButton}
+            >
+              {defaultAppStatus?.isDefault ? (
+                <Check className="h-3.5 w-3.5" />
+              ) : (
+                <FileText className="h-3.5 w-3.5" />
+              )}
+              <span>
+                {isDefaultAppBusy
+                  ? defaultAppCopy.settingButton
+                  : defaultAppStatus?.isDefault
+                    ? defaultAppCopy.alreadyDefault
+                    : defaultAppCopy.setButton}
+              </span>
+            </Button>
+          </div>
+
+          {!isMac && (
+            <p className="mt-3 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              {defaultAppCopy.unsupported}
+            </p>
+          )}
+
+          {isMac && defaultAppStatus && !defaultAppStatus.isPackaged && (
+            <p className="mt-3 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              {defaultAppCopy.devMode}
+            </p>
+          )}
+
+          {defaultAppStatus?.error && (
+            <p className="mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {defaultAppStatus.error}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {associations.map((item) => (
+            <div
+              key={item.extension}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border/30 bg-muted/15 px-3 py-2"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="rounded-md border border-border/40 bg-background px-2 py-1 font-mono text-xs font-semibold">
+                  .{item.extension}
+                </span>
+                <span className="text-sm text-foreground">{item.label}</span>
+              </div>
+              <div className="flex min-w-0 items-center gap-1.5 text-right">
+                {item.isDefault && <Check className="h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />}
+                <span
+                  className={`truncate text-xs ${
+                    item.isDefault ? 'text-emerald-600 dark:text-emerald-300' : 'text-muted-foreground'
+                  }`}
+                >
+                  {item.isDefault
+                    ? defaultAppCopy.statusDefault
+                    : item.currentHandler
+                      ? defaultAppCopy.statusOther.replace('{handler}', item.currentHandler)
+                      : defaultAppCopy.statusUnknown}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadDefaultDocumentAppStatus}
+            disabled={isDefaultAppBusy}
+            className="h-7 px-3 text-xs"
+          >
+            {defaultAppCopy.refresh}
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // 渲染关于软件内容（迁移自 AboutModal）
@@ -615,6 +834,8 @@ export default function SettingsModal({
         return renderLanguageSettings()
       case 'shortcuts':
         return renderShortcutSettings()
+      case 'defaultApps':
+        return renderDefaultAppSettings()
       case 'plugins':
         return renderPluginsSettings()
       case 'about':

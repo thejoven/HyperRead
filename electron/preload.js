@@ -22,6 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 打开外部链接 - 使用 IPC 调用主进程
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
 
+  // 默认文档打开方式
+  getDefaultDocumentAppStatus: () => ipcRenderer.invoke('get-default-document-app-status'),
+  setDefaultDocumentApp: () => ipcRenderer.invoke('set-default-document-app'),
+
   // 处理文件拖拽（从主进程调用）
   handleFileDrop: (filePath) => {
     if (!filePath || typeof filePath !== 'string') {

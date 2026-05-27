@@ -15,6 +15,27 @@ export interface PluginInstallResult {
   manifest: any
 }
 
+export interface DefaultDocumentAppAssociation {
+  extension: string
+  label: string
+  uti?: string
+  currentHandler?: string
+  status?: number
+  isDefault: boolean
+  error?: string
+}
+
+export interface DefaultDocumentAppStatus {
+  supported: boolean
+  isPackaged: boolean
+  bundleId: string
+  appBundlePath?: string | null
+  associations: DefaultDocumentAppAssociation[]
+  isDefault: boolean
+  success: boolean
+  error?: string
+}
+
 export interface PluginElectronAPI {
   listInstalled: () => Promise<any[]>
   readFile: (pluginId: string, fileName: string) => Promise<{ content: string; fileName: string; filePath: string; fileType: string }>
@@ -34,6 +55,8 @@ export interface ElectronAPI {
   scanDirectory: (dirPath: string) => Promise<DirectoryData>
   openExternal: (url: string) => Promise<void>
   readImage: (imagePath: string, markdownFilePath?: string) => Promise<ReadImageResult>
+  getDefaultDocumentAppStatus: () => Promise<DefaultDocumentAppStatus>
+  setDefaultDocumentApp: () => Promise<DefaultDocumentAppStatus>
   isElectron: boolean
   platform: string
   // Enhanced drag-drop functions

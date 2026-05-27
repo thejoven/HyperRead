@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
+const { execFile } = require('child_process')
 
 let mainWindow
 
@@ -81,6 +82,159 @@ function debounce(fn, delay) {
 
 const SCANNABLE_DOCUMENT_EXTENSIONS = new Set(['.md', '.markdown', '.pdf', '.epub', '.html', '.htm'])
 const OPENABLE_DOCUMENT_EXTENSIONS = new Set([...SCANNABLE_DOCUMENT_EXTENSIONS, '.txt'])
+const DOCUMENT_DEFAULT_APP_BUNDLE_ID = 'com.thejoven.hyperread'
+const DEFAULT_DOCUMENT_APP_ASSOCIATIONS = [
+  { extension: 'md', label: 'Markdown' },
+  { extension: 'markdown', label: 'Markdown' },
+  { extension: 'pdf', label: 'PDF' }
+]
+
+function execFilePromise(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    execFile(command, args, options, (error, stdout, stderr) => {
+      if (error) {
+        error.stderr = stderr
+        reject(error)
+        return
+      }
+
+      resolve({ stdout, stderr })
+    })
+  })
+}
+
+function getMacAppBundlePath() {
+  if (process.platform !== 'darwin') return null
+
+  const match = process.execPath.match(/^(.+?\.app)(?:\/|$)/)
+  return match?.[1] ?? null
+}
+
+function createDefaultDocumentAppScript(shouldSetDefault) {
+  return `
+ObjC.import('CoreServices')
+
+const bundleId = ${JSON.stringify(DOCUMENT_DEFAULT_APP_BUNDLE_ID)}
+const shouldSetDefault = ${JSON.stringify(shouldSetDefault)}
+const fileTypes = ${JSON.stringify(DEFAULT_DOCUMENT_APP_ASSOCIATIONS)}
+
+function unwrapCoreFoundationString(ref) {
+  if (!ref) return ''
+
+  const value = ObjC.unwrap(ObjC.castRefToObject(ref))
+  return value ? String(value) : ''
+}
+
+const results = fileTypes.map((fileType) => {
+  const utiRef = $.UTTypeCreatePreferredIdentifierForTag(
+    $.kUTTagClassFilenameExtension,
+    $(fileType.extension),
+    null
+  )
+  const uti = unwrapCoreFoundationString(utiRef)
+
+  if (!uti) {
+    return {
+      extension: fileType.extension,
+      label: fileType.label,
+      isDefault: false,
+      error: 'Unable to resolve file type'
+    }
+  }
+
+  let status = 0
+  if (shouldSetDefault) {
+    status = Number($.LSSetDefaultRoleHandlerForContentType($(uti), $.kLSRolesAll, $(bundleId)))
+  }
+
+  const handlerRef = $.LSCopyDefaultRoleHandlerForContentType($(uti), $.kLSRolesAll)
+  const currentHandler = unwrapCoreFoundationString(handlerRef)
+
+  return {
+    extension: fileType.extension,
+    label: fileType.label,
+    uti,
+    currentHandler,
+    status,
+    isDefault: currentHandler === bundleId
+  }
+})
+
+JSON.stringify(results)
+`
+}
+
+function buildDefaultDocumentAppStatus(associations, extra = {}) {
+  const isDefault = associations.length > 0 && associations.every(item => item.isDefault)
+
+  return {
+    supported: process.platform === 'darwin',
+    isPackaged: app.isPackaged,
+    bundleId: DOCUMENT_DEFAULT_APP_BUNDLE_ID,
+    appBundlePath: getMacAppBundlePath(),
+    associations,
+    isDefault,
+    success: isDefault,
+    ...extra
+  }
+}
+
+async function queryDefaultDocumentAppStatus(shouldSetDefault = false) {
+  if (process.platform !== 'darwin') {
+    return buildDefaultDocumentAppStatus(
+      DEFAULT_DOCUMENT_APP_ASSOCIATIONS.map(item => ({ ...item, isDefault: false })),
+      { success: false, error: 'Default document app settings are only supported on macOS.' }
+    )
+  }
+
+  const { stdout } = await execFilePromise(
+    '/usr/bin/osascript',
+    ['-l', 'JavaScript', '-e', createDefaultDocumentAppScript(shouldSetDefault)],
+    { timeout: 10000, maxBuffer: 1024 * 1024 }
+  )
+
+  const associations = JSON.parse(stdout.trim() || '[]')
+  const failed = associations.filter(item => !item.isDefault)
+
+  return buildDefaultDocumentAppStatus(associations, {
+    success: failed.length === 0,
+    error: failed.length > 0 && shouldSetDefault
+      ? 'Some file types could not be assigned to HyperRead.'
+      : undefined
+  })
+}
+
+async function registerMacAppBundleForLaunchServices() {
+  const appBundlePath = getMacAppBundlePath()
+
+  if (!appBundlePath || !fs.existsSync(appBundlePath)) {
+    throw new Error('无法找到 HyperRead.app，请先安装正式版应用。')
+  }
+
+  await execFilePromise(
+    '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister',
+    ['-f', appBundlePath],
+    { timeout: 10000, maxBuffer: 1024 * 1024 }
+  )
+}
+
+async function setDefaultDocumentAppStatus() {
+  if (process.platform !== 'darwin') {
+    return queryDefaultDocumentAppStatus(false)
+  }
+
+  if (!app.isPackaged) {
+    const status = await queryDefaultDocumentAppStatus(false)
+    return {
+      ...status,
+      success: false,
+      error: '请先安装打包后的 HyperRead.app，开发模式不会修改默认打开方式。'
+    }
+  }
+
+  await registerMacAppBundleForLaunchServices()
+  return queryDefaultDocumentAppStatus(true)
+}
 
 function getFileTypeFromExtension(ext) {
   if (ext === '.pdf') return 'pdf'
@@ -538,6 +692,38 @@ ipcMain.handle('get-fullscreen', async () => {
     return !!mainWindow && mainWindow.isFullScreen()
   } catch {
     return false
+  }
+})
+
+// 查询 macOS 默认文档打开方式
+ipcMain.handle('get-default-document-app-status', async () => {
+  try {
+    return await queryDefaultDocumentAppStatus(false)
+  } catch (error) {
+    console.error('Main: get-default-document-app-status error:', error)
+    return buildDefaultDocumentAppStatus(
+      DEFAULT_DOCUMENT_APP_ASSOCIATIONS.map(item => ({ ...item, isDefault: false })),
+      {
+        success: false,
+        error: error.message || '无法读取默认打开方式。'
+      }
+    )
+  }
+})
+
+// 将 HyperRead 设置为 Markdown 与 PDF 的默认打开方式
+ipcMain.handle('set-default-document-app', async () => {
+  try {
+    return await setDefaultDocumentAppStatus()
+  } catch (error) {
+    console.error('Main: set-default-document-app error:', error)
+    return buildDefaultDocumentAppStatus(
+      DEFAULT_DOCUMENT_APP_ASSOCIATIONS.map(item => ({ ...item, isDefault: false })),
+      {
+        success: false,
+        error: error.message || '设置默认打开方式失败。'
+      }
+    )
   }
 })
 
