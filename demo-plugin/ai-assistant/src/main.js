@@ -562,7 +562,43 @@ const PLUGIN_STYLES = `
 }
 .ai-settings-content::-webkit-scrollbar { width: 4px; }
 .ai-settings-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.ai-field { margin-bottom: 12px; }
+.ai-settings-table {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background) 92%, var(--muted));
+}
+.ai-setting-row {
+  display: grid;
+  grid-template-columns: minmax(112px, 0.34fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ai-setting-row:last-child { border-bottom: none; }
+.ai-setting-row.multi { align-items: start; }
+.ai-setting-label { min-width: 0; }
+.ai-setting-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+.ai-setting-desc {
+  margin: 3px 0 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+.ai-setting-control { min-width: 0; }
+.ai-settings-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
 .ai-label {
   display: block;
   font-size: 11.5px;
@@ -620,6 +656,7 @@ const PLUGIN_STYLES = `
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 8px;
+  background: color-mix(in srgb, var(--background) 96%, var(--muted));
 }
 .ai-role-card-header {
   display: flex;
@@ -673,11 +710,10 @@ const PLUGIN_STYLES = `
   display: flex;
   align-items: center;
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
   gap: 8px;
 }
+.ai-hist-item:last-child { border-bottom: none; }
 .ai-hist-info { flex: 1; min-width: 0; }
 .ai-hist-name {
   font-size: 12px;
@@ -694,6 +730,26 @@ const PLUGIN_STYLES = `
   font-size: 11px;
   color: var(--muted-foreground);
   margin-bottom: 10px;
+}
+.ai-empty-state {
+  margin: 0;
+  padding: 14px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  text-align: center;
+}
+@media (max-width: 560px) {
+  .ai-setting-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    align-items: start;
+  }
+  .ai-settings-actions,
+  .ai-btn-row {
+    flex-direction: column;
+  }
 }
 `
 
@@ -1315,10 +1371,14 @@ function buildSettingsPanel(container, state) {
   // ── API Config ──────────────────────────────────────────────────────────
   const apiPanel = h('div', 'ai-settings-content')
 
-  const mkField = (label, inputEl) => {
-    const field = h('div', 'ai-field')
-    field.append(h('label', 'ai-label', label), inputEl)
-    return field
+  const mkSettingRow = (title, desc, controlEl, className = '') => {
+    const row = h('div', `ai-setting-row${className ? ` ${className}` : ''}`)
+    const label = h('label', 'ai-setting-label')
+    label.append(h('span', 'ai-setting-title', title))
+    if (desc) label.append(h('p', 'ai-setting-desc', desc))
+    row.append(label, h('div', 'ai-setting-control'))
+    row.lastChild.append(controlEl)
+    return row
   }
 
   const apiKeyInp = document.createElement('input')
@@ -1347,7 +1407,7 @@ function buildSettingsPanel(container, state) {
     statusMsg.style.display = 'block'
   }
 
-  const btnRow = h('div', 'ai-btn-row')
+  const btnRow = h('div', 'ai-settings-actions')
 
   const testBtn = h('button', 'ai-btn', '测试连接')
   testBtn.onclick = async () => {
@@ -1380,10 +1440,14 @@ function buildSettingsPanel(container, state) {
   }
 
   btnRow.append(testBtn, saveBtn)
+  const apiTable = h('div', 'ai-settings-table')
+  apiTable.append(
+    mkSettingRow('API Key', '密钥仅保存在本机插件设置中', apiKeyInp),
+    mkSettingRow('API URL', '兼容 OpenAI Chat Completions 的接口地址', apiUrlInp),
+    mkSettingRow('模型名称', '例如 gpt-4o、deepseek-chat 或自定义模型名', modelInp),
+  )
   apiPanel.append(
-    mkField('API Key', apiKeyInp),
-    mkField('API URL (兼容 OpenAI 格式)', apiUrlInp),
-    mkField('模型名称', modelInp),
+    apiTable,
     btnRow,
     statusMsg,
   )
@@ -1403,21 +1467,19 @@ function buildSettingsPanel(container, state) {
       if (role.description) card.append(hdr, h('p', 'ai-role-desc', role.description))
       else card.append(hdr)
 
-      const editForm = h('div', '')
+      const editForm = h('div', 'ai-settings-table')
       editForm.style.display = 'none'
 
       const nameInp = document.createElement('input')
       nameInp.type = 'text'
       nameInp.className = 'ai-input'
       nameInp.value = role.name
-      nameInp.style.marginBottom = '6px'
 
       const descInp = document.createElement('input')
       descInp.type = 'text'
       descInp.className = 'ai-input'
       descInp.value = role.description || ''
       descInp.placeholder = '角色描述（可选）'
-      descInp.style.marginBottom = '6px'
 
       const promptTa = document.createElement('textarea')
       promptTa.className = 'ai-input'
@@ -1426,8 +1488,8 @@ function buildSettingsPanel(container, state) {
       promptTa.rows = 4
       promptTa.style.cssText = 'min-height:80px;resize:vertical;font-family:inherit;'
 
-      const fBtnRow = h('div', 'ai-btn-row')
-      fBtnRow.style.marginTop = '6px'
+      const fBtnRow = h('div', 'ai-settings-actions')
+      fBtnRow.style.display = 'none'
       const saveRoleBtn = h('button', 'ai-btn primary', '保存')
       saveRoleBtn.onclick = () => {
         role.name = nameInp.value.trim() || role.name
@@ -1437,19 +1499,26 @@ function buildSettingsPanel(container, state) {
         renderRoles()
       }
       const cancelBtn = h('button', 'ai-btn', '取消')
-      cancelBtn.onclick = () => { editForm.style.display = 'none'; actRow.style.display = 'flex' }
+      cancelBtn.onclick = () => {
+        editForm.style.display = 'none'
+        fBtnRow.style.display = 'none'
+        actRow.style.display = 'flex'
+      }
       fBtnRow.append(saveRoleBtn, cancelBtn)
 
       editForm.append(
-        h('label', 'ai-label', '名称'), nameInp,
-        h('label', 'ai-label', '描述'), descInp,
-        h('label', 'ai-label', 'System Prompt'), promptTa,
-        fBtnRow,
+        mkSettingRow('名称', '', nameInp),
+        mkSettingRow('描述', '', descInp),
+        mkSettingRow('System Prompt', '用于控制该角色回答时的语气和任务边界', promptTa, 'multi'),
       )
 
       const actRow = h('div', 'ai-role-actions')
       const editBtn = h('button', 'ai-role-action-btn', '编辑')
-      editBtn.onclick = () => { editForm.style.display = 'block'; actRow.style.display = 'none' }
+      editBtn.onclick = () => {
+        editForm.style.display = 'block'
+        fBtnRow.style.display = 'flex'
+        actRow.style.display = 'none'
+      }
       actRow.append(editBtn)
 
       if (!role.isDefault) {
@@ -1462,7 +1531,7 @@ function buildSettingsPanel(container, state) {
         actRow.append(delBtn)
       }
 
-      card.append(actRow, editForm)
+      card.append(actRow, editForm, fBtnRow)
       rolesPanel.append(card)
     })
 
@@ -1491,8 +1560,9 @@ function buildSettingsPanel(container, state) {
     histPanel.append(infoCard)
 
     if (convs.length === 0) {
-      histPanel.append(h('p', '', '暂无对话历史'))
+      histPanel.append(h('p', 'ai-empty-state', '暂无对话历史'))
     } else {
+      const list = h('div', 'ai-settings-table')
       convs.forEach(conv => {
         const item = h('div', 'ai-hist-item')
         const info = h('div', 'ai-hist-info')
@@ -1506,11 +1576,12 @@ function buildSettingsPanel(container, state) {
           renderHistory()
         }
         item.append(info, del)
-        histPanel.append(item)
+        list.append(item)
       })
+      histPanel.append(list)
     }
 
-    const row = h('div', 'ai-btn-row')
+    const row = h('div', 'ai-settings-actions')
     const clearAll = h('button', 'ai-btn', '清空全部')
     clearAll.onclick = () => {
       if (confirm('确定要清空所有对话历史吗？')) {

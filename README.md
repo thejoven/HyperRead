@@ -302,6 +302,18 @@ export default {
 [ui]: ./DOCS/plugin-system/plugin-development-en.md#ui-extensions
 [data]: ./DOCS/plugin-system/plugin-development-en.md#data-persistence
 
+### Packaged Demo Plugins
+
+Users can install the ready-made demo packages from `demo-plugin/*.zip` without building from source.
+
+| Package | Plugin | What it adds |
+|---------|--------|--------------|
+| [`demo-plugin/ai-assistant.zip`](./demo-plugin/ai-assistant.zip) | AI Assistant | Right sidebar chat, custom API endpoint settings, roles, and conversation history |
+| [`demo-plugin/article-notebook.zip`](./demo-plugin/article-notebook.zip) | Article Notebook | Per-document notes, text highlights, and send-to-AI handoff |
+| [`demo-plugin/doc-assistant.zip`](./demo-plugin/doc-assistant.zip) | Document Assistant | Local document summary and reading helpers |
+| [`demo-plugin/toc-minimap.zip`](./demo-plugin/toc-minimap.zip) | TOC Minimap | Floating heading map for Markdown navigation |
+| [`demo-plugin/word-count.zip`](./demo-plugin/word-count.zip) | Word Count | Status bar word, character, and line counts |
+
 ### Documentation
 
 | Link | Description |

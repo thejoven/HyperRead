@@ -1695,7 +1695,43 @@ var PLUGIN_STYLES = `
 }
 .ai-settings-content::-webkit-scrollbar { width: 4px; }
 .ai-settings-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.ai-field { margin-bottom: 12px; }
+.ai-settings-table {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background) 92%, var(--muted));
+}
+.ai-setting-row {
+  display: grid;
+  grid-template-columns: minmax(112px, 0.34fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ai-setting-row:last-child { border-bottom: none; }
+.ai-setting-row.multi { align-items: start; }
+.ai-setting-label { min-width: 0; }
+.ai-setting-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+.ai-setting-desc {
+  margin: 3px 0 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+.ai-setting-control { min-width: 0; }
+.ai-settings-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
 .ai-label {
   display: block;
   font-size: 11.5px;
@@ -1753,6 +1789,7 @@ var PLUGIN_STYLES = `
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 8px;
+  background: color-mix(in srgb, var(--background) 96%, var(--muted));
 }
 .ai-role-card-header {
   display: flex;
@@ -1806,11 +1843,10 @@ var PLUGIN_STYLES = `
   display: flex;
   align-items: center;
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
   gap: 8px;
 }
+.ai-hist-item:last-child { border-bottom: none; }
 .ai-hist-info { flex: 1; min-width: 0; }
 .ai-hist-name {
   font-size: 12px;
@@ -1827,6 +1863,26 @@ var PLUGIN_STYLES = `
   font-size: 11px;
   color: var(--muted-foreground);
   margin-bottom: 10px;
+}
+.ai-empty-state {
+  margin: 0;
+  padding: 14px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  text-align: center;
+}
+@media (max-width: 560px) {
+  .ai-setting-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    align-items: start;
+  }
+  .ai-settings-actions,
+  .ai-btn-row {
+    flex-direction: column;
+  }
 }
 `;
 function createState(api) {
@@ -2364,10 +2420,14 @@ function buildSettingsPanel(container, state) {
   container.append(tabBar);
   const panels = {};
   const apiPanel = h("div", "ai-settings-content");
-  const mkField = (label, inputEl) => {
-    const field = h("div", "ai-field");
-    field.append(h("label", "ai-label", label), inputEl);
-    return field;
+  const mkSettingRow = (title, desc, controlEl, className = "") => {
+    const row = h("div", `ai-setting-row${className ? ` ${className}` : ""}`);
+    const label = h("label", "ai-setting-label");
+    label.append(h("span", "ai-setting-title", title));
+    if (desc) label.append(h("p", "ai-setting-desc", desc));
+    row.append(label, h("div", "ai-setting-control"));
+    row.lastChild.append(controlEl);
+    return row;
   };
   const apiKeyInp = document.createElement("input");
   apiKeyInp.type = "password";
@@ -2390,7 +2450,7 @@ function buildSettingsPanel(container, state) {
     statusMsg.textContent = text;
     statusMsg.style.display = "block";
   };
-  const btnRow = h("div", "ai-btn-row");
+  const btnRow = h("div", "ai-settings-actions");
   const testBtn = h("button", "ai-btn", "\u6D4B\u8BD5\u8FDE\u63A5");
   testBtn.onclick = async () => {
     const cfg = {
@@ -2425,10 +2485,14 @@ function buildSettingsPanel(container, state) {
     setStatus(configError ? "error" : "success", configError || "\u2713 \u914D\u7F6E\u5DF2\u4FDD\u5B58");
   };
   btnRow.append(testBtn, saveBtn);
+  const apiTable = h("div", "ai-settings-table");
+  apiTable.append(
+    mkSettingRow("API Key", "\u5BC6\u94A5\u4EC5\u4FDD\u5B58\u5728\u672C\u673A\u63D2\u4EF6\u8BBE\u7F6E\u4E2D", apiKeyInp),
+    mkSettingRow("API URL", "\u517C\u5BB9 OpenAI Chat Completions \u7684\u63A5\u53E3\u5730\u5740", apiUrlInp),
+    mkSettingRow("\u6A21\u578B\u540D\u79F0", "\u4F8B\u5982 gpt-4o\u3001deepseek-chat \u6216\u81EA\u5B9A\u4E49\u6A21\u578B\u540D", modelInp)
+  );
   apiPanel.append(
-    mkField("API Key", apiKeyInp),
-    mkField("API URL (\u517C\u5BB9 OpenAI \u683C\u5F0F)", apiUrlInp),
-    mkField("\u6A21\u578B\u540D\u79F0", modelInp),
+    apiTable,
     btnRow,
     statusMsg
   );
@@ -2443,27 +2507,25 @@ function buildSettingsPanel(container, state) {
       if (role.isDefault) hdr.append(h("span", "ai-badge", "\u9ED8\u8BA4"));
       if (role.description) card.append(hdr, h("p", "ai-role-desc", role.description));
       else card.append(hdr);
-      const editForm = h("div", "");
+      const editForm = h("div", "ai-settings-table");
       editForm.style.display = "none";
       const nameInp = document.createElement("input");
       nameInp.type = "text";
       nameInp.className = "ai-input";
       nameInp.value = role.name;
-      nameInp.style.marginBottom = "6px";
       const descInp = document.createElement("input");
       descInp.type = "text";
       descInp.className = "ai-input";
       descInp.value = role.description || "";
       descInp.placeholder = "\u89D2\u8272\u63CF\u8FF0\uFF08\u53EF\u9009\uFF09";
-      descInp.style.marginBottom = "6px";
       const promptTa = document.createElement("textarea");
       promptTa.className = "ai-input";
       promptTa.value = role.systemPrompt;
       promptTa.placeholder = "System prompt...";
       promptTa.rows = 4;
       promptTa.style.cssText = "min-height:80px;resize:vertical;font-family:inherit;";
-      const fBtnRow = h("div", "ai-btn-row");
-      fBtnRow.style.marginTop = "6px";
+      const fBtnRow = h("div", "ai-settings-actions");
+      fBtnRow.style.display = "none";
       const saveRoleBtn = h("button", "ai-btn primary", "\u4FDD\u5B58");
       saveRoleBtn.onclick = () => {
         role.name = nameInp.value.trim() || role.name;
@@ -2475,22 +2537,20 @@ function buildSettingsPanel(container, state) {
       const cancelBtn = h("button", "ai-btn", "\u53D6\u6D88");
       cancelBtn.onclick = () => {
         editForm.style.display = "none";
+        fBtnRow.style.display = "none";
         actRow.style.display = "flex";
       };
       fBtnRow.append(saveRoleBtn, cancelBtn);
       editForm.append(
-        h("label", "ai-label", "\u540D\u79F0"),
-        nameInp,
-        h("label", "ai-label", "\u63CF\u8FF0"),
-        descInp,
-        h("label", "ai-label", "System Prompt"),
-        promptTa,
-        fBtnRow
+        mkSettingRow("\u540D\u79F0", "", nameInp),
+        mkSettingRow("\u63CF\u8FF0", "", descInp),
+        mkSettingRow("System Prompt", "\u7528\u4E8E\u63A7\u5236\u8BE5\u89D2\u8272\u56DE\u7B54\u65F6\u7684\u8BED\u6C14\u548C\u4EFB\u52A1\u8FB9\u754C", promptTa, "multi")
       );
       const actRow = h("div", "ai-role-actions");
       const editBtn = h("button", "ai-role-action-btn", "\u7F16\u8F91");
       editBtn.onclick = () => {
         editForm.style.display = "block";
+        fBtnRow.style.display = "flex";
         actRow.style.display = "none";
       };
       actRow.append(editBtn);
@@ -2503,7 +2563,7 @@ function buildSettingsPanel(container, state) {
         };
         actRow.append(delBtn);
       }
-      card.append(actRow, editForm);
+      card.append(actRow, editForm, fBtnRow);
       rolesPanel.append(card);
     });
     const addBtn = h("button", "ai-add-role-btn", "+ \u6DFB\u52A0\u81EA\u5B9A\u4E49\u89D2\u8272");
@@ -2524,8 +2584,9 @@ function buildSettingsPanel(container, state) {
     infoCard.innerHTML = `\u5171 <strong>${convs.length}</strong> \u6BB5\u5BF9\u8BDD\u5386\u53F2\uFF08\u6700\u591A\u4FDD\u7559 100 \u6BB5\uFF09`;
     histPanel.append(infoCard);
     if (convs.length === 0) {
-      histPanel.append(h("p", "", "\u6682\u65E0\u5BF9\u8BDD\u5386\u53F2"));
+      histPanel.append(h("p", "ai-empty-state", "\u6682\u65E0\u5BF9\u8BDD\u5386\u53F2"));
     } else {
+      const list = h("div", "ai-settings-table");
       convs.forEach((conv) => {
         const item = h("div", "ai-hist-item");
         const info = h("div", "ai-hist-info");
@@ -2539,10 +2600,11 @@ function buildSettingsPanel(container, state) {
           renderHistory();
         };
         item.append(info, del);
-        histPanel.append(item);
+        list.append(item);
       });
+      histPanel.append(list);
     }
-    const row = h("div", "ai-btn-row");
+    const row = h("div", "ai-settings-actions");
     const clearAll = h("button", "ai-btn", "\u6E05\u7A7A\u5168\u90E8");
     clearAll.onclick = () => {
       if (confirm("\u786E\u5B9A\u8981\u6E05\u7A7A\u6240\u6709\u5BF9\u8BDD\u5386\u53F2\u5417\uFF1F")) {
