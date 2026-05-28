@@ -31,6 +31,56 @@ export interface ShortcutContextType {
 
 // 默认快捷键配置
 const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
+  // General shortcuts
+  {
+    id: 'general-open-file',
+    category: 'general',
+    description: 'shortcuts.actions.openFile',
+    defaultKeys: ['cmd+o', 'ctrl+o'],
+    keys: ['cmd+o', 'ctrl+o'],
+    enabled: true
+  },
+  {
+    id: 'general-open-folder',
+    category: 'general',
+    description: 'shortcuts.actions.openFolder',
+    defaultKeys: ['cmd+shift+o', 'ctrl+shift+o'],
+    keys: ['cmd+shift+o', 'ctrl+shift+o'],
+    enabled: true
+  },
+  {
+    id: 'general-settings',
+    category: 'general',
+    description: 'shortcuts.actions.settings',
+    defaultKeys: ['cmd+,', 'ctrl+,'],
+    keys: ['cmd+,', 'ctrl+,'],
+    enabled: true
+  },
+  // Navigation shortcuts
+  {
+    id: 'navigation-refresh',
+    category: 'navigation',
+    description: 'ui.buttons.refreshFiles',
+    defaultKeys: ['f5', 'cmd+r', 'ctrl+r'],
+    keys: ['f5', 'cmd+r', 'ctrl+r'],
+    enabled: true
+  },
+  {
+    id: 'navigation-prev-file',
+    category: 'navigation',
+    description: 'shortcuts.actions.prevFile',
+    defaultKeys: ['cmd+[', 'ctrl+['],
+    keys: ['cmd+[', 'ctrl+['],
+    enabled: true
+  },
+  {
+    id: 'navigation-next-file',
+    category: 'navigation',
+    description: 'shortcuts.actions.nextFile',
+    defaultKeys: ['cmd+]', 'ctrl+]'],
+    keys: ['cmd+]', 'ctrl+]'],
+    enabled: true
+  },
   // Search shortcuts
   {
     id: 'search-open',
@@ -79,6 +129,39 @@ const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
     description: 'shortcuts.actions.toggleSidebar',
     defaultKeys: ['cmd+.', 'ctrl+.'],
     keys: ['cmd+.', 'ctrl+.'],
+    enabled: true
+  },
+  {
+    id: 'view-toggle-theme',
+    category: 'view',
+    description: 'shortcuts.actions.toggleTheme',
+    defaultKeys: ['cmd+shift+t', 'ctrl+shift+t'],
+    keys: ['cmd+shift+t', 'ctrl+shift+t'],
+    enabled: true
+  },
+  // Editor shortcuts
+  {
+    id: 'editor-increase-font',
+    category: 'editor',
+    description: 'shortcuts.actions.increaseFont',
+    defaultKeys: ['cmd+=', 'ctrl+='],
+    keys: ['cmd+=', 'ctrl+='],
+    enabled: true
+  },
+  {
+    id: 'editor-decrease-font',
+    category: 'editor',
+    description: 'shortcuts.actions.decreaseFont',
+    defaultKeys: ['cmd+-', 'ctrl+-'],
+    keys: ['cmd+-', 'ctrl+-'],
+    enabled: true
+  },
+  {
+    id: 'editor-reset-font',
+    category: 'editor',
+    description: 'shortcuts.actions.resetZoom',
+    defaultKeys: ['cmd+0', 'ctrl+0'],
+    keys: ['cmd+0', 'ctrl+0'],
     enabled: true
   },
   // Reading shortcuts (EPUB/PDF)
@@ -232,10 +315,10 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
 
   // 检查快捷键冲突
   const checkConflict = useCallback((keys: string[], excludeId?: string): ShortcutConfig | null => {
-    const keyStr = keys.join(',')
+    const normalizedKeys = new Set(keys.map(key => key.trim().toLowerCase()))
     for (const shortcut of shortcuts) {
       if (shortcut.id === excludeId || !shortcut.enabled) continue
-      if (shortcut.keys.join(',') === keyStr) {
+      if (shortcut.keys.some(key => normalizedKeys.has(key.trim().toLowerCase()))) {
         return shortcut
       }
     }

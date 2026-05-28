@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 import { useShortcuts } from '@/contexts/ShortcutContext'
 import { epubReadingProgress, ReadingProgress } from '@/lib/epub-reading-progress'
+import { isEditableShortcutTarget, keyboardEventMatchesAnyShortcut } from '@/lib/shortcut-matcher'
 import ResumeReadingDialog from './ResumeReadingDialog'
 
 interface EpubViewerProps {
@@ -421,54 +422,12 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
   // Get shortcuts from context
   const { shortcuts } = useShortcuts()
 
-  // Helper function to check if a key event matches a shortcut key
-  const matchesKey = useCallback((e: KeyboardEvent, shortcutKey: string): boolean => {
-    const key = e.key.toLowerCase()
-    const shortcutKeyLower = shortcutKey.toLowerCase()
-
-    // Handle modifier combinations like "shift+space"
-    if (shortcutKeyLower.includes('+')) {
-      const parts = shortcutKeyLower.split('+')
-      const mainKey = parts[parts.length - 1]
-      const modifiers = parts.slice(0, -1)
-
-      const hasShift = modifiers.includes('shift')
-      const hasCtrl = modifiers.includes('ctrl') || modifiers.includes('cmd')
-      const hasAlt = modifiers.includes('alt')
-
-      // Check main key
-      let keyMatches = false
-      if (mainKey === 'space') keyMatches = e.key === ' '
-      else keyMatches = key === mainKey
-
-      // Check modifiers
-      const modifiersMatch =
-        (hasShift === e.shiftKey) &&
-        (hasCtrl === (e.ctrlKey || e.metaKey)) &&
-        (hasAlt === e.altKey)
-
-      return keyMatches && modifiersMatch
-    }
-
-    // Handle simple keys (without modifiers)
-    const noModifiers = !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey
-    if (shortcutKeyLower === 'space') return e.key === ' ' && noModifiers
-    if (shortcutKeyLower === 'arrowleft') return e.key === 'ArrowLeft' && noModifiers
-    if (shortcutKeyLower === 'arrowright') return e.key === 'ArrowRight' && noModifiers
-    if (shortcutKeyLower === 'pageup') return e.key === 'PageUp' && noModifiers
-    if (shortcutKeyLower === 'pagedown') return e.key === 'PageDown' && noModifiers
-    if (shortcutKeyLower === 'home') return e.key === 'Home' && noModifiers
-    if (shortcutKeyLower === 'end') return e.key === 'End' && noModifiers
-
-    return key === shortcutKeyLower && noModifiers
-  }, [])
-
   // Check if event matches any of the shortcut's keys
   const matchesShortcut = useCallback((e: KeyboardEvent, shortcutId: string): boolean => {
     const shortcut = shortcuts.find(s => s.id === shortcutId)
     if (!shortcut || !shortcut.enabled) return false
-    return shortcut.keys.some(key => matchesKey(e, key))
-  }, [shortcuts, matchesKey])
+    return keyboardEventMatchesAnyShortcut(e, shortcut.keys)
+  }, [shortcuts])
 
   // Keyboard navigation with configurable shortcuts
   useEffect(() => {
@@ -476,7 +435,7 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Skip if user is typing in an input or textarea
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (isEditableShortcutTarget(e.target)) return
 
       // Skip if resume dialog is showing
       if (showResumeDialog) return

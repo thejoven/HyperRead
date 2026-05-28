@@ -8,6 +8,8 @@ import { X, Search, ChevronDown, ChevronUp, Type, Regex, FileSearch } from 'luci
 import { searchInContent, formatResultCount, debounce, SearchOptions, SearchMatch } from '@/lib/search/search-engine'
 import SearchResultItem from './SearchResultItem'
 import { useT } from '@/lib/i18n'
+import { useShortcuts } from '@/contexts/ShortcutContext'
+import { keyboardEventMatchesAnyShortcut } from '@/lib/shortcut-matcher'
 
 interface SearchPanelProps {
   isOpen: boolean
@@ -19,6 +21,7 @@ interface SearchPanelProps {
 
 export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine, onSearchQueryChange }: SearchPanelProps) {
   const t = useT()
+  const { shortcuts } = useShortcuts()
   const [query, setQuery] = useState('')
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
     caseSensitive: false,
@@ -123,27 +126,34 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
   useEffect(() => {
     if (!isOpen) return
 
+    const matchesShortcut = (e: KeyboardEvent, id: string) => {
+      const shortcut = shortcuts.find(item => item.id === id)
+      if (!shortcut || !shortcut.enabled) return false
+      return keyboardEventMatchesAnyShortcut(e, shortcut.keys)
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to close
-      if (e.key === 'Escape') {
+      if (matchesShortcut(e, 'search-close')) {
         e.preventDefault()
         onClose()
+        return
       }
-      // Enter to go to next match
-      else if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        goToNextMatch()
-      }
-      // Shift+Enter to go to previous match
-      else if (e.key === 'Enter' && e.shiftKey) {
+
+      if (matchesShortcut(e, 'search-prev')) {
         e.preventDefault()
         goToPreviousMatch()
+        return
+      }
+
+      if (matchesShortcut(e, 'search-next')) {
+        e.preventDefault()
+        goToNextMatch()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose, goToNextMatch, goToPreviousMatch])
+  }, [isOpen, onClose, goToNextMatch, goToPreviousMatch, shortcuts])
 
   // Handle clicking on a result item
   const handleResultClick = useCallback(

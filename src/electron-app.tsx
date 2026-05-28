@@ -9,7 +9,15 @@ import { Toaster } from '@/components/ui/sonner'
 import { FileText, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { toast } from "sonner"
+import { useTheme } from 'next-themes'
 import { useShortcuts } from '@/contexts/ShortcutContext'
+import {
+  getDoublePressShortcutKey,
+  isEditableShortcutTarget,
+  isShortcutRecorderActive,
+  keyboardEventMatchesAnyShortcut,
+  keyboardEventMatchesKey
+} from '@/lib/shortcut-matcher'
 
 // Hooks
 import { useTabs } from '@/hooks/use-tabs'
@@ -43,6 +51,7 @@ interface ElectronAppProps {
 export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
   const t = useT()
   const { shortcuts } = useShortcuts()
+  const { resolvedTheme, setTheme, theme } = useTheme()
   const { statusBarItems, sidebarPanels, emitDocumentOpen, emitDocumentClose, emitTabActivate } = usePlugins()
   const [activePluginPanel, setActivePluginPanel] = useState<string | null>(null)
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false)
@@ -147,24 +156,43 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
     await setFileDataFromTab(filePath)
   }, [tabs, setFileDataFromTab])
 
-  const handleCloseTab = useCallback((path: string) => {
-    const closingActiveLastTab = tabs.activeTab === path && tabs.openTabs.length === 1
-    tabs.closeTab(path, async (fp) => {
-      await setFileDataFromTab(fp)
-    })
-    if (closingActiveLastTab) {
-      startTransition(() => {
-        setFileData(null)
-      })
-    }
-  }, [tabs, setFileData, setFileDataFromTab])
+  const handleActivateAdjacentTab = useCallback((offset: number) => {
+    if (tabs.openTabs.length < 2) return
 
-  const handleCloseAllTabs = useCallback(() => {
-    tabs.closeAllTabs()
+    const activeIndex = tabs.activeTab
+      ? tabs.openTabs.findIndex(tab => tab.filePath === tabs.activeTab)
+      : -1
+    const currentIndex = activeIndex >= 0 ? activeIndex : 0
+    const nextIndex = (currentIndex + offset + tabs.openTabs.length) % tabs.openTabs.length
+    const nextTab = tabs.openTabs[nextIndex]
+
+    if (nextTab) {
+      void handleActivateTab(nextTab.filePath)
+    }
+  }, [tabs.openTabs, tabs.activeTab, handleActivateTab])
+
+  const returnToHome = useCallback(() => {
+    setShowSearch(false)
     startTransition(() => {
       setFileData(null)
     })
-  }, [tabs, setFileData])
+    directory.clearDirectoryState()
+  }, [directory, setFileData])
+
+  const handleCloseTab = useCallback((path: string) => {
+    const closingLastTab = tabs.openTabs.length === 1 && tabs.openTabs[0]?.filePath === path
+    tabs.closeTab(path, async (fp) => {
+      await setFileDataFromTab(fp)
+    })
+    if (closingLastTab) {
+      returnToHome()
+    }
+  }, [tabs, setFileDataFromTab, returnToHome])
+
+  const handleCloseAllTabs = useCallback(() => {
+    tabs.closeAllTabs()
+    returnToHome()
+  }, [tabs, returnToHome])
 
   const handleCloseOtherTabs = useCallback(async (path: string) => {
     tabs.closeOtherTabs(path)
@@ -283,10 +311,13 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
 
   // === Home Handler ===
   const handleGoHome = useCallback(() => {
-    setFileData(null)
-    directory.setIsDirectoryMode(false)
-    directory.setDirectoryData(null)
-  }, [directory])
+    returnToHome()
+  }, [returnToHome])
+
+  const handleToggleTheme = useCallback(() => {
+    const currentTheme = resolvedTheme || theme
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark')
+  }, [resolvedTheme, setTheme, theme])
 
   // === Open Recent Handler ===
   const handleOpenRecent = useCallback(async (item: RecentItem) => {
@@ -329,74 +360,127 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
     }
   }, [loadFile, tabs, directory, addRecentItem, refreshRecentItems, t])
 
-  // === Search Shortcuts ===
+  // === Configurable Keyboard Shortcuts ===
   useEffect(() => {
-    const searchOpenShortcut = shortcuts.find(s => s.id === 'search-open')
-    if (!searchOpenShortcut || !searchOpenShortcut.enabled) return
+    let lastDoublePressKey = ''
+    let lastDoublePressTime = 0
 
-    const keys = searchOpenShortcut.keys[0]
-    const isDoubleShift = keys === 'shift shift'
-
-    if (isDoubleShift) {
-      let shiftPressCount = 0
-      let shiftTimer: NodeJS.Timeout | null = null
-
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Shift') {
-          shiftPressCount++
-          if (shiftPressCount === 1) {
-            shiftTimer = setTimeout(() => { shiftPressCount = 0 }, 500)
-          } else if (shiftPressCount === 2) {
-            e.preventDefault()
-            if (fileData && fileData.content) setShowSearch(true)
-            shiftPressCount = 0
-            if (shiftTimer) clearTimeout(shiftTimer)
-          }
-        }
-      }
-
-      window.addEventListener('keydown', handleKeyDown, { passive: false })
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown)
-        if (shiftTimer) clearTimeout(shiftTimer)
-      }
-    } else {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        const pressedKey = e.key.toLowerCase()
-        const hasCtrl = e.ctrlKey || e.metaKey
-        const hasShift = e.shiftKey
-        const hasAlt = e.altKey
-
-        let combination = ''
-        if (hasCtrl) combination += 'ctrl+'
-        if (hasShift) combination += 'shift+'
-        if (hasAlt) combination += 'alt+'
-        combination += pressedKey
-
-        if (combination === keys) {
-          e.preventDefault()
-          if (fileData && fileData.content) setShowSearch(true)
-        }
-      }
-
-      window.addEventListener('keydown', handleKeyDown, { passive: false })
-      return () => window.removeEventListener('keydown', handleKeyDown)
+    const findShortcut = (id: string) => shortcuts.find(shortcut => shortcut.id === id)
+    const matchesShortcut = (e: KeyboardEvent, id: string) => {
+      const shortcut = findShortcut(id)
+      if (!shortcut || !shortcut.enabled) return false
+      return keyboardEventMatchesAnyShortcut(e, shortcut.keys)
     }
-  }, [fileData, shortcuts])
 
-  // === Sidebar Toggle Shortcut ===
-  useEffect(() => {
+    const matchesDoublePressShortcut = (e: KeyboardEvent, id: string) => {
+      const shortcut = findShortcut(id)
+      if (!shortcut || !shortcut.enabled || e.repeat) return false
+
+      for (const shortcutKey of shortcut.keys) {
+        const doublePressKey = getDoublePressShortcutKey(shortcutKey)
+        if (!doublePressKey || !keyboardEventMatchesKey(e, doublePressKey)) continue
+
+        const now = Date.now()
+        const isSecondPress =
+          lastDoublePressKey === doublePressKey && now - lastDoublePressTime < 500
+
+        lastDoublePressKey = isSecondPress ? '' : doublePressKey
+        lastDoublePressTime = isSecondPress ? 0 : now
+
+        return isSecondPress
+      }
+
+      return false
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      const hasCmd = e.metaKey || e.ctrlKey
-      const key = e.key
-      if (hasCmd && (key === '.' || key === 'b' || key === 'B')) {
+      if (showSettings || isShortcutRecorderActive() || isEditableShortcutTarget(e.target)) return
+
+      if (matchesDoublePressShortcut(e, 'search-open') || matchesShortcut(e, 'search-open')) {
+        e.preventDefault()
+        if (fileData?.content) setShowSearch(true)
+        return
+      }
+
+      if (matchesShortcut(e, 'general-open-file')) {
+        e.preventDefault()
+        void handleOpenFile()
+        return
+      }
+
+      if (matchesShortcut(e, 'general-open-folder')) {
+        e.preventDefault()
+        void handleOpenDirectory()
+        return
+      }
+
+      if (matchesShortcut(e, 'general-settings')) {
+        e.preventDefault()
+        setShowSettings(true)
+        return
+      }
+
+      if (matchesShortcut(e, 'navigation-refresh')) {
+        e.preventDefault()
+        void handleRefresh()
+        return
+      }
+
+      if (matchesShortcut(e, 'navigation-prev-file')) {
+        e.preventDefault()
+        handleActivateAdjacentTab(-1)
+        return
+      }
+
+      if (matchesShortcut(e, 'navigation-next-file')) {
+        e.preventDefault()
+        handleActivateAdjacentTab(1)
+        return
+      }
+
+      if (matchesShortcut(e, 'view-toggle-sidebar') || matchesShortcut(e, 'view-toggle-sidebar-alt')) {
         e.preventDefault()
         settings.toggleSidebar()
+        return
+      }
+
+      if (matchesShortcut(e, 'view-toggle-theme')) {
+        e.preventDefault()
+        handleToggleTheme()
+        return
+      }
+
+      if (matchesShortcut(e, 'editor-increase-font')) {
+        e.preventDefault()
+        settings.setFontSize(Math.min(24, settings.fontSize + 2))
+        return
+      }
+
+      if (matchesShortcut(e, 'editor-decrease-font')) {
+        e.preventDefault()
+        settings.setFontSize(Math.max(12, settings.fontSize - 2))
+        return
+      }
+
+      if (matchesShortcut(e, 'editor-reset-font')) {
+        e.preventDefault()
+        settings.setFontSize(16)
       }
     }
+
     window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [settings])
+  }, [
+    fileData,
+    handleActivateAdjacentTab,
+    handleOpenDirectory,
+    handleOpenFile,
+    handleRefresh,
+    handleToggleTheme,
+    settings,
+    shortcuts,
+    showSettings
+  ])
 
   // === Plugin Panel Activation Bridge ===
   useEffect(() => {

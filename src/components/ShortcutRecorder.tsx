@@ -23,6 +23,7 @@ function formatKey(key: string): string {
     'Alt': 'Alt',
     'Shift': 'Shift',
     ' ': 'Space',
+    'space': 'Space',
     'ArrowUp': '↑',
     'ArrowDown': '↓',
     'ArrowLeft': '←',
@@ -55,6 +56,14 @@ function normalizeKeys(keys: string[]): string[] {
   modifiers.sort((a, b) => order.indexOf(a) - order.indexOf(b))
 
   return [...modifiers, ...regularKeys]
+}
+
+function normalizeRecordedKey(key: string): string {
+  if (key === ' ') return 'space'
+  const normalizedKey = key.toLowerCase()
+  if (normalizedKey === 'meta') return 'cmd'
+  if (normalizedKey === 'control') return 'ctrl'
+  return normalizedKey
 }
 
 export default function ShortcutRecorder({
@@ -123,20 +132,13 @@ export default function ShortcutRecorder({
 
       const keys: string[] = []
 
-      // 检测平台并使用对应的修饰键
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
-
-      if (isMac) {
-        if (e.metaKey) keys.push('cmd')
-      } else {
-        if (e.ctrlKey) keys.push('ctrl')
-      }
-
+      if (e.metaKey) keys.push('cmd')
+      if (e.ctrlKey) keys.push('ctrl')
       if (e.altKey) keys.push('alt')
       if (e.shiftKey) keys.push('shift')
 
       // 添加主键
-      keys.push(e.key.toLowerCase())
+      keys.push(normalizeRecordedKey(e.key))
 
       setRecordedKeys(normalizeKeys(keys))
     }
@@ -204,6 +206,7 @@ export default function ShortcutRecorder({
 
   return (
     <div
+      data-shortcut-recorder="true"
       className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[60] macos-fade-in p-4"
       onClick={handleBackdropClick}
     >

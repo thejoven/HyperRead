@@ -24,6 +24,7 @@ function formatKey(key: string): string {
     'alt': 'Alt',
     'shift': 'Shift',
     ' ': 'Space',
+    'space': 'Space',
     'arrowup': '↑',
     'arrowdown': '↓',
     'arrowleft': '←',
