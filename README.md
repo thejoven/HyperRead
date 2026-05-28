@@ -17,7 +17,7 @@ A beautiful macOS-style document reader supporting Markdown, PDF, and EPUB, buil
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
 [![Twitter](https://img.shields.io/badge/Twitter-@thejoven_com-1DA1F2.svg?logo=twitter)](https://x.com/thejoven_com)
 
-English | [简体中文](./README-zh.md)
+English | [简体中文](./docs/user-guide/README-zh.md)
 
 </div>
 
@@ -295,12 +295,12 @@ export default {
 [doc]: ./demo-plugin/doc-assistant/
 [toc]: ./demo-plugin/toc-minimap/
 [notes]: ./demo-plugin/article-notebook/
-[quick]: ./DOCS/plugin-system/plugin-development-en.md#quick-start
-[bar]: ./DOCS/plugin-system/plugin-development-en.md#status-bar
-[guide]: ./DOCS/plugin-system/plugin-development-en.md
-[side]: ./DOCS/plugin-system/plugin-development-en.md#sidebar-panel
-[ui]: ./DOCS/plugin-system/plugin-development-en.md#ui-extensions
-[data]: ./DOCS/plugin-system/plugin-development-en.md#data-persistence
+[quick]: ./docs/plugin-system/plugin-development-en.md#quick-start
+[bar]: ./docs/plugin-system/plugin-development-en.md#status-bar
+[guide]: ./docs/plugin-system/plugin-development-en.md
+[side]: ./docs/plugin-system/plugin-development-en.md#sidebar-panel
+[ui]: ./docs/plugin-system/plugin-development-en.md#ui-extensions
+[data]: ./docs/plugin-system/plugin-development-en.md#data-persistence
 
 ### Packaged Demo Plugins
 
@@ -318,11 +318,11 @@ Users can install the ready-made demo packages from `demo-plugin/*.zip` without 
 
 | Link | Description |
 |------|-------------|
-| [**Plugin Development Guide (English)**](./DOCS/plugin-system/plugin-development-en.md) | Full English guide — events, UI APIs, npm deps, TypeScript, hot reload, packaging |
-| [Plugin System Overview](./DOCS/plugin-system/README.md) | Architecture and core concepts (中文) |
-| [Developer Guide](./DOCS/plugin-system/developer-guide.md) | Step-by-step tutorial (中文) |
-| [API Reference](./DOCS/plugin-system/api-reference.md) | Full API type definitions (中文) |
-| [Quick Reference](./DOCS/plugin-system/quick-reference.md) | Cheat sheet (中文) |
+| [**Plugin Development Guide (English)**](./docs/plugin-system/plugin-development-en.md) | Full English guide — events, UI APIs, npm deps, TypeScript, hot reload, packaging |
+| [Plugin System Overview](./docs/plugin-system/README.md) | Architecture and core concepts (中文) |
+| [Developer Guide](./docs/plugin-system/developer-guide.md) | Step-by-step tutorial (中文) |
+| [API Reference](./docs/plugin-system/api-reference.md) | Full API type definitions (中文) |
+| [Quick Reference](./docs/plugin-system/quick-reference.md) | Cheat sheet (中文) |
 | [Word Count Template](./plugin-template/) | Minimal starter plugin |
 | [AI Assistant Demo](./demo-plugin/ai-assistant/) | Full-featured example plugin |
 
@@ -389,7 +389,7 @@ This project is open source under the [GNU Affero General Public License v3.0](L
 - 🎨 **Modular Architecture** - New hooks (use-settings, use-directory, use-drag-drop) and components for better maintainability
 - 🔧 **Improved Type Safety** - Enhanced TypeScript definitions and better code organization
 
-👀 **[View Full Changelog](./CHANGELOG.md)** - Detailed release notes and version history
+👀 **[View Full Changelog](./docs/release/changelog.md)** - Detailed release notes and version history
 
 ---
 

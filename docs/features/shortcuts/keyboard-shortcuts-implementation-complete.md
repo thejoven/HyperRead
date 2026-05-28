@@ -237,8 +237,8 @@ src/
 18. `src/components/ShortcutConflictDialog.tsx` - 冲突对话框
 
 #### 文档文件
-19. `docs/keyboard-shortcuts-system-design.md` - 设计文档
-20. `docs/keyboard-shortcuts-implementation-complete.md` - 本文档
+19. `docs/features/shortcuts/keyboard-shortcuts-system-design.md` - 设计文档
+20. `docs/features/shortcuts/keyboard-shortcuts-implementation-complete.md` - 本文档
 
 ### 修改文件 (5个)
 

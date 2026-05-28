@@ -2,7 +2,7 @@
 
 # HyperRead
 
-<img src="./logo/logo.png" alt="HyperRead Logo" width="200" />
+<img src="../../logo/logo.png" alt="HyperRead Logo" width="200" />
 
 **Read smarter. Read faster.**
 
@@ -10,11 +10,11 @@
 
 [![Version](https://img.shields.io/badge/version-5.6.2-blue.svg)](https://github.com/thejoven/HyperRead/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/thejoven/HyperRead)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](../../LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-latest-brightgreen.svg)](https://github.com/thejoven/HyperRead/releases/latest)
 [![Twitter](https://img.shields.io/badge/Twitter-@thejoven_com-1DA1F2.svg?logo=twitter)](https://x.com/thejoven_com)
 
-[English](./README.md) | 简体中文
+[English](../../README.md) | 简体中文
 
 </div>
 
@@ -279,13 +279,13 @@ export default {
 
 | 链接 | 说明 |
 |------|------|
-| [**Plugin Development Guide (English)**](./DOCS/plugin-system/plugin-development-en.md) | 完整英文指南 |
-| [**插件系统概览**](./DOCS/plugin-system/README.md) | 架构、特性与核心概念 |
-| [**开发者指南**](./DOCS/plugin-system/developer-guide.md) | 从零创建插件的完整教程 |
-| [**API 参考手册**](./DOCS/plugin-system/api-reference.md) | 完整 API 类型定义 |
-| [**快速参考**](./DOCS/plugin-system/quick-reference.md) | API 速查表 |
-| [Word Count 模板](./plugin-template/) | 最小示例插件 |
-| [AI 助手示例](./demo-plugin/ai-assistant/) | 功能完整的示例插件 |
+| [**Plugin Development Guide (English)**](../plugin-system/plugin-development-en.md) | 完整英文指南 |
+| [**插件系统概览**](../plugin-system/README.md) | 架构、特性与核心概念 |
+| [**开发者指南**](../plugin-system/developer-guide.md) | 从零创建插件的完整教程 |
+| [**API 参考手册**](../plugin-system/api-reference.md) | 完整 API 类型定义 |
+| [**快速参考**](../plugin-system/quick-reference.md) | API 速查表 |
+| [Word Count 模板](../../plugin-template/) | 最小示例插件 |
+| [AI 助手示例](../../demo-plugin/ai-assistant/) | 功能完整的示例插件 |
 
 ### 安装插件
 
@@ -308,7 +308,7 @@ export default {
 
 ## 📄 许可证
 
-本项目基于 [GNU Affero General Public License v3.0](LICENSE) 开源。
+本项目基于 [GNU Affero General Public License v3.0](../../LICENSE) 开源。
 
 ## 🔗 相关链接
 
@@ -350,7 +350,7 @@ export default {
 - 🎨 **模块化架构** - 新增 hooks（use-settings、use-directory、use-drag-drop）和组件，提高可维护性
 - 🔧 **改进类型安全** - 增强 TypeScript 类型定义和更好的代码组织
 
-👀 **[查看完整更新日志](./CHANGELOG.md)** - 详细的发布说明和版本历史
+👀 **[查看完整更新日志](../release/changelog.md)** - 详细的发布说明和版本历史
 
 ---
 

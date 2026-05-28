@@ -98,7 +98,7 @@ Key files:
 
 Plugin UI extension points: status bar (`StatusBar.tsx`), right sidebar panels (`RightSidebar.tsx` / `PluginSidebarPanel.tsx`), settings panels (`PluginSettingsRenderer.tsx`).
 
-Plugin data is persisted to `~/.hyperread/plugin-data/{id}/` via IPC. See `DOCS/plugin-system/` for the full API reference and `plugin-template/` for a starter.
+Plugin data is persisted to `~/.hyperread/plugin-data/{id}/` via IPC. See `../plugin-system/` for the full API reference and `plugin-template/` for a starter.
 
 ### i18n
 

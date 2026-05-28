@@ -10,14 +10,9 @@
 
 ### 💡 进阶功能
 - **[高级语法](./advanced-syntax.md)** - 引用、脚注、任务列表等高级特性
-- **[代码和语法高亮](./code-and-highlighting.md)** - 代码块、行内代码、多语言高亮
 
 ### 🎨 可视化内容
 - **[图表和可视化](./charts-and-diagrams.md)** - Mermaid 图表、流程图、时序图
-- **[扩展功能](./extended-features.md)** - 数学公式、HTML 标签、元数据
-
-### 📋 实用指南
-- **[最佳实践](./best-practices.md)** - 文档组织、样式规范、性能优化
 
 ## 🚀 快速开始
 
