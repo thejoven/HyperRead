@@ -1,6 +1,7 @@
 import type {
   PluginManifest, PluginRecord, PluginState,
   RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredViewType, RegisteredCommand,
+  RegisteredDocumentAction,
   RegisteredSidebarPanel, RegisteredSettingsPanel, FileData, PluginEvent
 } from './types'
 import type { PluginUIRegistry } from './api-factory'
@@ -24,6 +25,7 @@ export class PluginManager {
     this.uiRegistry = {
       statusBarItems: new Map(),
       toolbarButtons: new Map(),
+      documentActions: new Map(),
       sidebarPanels: new Map(),
       settingsPanels: new Map(),
       viewTypes: new Map(),
@@ -106,6 +108,9 @@ export class PluginManager {
     for (const key of [...this.uiRegistry.toolbarButtons.keys()]) {
       if (key.startsWith(`${pluginId}:`)) this.uiRegistry.toolbarButtons.delete(key)
     }
+    for (const key of [...this.uiRegistry.documentActions.keys()]) {
+      if (key.startsWith(`${pluginId}:`)) this.uiRegistry.documentActions.delete(key)
+    }
     for (const [id, panel] of [...this.uiRegistry.sidebarPanels.entries()]) {
       if (panel.pluginId === pluginId) this.uiRegistry.sidebarPanels.delete(id)
     }
@@ -134,6 +139,10 @@ export class PluginManager {
 
   getToolbarButtons(): RegisteredToolbarButton[] {
     return Array.from(this.uiRegistry.toolbarButtons.values())
+  }
+
+  getDocumentActions(): RegisteredDocumentAction[] {
+    return Array.from(this.uiRegistry.documentActions.values())
   }
 
   getSidebarPanels(): RegisteredSidebarPanel[] {

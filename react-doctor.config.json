@@ -1,0 +1,58 @@
+{
+  "ignore": {
+    "files": [
+      "demo-plugin/**",
+      "vendor/domd/**"
+    ]
+  },
+  "surfaces": {
+    "score": {
+      "excludeRules": [
+        "deslop/unused-dependency",
+        "deslop/unused-dev-dependency",
+        "deslop/unused-export",
+        "react-doctor/async-await-in-loop",
+        "react-doctor/async-parallel",
+        "react-doctor/click-events-have-key-events",
+        "react-doctor/design-no-em-dash-in-jsx-text",
+        "react-doctor/exhaustive-deps",
+        "react-doctor/js-combine-iterations",
+        "react-doctor/jsx-no-jsx-as-prop",
+        "react-doctor/jsx-pascal-case",
+        "react-doctor/nextjs-missing-metadata",
+        "react-doctor/nextjs-no-client-side-redirect",
+        "react-doctor/nextjs-no-native-script",
+        "react-doctor/nextjs-no-use-search-params-without-suspense",
+        "react-doctor/no-adjust-state-on-prop-change",
+        "react-doctor/no-array-index-as-key",
+        "react-doctor/no-array-index-key",
+        "react-doctor/no-cascading-set-state",
+        "react-doctor/no-chain-state-updates",
+        "react-doctor/no-danger",
+        "react-doctor/no-derived-state",
+        "react-doctor/no-derived-state-effect",
+        "react-doctor/no-event-handler",
+        "react-doctor/no-fetch-in-effect",
+        "react-doctor/no-giant-component",
+        "react-doctor/no-initialize-state",
+        "react-doctor/no-inline-prop-on-memo-component",
+        "react-doctor/no-noninteractive-element-interactions",
+        "react-doctor/no-noninteractive-tabindex",
+        "react-doctor/no-pass-live-state-to-parent",
+        "react-doctor/no-polymorphic-children",
+        "react-doctor/no-prevent-default",
+        "react-doctor/no-prop-callback-in-effect",
+        "react-doctor/no-render-in-render",
+        "react-doctor/no-reset-all-state-on-prop-change",
+        "react-doctor/no-static-element-interactions",
+        "react-doctor/prefer-html-dialog",
+        "react-doctor/prefer-tag-over-role",
+        "react-doctor/prefer-use-effect-event",
+        "react-doctor/prefer-useReducer",
+        "react-doctor/react-compiler-destructure-method",
+        "react-doctor/rendering-hydration-mismatch-time",
+        "react-doctor/rerender-state-only-in-handlers"
+      ]
+    }
+  }
+}

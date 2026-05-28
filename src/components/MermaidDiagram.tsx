@@ -365,11 +365,11 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 bg-background/80 hover:bg-background border border-border shadow-sm"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity size-8 p-0 bg-background/80 hover:bg-background border border-border shadow-sm"
           onClick={toggleFullscreen}
           title="全屏查看图表"
         >
-          <Maximize2 className="h-4 w-4" />
+          <Maximize2 className="size-4" />
         </Button>
         <MermaidOutput
           chart={chart}
@@ -387,11 +387,11 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="size-8 p-0"
                 onClick={closeFullscreen}
                 title="关闭全屏"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </Button>
             </div>
 
@@ -421,21 +421,21 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
               <Button
                 variant={isDragEnabled ? 'default' : 'ghost'}
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="size-8 p-0"
                 onClick={toggleDragMode}
                 title={isDragEnabled ? '关闭拖拽模式' : '开启拖拽模式'}
               >
-                <Hand className={`h-4 w-4 ${isDragEnabled ? 'text-primary-foreground' : ''}`} />
+                <Hand className={`size-4 ${isDragEnabled ? 'text-primary-foreground' : ''}`} />
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="size-8 p-0"
                 onClick={resetPosition}
                 title="回到原点"
               >
-                <Home className="h-4 w-4" />
+                <Home className="size-4" />
               </Button>
 
               <div className="h-px bg-border mx-1" />
@@ -443,29 +443,29 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="size-8 p-0"
                 onClick={zoomIn}
                 title="放大"
               >
-                <ZoomIn className="h-4 w-4" />
+                <ZoomIn className="size-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="size-8 p-0"
                 onClick={zoomOut}
                 title="缩小"
               >
-                <ZoomOut className="h-4 w-4" />
+                <ZoomOut className="size-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="size-8 p-0"
                 onClick={resetZoom}
                 title="重置缩放和位置"
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="size-4" />
               </Button>
 
               <div className="text-xs text-center text-muted-foreground px-1">

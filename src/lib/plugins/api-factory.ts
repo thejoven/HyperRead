@@ -2,15 +2,17 @@ import type {
   PluginAPI, PluginEvent, CommandDef, StatusBarItem, StatusBarHandle,
   ToolbarButton, ToolbarHandle, SidebarPanelDef, SidebarHandle,
   SettingsPanelDef, SettingsHandle,
+  DocumentActionDef, DocumentActionHandle,
   ViewTypeDef, ViewTypeHandle, FileData,
   RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredViewType, RegisteredCommand,
-  RegisteredSidebarPanel, RegisteredSettingsPanel
+  RegisteredSidebarPanel, RegisteredSettingsPanel, RegisteredDocumentAction
 } from './types'
 import { pluginEventBus } from './event-bus'
 
 export interface PluginUIRegistry {
   statusBarItems: Map<string, RegisteredStatusBarItem>
   toolbarButtons: Map<string, RegisteredToolbarButton>
+  documentActions: Map<string, RegisteredDocumentAction>
   sidebarPanels: Map<string, RegisteredSidebarPanel>
   settingsPanels: Map<string, RegisteredSettingsPanel>
   viewTypes: Map<string, RegisteredViewType>
@@ -77,6 +79,18 @@ export function createPluginAPI(
       return {
         remove() {
           registry.toolbarButtons.delete(key)
+          registry.onUpdate()
+        }
+      }
+    },
+
+    registerDocumentAction(action: DocumentActionDef): DocumentActionHandle {
+      const key = `${pluginId}:${action.id}`
+      registry.documentActions.set(key, { ...action, pluginId })
+      registry.onUpdate()
+      return {
+        remove() {
+          registry.documentActions.delete(key)
           registry.onUpdate()
         }
       }
@@ -151,6 +165,13 @@ export function createPluginAPI(
       const result = await window.electronAPI?.pluginAPI?.readFile(pluginId, filePath)
       if (!result) throw new Error('electronAPI not available')
       return result as FileData
+    },
+
+    async openMarkdownEditor(options: { filePath: string }): Promise<void> {
+      if (!window.electronAPI?.openMarkdownEditor) {
+        throw new Error('Markdown editor is not available')
+      }
+      await window.electronAPI.openMarkdownEditor(options.filePath)
     },
 
     log(...args: unknown[]) {

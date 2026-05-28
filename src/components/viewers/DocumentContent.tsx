@@ -13,7 +13,7 @@ const HtmlViewer = React.lazy(() => import('@/components/HtmlViewer'))
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center h-full">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="animate-spin rounded-full size-8 border-b-2 border-primary" />
     </div>
   )
 }
@@ -115,6 +115,7 @@ export default function DocumentContent({
         </div>
       )}
       <MarkdownContentWrapper
+        fileData={fileData}
         content={fileData.content}
         filePath={fileData.filePath}
         fontSize={fontSize}

@@ -54,6 +54,7 @@ Desktop.ini
 
 # Lock files (keep only pnpm-lock.yaml)
 package-lock.json
+!vendor/domd/package-lock.json
 yarn.lock
 
 # Logs

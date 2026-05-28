@@ -20,21 +20,21 @@ function formatRelativeTime(isoString: string): string {
 }
 
 function getFileIcon(fileName: string, type: 'file' | 'directory') {
-  if (type === 'directory') return <Folder className="h-[18px] w-[18px] text-blue-400/80 dark:text-blue-400/60 stroke-[1.5]" />
+  if (type === 'directory') return <Folder className="size-[18px] text-blue-400/80 dark:text-blue-400/60 stroke-[1.5]" />
   const ext = fileName.split('.').pop()?.toLowerCase()
   switch (ext) {
-    case 'pdf': return <FileText className="h-[18px] w-[18px] text-red-400/80 dark:text-red-400/60 stroke-[1.5]" />
-    case 'epub': return <BookOpen className="h-[18px] w-[18px] text-orange-400/80 dark:text-orange-400/60 stroke-[1.5]" />
+    case 'pdf': return <FileText className="size-[18px] text-red-400/80 dark:text-red-400/60 stroke-[1.5]" />
+    case 'epub': return <BookOpen className="size-[18px] text-orange-400/80 dark:text-orange-400/60 stroke-[1.5]" />
     case 'html':
-    case 'htm': return <FileCode className="h-[18px] w-[18px] text-amber-400/80 dark:text-amber-400/60 stroke-[1.5]" />
+    case 'htm': return <FileCode className="size-[18px] text-amber-400/80 dark:text-amber-400/60 stroke-[1.5]" />
     case 'md':
-    case 'markdown': return <FileText className="h-[18px] w-[18px] text-emerald-400/80 dark:text-emerald-400/60 stroke-[1.5]" />
+    case 'markdown': return <FileText className="size-[18px] text-emerald-400/80 dark:text-emerald-400/60 stroke-[1.5]" />
     case 'png':
     case 'jpg':
     case 'jpeg':
     case 'gif':
-    case 'webp': return <ImageIcon className="h-[18px] w-[18px] text-purple-400/80 dark:text-purple-400/60 stroke-[1.5]" />
-    default: return <File className="h-[18px] w-[18px] text-muted-foreground/40 stroke-[1.5]" />
+    case 'webp': return <ImageIcon className="size-[18px] text-purple-400/80 dark:text-purple-400/60 stroke-[1.5]" />
+    default: return <File className="size-[18px] text-muted-foreground/40 stroke-[1.5]" />
   }
 }
 
@@ -66,7 +66,7 @@ export default function WelcomeScreen({
         {/* Header Section: Logo, Title, Subtitle */}
         <div className="flex flex-col items-center gap-4 mb-12 select-none text-center">
           {/* Logo */}
-          <div className="relative flex items-center justify-center w-[72px] h-[72px] drop-shadow-sm mb-2">
+          <div className="relative flex items-center justify-center size-[72px] drop-shadow-sm mb-2">
             <img 
               src="./logo.png" 
               alt="HyperRead Logo" 
@@ -93,18 +93,18 @@ export default function WelcomeScreen({
 
         {/* Actions Section */}
         <div className="flex items-center gap-3 w-full mb-12 select-none px-2">
-           <button 
+           <button type="button"
              onClick={onOpenFile} 
              className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-[10px] bg-muted/30 hover:bg-muted/60 text-foreground/70 hover:text-foreground text-[13px] font-medium transition-colors border border-transparent hover:border-border/30 flex-1"
            >
-              <FileText className="w-4 h-4 stroke-[1.5] text-muted-foreground/70" />
+              <FileText className="size-4 stroke-[1.5] text-muted-foreground/70" />
               {t('ui.buttons.openFile')}
            </button>
-           <button 
+           <button type="button"
              onClick={onOpenDirectory} 
              className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-[10px] bg-muted/30 hover:bg-muted/60 text-foreground/70 hover:text-foreground text-[13px] font-medium transition-colors border border-transparent hover:border-border/30 flex-1"
            >
-              <Folder className="w-4 h-4 stroke-[1.5] text-muted-foreground/70" />
+              <Folder className="size-4 stroke-[1.5] text-muted-foreground/70" />
               {t('ui.buttons.openFolder')}
            </button>
         </div>
@@ -113,7 +113,7 @@ export default function WelcomeScreen({
         <div className="w-full flex flex-col">
           {displayItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-muted-foreground/40 select-none">
-              <Box className="w-8 h-8 mb-5 opacity-20 stroke-[1]" />
+              <Box className="size-8 mb-5 opacity-20 stroke-[1]" />
               <p className="text-[13px] font-medium tracking-wide !m-0">{t('ui.messages.noRecentItems')}</p>
               <p className="text-[12px] mt-2 opacity-50 !m-0">{t('ui.messages.dragDropHint')}</p>
             </div>
@@ -123,14 +123,14 @@ export default function WelcomeScreen({
                 <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-[0.1em]">
                   {t('ui.messages.recentItems')}
                 </span>
-                <button onClick={onClearRecent} className="text-[11px] font-medium text-muted-foreground/30 hover:text-foreground/70 transition-colors">
+                <button type="button" onClick={onClearRecent} className="text-[11px] font-medium text-muted-foreground/30 hover:text-foreground/70 transition-colors">
                   {t('ui.messages.clearRecent')}
                 </button>
               </div>
 
               <div className="flex flex-col gap-0.5">
                 {displayItems.map((item) => (
-                  <button
+                  <button type="button"
                     key={item.filePath}
                     onClick={() => onOpenRecent(item)}
                     className="group flex items-center gap-4 w-full px-3 py-2.5 rounded-xl hover:bg-muted/40 active:bg-muted/60 transition-all text-left outline-none"
@@ -163,8 +163,8 @@ export default function WelcomeScreen({
       {/* Drag Overlay */}
       {isDragOver && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none bg-background/60 backdrop-blur-md transition-all duration-300">
-          <div className="w-16 h-16 rounded-2xl bg-foreground/5 border border-foreground/10 flex items-center justify-center mb-4 shadow-sm">
-            <Plus className="w-8 h-8 text-foreground/60 stroke-[1.5]" />
+          <div className="size-16 rounded-2xl bg-foreground/5 border border-foreground/10 flex items-center justify-center mb-4 shadow-sm">
+            <Plus className="size-8 text-foreground/60 stroke-[1.5]" />
           </div>
           <p className="text-[13px] font-medium text-foreground/80 tracking-wide !m-0">{t('ui.messages.releaseToOpen')}</p>
         </div>

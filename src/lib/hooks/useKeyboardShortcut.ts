@@ -5,7 +5,7 @@
  * in React components with automatic cleanup on unmount.
  */
 
-import { useEffect, useRef, useContext } from 'react';
+import { useEffect, useRef, use } from 'react';
 import type { KeyCombination } from '../shortcuts/types';
 import { ShortcutManagerContext } from '../../contexts/ShortcutManagerContext';
 
@@ -40,7 +40,7 @@ export function useKeyboardShortcut(
   handler: () => void | Promise<void>,
   options: UseKeyboardShortcutOptions = {}
 ): void {
-  const { manager } = useContext(ShortcutManagerContext);
+  const { manager } = use(ShortcutManagerContext);
   const handlerRef = useRef(handler);
   const actionIdRef = useRef(
     options.actionId ?? `hook-shortcut-${Math.random().toString(36).slice(2)}`
@@ -114,7 +114,7 @@ export function useKeyboardShortcuts(
     }
   >
 ): void {
-  const { manager } = useContext(ShortcutManagerContext);
+  const { manager } = use(ShortcutManagerContext);
   const handlersRef = useRef(shortcuts);
 
   // Keep handlers ref up to date
@@ -164,7 +164,7 @@ export function useKeyboardShortcuts(
  * Hook to check if a specific shortcut is registered
  */
 export function useIsShortcutRegistered(actionId: string): boolean {
-  const { manager } = useContext(ShortcutManagerContext);
+  const { manager } = use(ShortcutManagerContext);
 
   if (!manager) return false;
 
@@ -176,7 +176,7 @@ export function useIsShortcutRegistered(actionId: string): boolean {
  * Hook to get all registered shortcuts
  */
 export function useAllShortcuts() {
-  const { manager } = useContext(ShortcutManagerContext);
+  const { manager } = use(ShortcutManagerContext);
 
   if (!manager) return [];
 
@@ -187,7 +187,7 @@ export function useAllShortcuts() {
  * Hook to enable/disable the entire shortcut system
  */
 export function useShortcutSystem() {
-  const { manager } = useContext(ShortcutManagerContext);
+  const { manager } = use(ShortcutManagerContext);
 
   return {
     enable: () => manager?.enable(),

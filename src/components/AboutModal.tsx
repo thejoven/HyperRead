@@ -91,20 +91,20 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 h-7 w-7 p-0 hover:bg-muted/60 rounded-full transition-colors"
+          className="absolute top-4 right-4 z-10 size-7 p-0 hover:bg-muted/60 rounded-full transition-colors"
           title={t('ui.buttons.close')}
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
         </Button>
 
         {/* Hero header */}
         <div className="px-8 pt-10 pb-7 text-center bg-gradient-to-b from-primary/10 via-primary/5 to-transparent border-b border-border/10">
           {/* App icon */}
-          <div className="w-20 h-20 mx-auto mb-4 rounded-[22px] shadow-lg bg-gradient-to-br from-primary/25 to-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-primary/20">
+          <div className="size-20 mx-auto mb-4 rounded-[22px] shadow-lg bg-gradient-to-br from-primary/25 to-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-primary/20">
             <img
               src="./logo.png"
               alt="HyperRead Logo"
-              className="w-16 h-16 object-contain"
+              className="size-16 object-contain"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 target.style.display = 'none'
@@ -135,7 +135,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
           <div className="grid grid-cols-2 gap-2">
             {features.map(({ icon: Icon, label }, i) => (
               <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted/20 hover:bg-muted/30 transition-colors">
-                <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <Icon className="size-3.5 text-primary flex-shrink-0" />
                 <span className="text-xs text-muted-foreground leading-tight">{label}</span>
               </div>
             ))}
@@ -150,12 +150,12 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
             className="w-full h-9 macos-button justify-between group"
           >
             <div className="flex items-center gap-2">
-              <Github className="w-4 h-4" />
+              <Github className="size-4" />
               <span className="text-sm font-medium">github.com/thejoven/hyperread</span>
             </div>
             {copiedGithub
-              ? <Check className="w-3.5 h-3.5 text-green-500" />
-              : <Copy className="w-3.5 h-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
+              ? <Check className="size-3.5 text-green-500" />
+              : <Copy className="size-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
             }
           </Button>
 
@@ -166,14 +166,14 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
           >
             <div className="flex items-center gap-2">
               {/* X (Twitter) logo — simple SVG */}
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.766l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
               <span className="text-sm font-medium">x.com/thejoven_com</span>
             </div>
             {copiedX
-              ? <Check className="w-3.5 h-3.5 text-green-500" />
-              : <Copy className="w-3.5 h-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
+              ? <Check className="size-3.5 text-green-500" />
+              : <Copy className="size-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
             }
           </Button>
 

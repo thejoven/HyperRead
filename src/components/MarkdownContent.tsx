@@ -281,7 +281,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       </li>
     ),
     blockquote: ({ children }: { children?: React.ReactNode }) => (
-      <Card className="my-6 border-l-4 border-l-primary border-t-0 border-r-0 border-b-0 rounded-l-none bg-muted/20">
+      <Card className="my-6 border-l border-l-primary border-t-0 border-r-0 border-b-0 rounded-l-none bg-muted/20">
         <CardContent className="p-6 py-4">
           <div className="text-muted-foreground italic break-words overflow-wrap-anywhere">
             {processChildren(children)}
@@ -298,7 +298,7 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
       // Handle Mermaid diagrams
       if (!inline && (language === 'mermaid' || language === 'mmd')) {
         return (
-          <Suspense fallback={<div className="flex items-center justify-center p-4 text-muted-foreground">Loading diagram...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center p-4 text-muted-foreground">Loading diagram…</div>}>
             <MermaidDiagram chart={codeString} />
           </Suspense>
         )

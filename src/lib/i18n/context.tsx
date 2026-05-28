@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, use, useEffect, useState, ReactNode } from 'react'
 import {
   LanguageContextType,
   SUPPORTED_LANGUAGES,
@@ -78,7 +78,7 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
 
 // 自定义 Hook
 export function useTranslation() {
-  const context = useContext(LanguageContext)
+  const context = use(LanguageContext)
   if (context === undefined) {
     throw new Error('useTranslation must be used within a LanguageProvider')
   }

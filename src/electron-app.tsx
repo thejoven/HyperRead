@@ -513,6 +513,24 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
     return () => window.removeEventListener('file-association-opened', handleFileAssociation as EventListener)
   }, [tabs])
 
+  // === DOMD Editor Save Listener ===
+  useEffect(() => {
+    const handleMarkdownEditorSaved = (e: CustomEvent<FileData>) => {
+      const data = e.detail
+      if (!data?.filePath) return
+
+      tabs.setCacheEntry(data.filePath, data.content)
+      if (fileData?.filePath === data.filePath) {
+        startTransition(() => {
+          setFileData(data)
+        })
+      }
+    }
+
+    window.addEventListener('markdown-editor-saved', handleMarkdownEditorSaved as EventListener)
+    return () => window.removeEventListener('markdown-editor-saved', handleMarkdownEditorSaved as EventListener)
+  }, [fileData?.filePath, setFileData, tabs])
+
   // === Navigate to Line ===
   const handleNavigateToLine = useCallback((lineNumber: number) => {
     const contentElement = document.querySelector('.content-scroll') || document.querySelector('.markdown-content')
@@ -530,7 +548,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md mx-auto">
           <CardContent className="p-8 text-center">
-            <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <FileText className="size-16 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-2xl font-bold mb-2">HyperRead</h2>
             <p className="text-muted-foreground mb-4">此应用需要在 Electron 环境中运行</p>
             <Button onClick={() => window.location.reload()}>刷新页面</Button>
@@ -603,9 +621,9 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
               >
                 <div className="flex flex-col items-center justify-center h-full">
                   {settings.isSidebarCollapsed ? (
-                    <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+                    <ChevronRight className="size-2.5 text-muted-foreground" />
                   ) : (
-                    <ChevronLeft className="h-2.5 w-2.5 text-muted-foreground" />
+                    <ChevronLeft className="size-2.5 text-muted-foreground" />
                   )}
                 </div>
               </Button>
@@ -615,7 +633,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
                 {loading && (
                   <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="text-center">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                      <div className="inline-block animate-spin rounded-full size-8 border-b-2 border-primary mb-4"></div>
                       <p>{t('file.operations.loading')}</p>
                     </div>
                   </div>
@@ -641,7 +659,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
                   <div className="flex items-center justify-center h-full">
                     <Card className="max-w-md border-dashed">
                       <CardContent className="p-6 text-center">
-                        <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/60" />
+                        <FileText className="size-10 mx-auto mb-3 text-muted-foreground/60" />
                         <h3 className="text-sm font-medium mb-2 text-foreground">{t('ui.messages.selectFile')}</h3>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           {settings.isSidebarCollapsed
@@ -661,7 +679,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
               {loading && (
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
                   <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                    <div className="inline-block animate-spin rounded-full size-8 border-b-2 border-primary mb-4"></div>
                     <p>{t('file.operations.loading')}</p>
                   </div>
                 </div>

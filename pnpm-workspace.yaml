@@ -7,3 +7,6 @@ onlyBuiltDependencies:
   - es5-ext
   - esbuild
   - puppeteer
+
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade

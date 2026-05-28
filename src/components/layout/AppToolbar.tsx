@@ -60,10 +60,10 @@ export default function AppToolbar({
             variant="ghost"
             size="sm"
             onClick={onGoHome}
-            className="h-7 w-7 p-0 macos-button ml-1"
+            className="size-7 p-0 macos-button ml-1"
             title={t('ui.buttons.home')}
           >
-            <Home className="h-3.5 w-3.5" />
+            <Home className="size-3.5" />
           </Button>
         </div>
 
@@ -74,10 +74,10 @@ export default function AppToolbar({
               variant="ghost"
               size="sm"
               onClick={onToggleSidebar}
-              className={`h-7 w-7 p-0 macos-button ml-2 ${isSidebarCollapsed ? 'bg-primary/10 text-primary' : ''}`}
+              className={`size-7 p-0 macos-button ml-2 ${isSidebarCollapsed ? 'bg-primary/10 text-primary' : ''}`}
               title={isSidebarCollapsed ? t('ui.buttons.expandSidebar') : t('ui.buttons.collapseSidebar')}
             >
-              <PanelLeft className="h-3.5 w-3.5" />
+              <PanelLeft className="size-3.5" />
             </Button>
           </div>
         )}
@@ -106,7 +106,7 @@ export default function AppToolbar({
             className="h-7 px-2 macos-button"
             title={t('ui.buttons.openFile')}
           >
-            <FileText className="h-3.5 w-3.5" />
+            <FileText className="size-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -116,17 +116,17 @@ export default function AppToolbar({
             className="h-7 px-2 macos-button"
             title={t('ui.buttons.openFolder')}
           >
-            <Folder className="h-3.5 w-3.5" />
+            <Folder className="size-3.5" />
           </Button>
           <div className="w-px h-4 bg-border mx-1"></div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onOpenSettings}
-            className="h-7 w-7 p-0 macos-button"
+            className="size-7 p-0 macos-button"
             title={t('ui.buttons.settings')}
           >
-            <Settings className="h-3.5 w-3.5" />
+            <Settings className="size-3.5" />
           </Button>
           <ThemeToggle />
         </div>

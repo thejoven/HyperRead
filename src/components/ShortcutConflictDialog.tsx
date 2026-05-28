@@ -69,16 +69,16 @@ export default function ShortcutConflictDialog({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/20 bg-orange-50 dark:bg-orange-950/20">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <AlertTriangle className="size-5 text-orange-600 dark:text-orange-400" />
             <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-100">
               {t('shortcuts.conflictTitle')}
             </h3>
           </div>
-          <button
+          <button type="button"
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         </div>
 
@@ -136,14 +136,14 @@ export default function ShortcutConflictDialog({
             <p className="text-sm font-medium mb-3">{t('shortcuts.conflictResolution')}</p>
             <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex items-start gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                <span className="inline-block size-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                 <p>
                   <span className="font-medium text-foreground">{t('shortcuts.override')}:</span>{' '}
                   Assign the new key combination and remove it from the conflicting shortcut
                 </p>
               </div>
               <div className="flex items-start gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5 flex-shrink-0" />
+                <span className="inline-block size-1.5 rounded-full bg-muted-foreground mt-1.5 flex-shrink-0" />
                 <p>
                   <span className="font-medium text-foreground">{t('shortcuts.cancel')}:</span>{' '}
                   Keep the existing configuration and choose a different key combination

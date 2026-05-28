@@ -1,10 +1,26 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, net, protocol, session } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const { execFile } = require('child_process')
+const { pathToFileURL } = require('url')
 
 let mainWindow
+const domdWindowDocIds = new Map()
+const domdDocuments = new Map()
+const domdWindowsByPath = new Map()
+const markdownEditorWindowTitle = 'Hyperread - MDedit'
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'domd',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true
+    }
+  }
+])
 
 // 窗口状态管理
 const windowStateKeeper = {
@@ -346,6 +362,224 @@ function isScannableDocumentPath(filePath) {
 
 function isOpenableDocumentPath(filePath) {
   return OPENABLE_DOCUMENT_EXTENSIONS.has(path.extname(filePath).toLowerCase())
+}
+
+function isMarkdownDocumentPath(filePath) {
+  return ['.md', '.markdown'].includes(path.extname(filePath).toLowerCase())
+}
+
+function getDomdOutDir() {
+  return path.join(__dirname, '../vendor/domd/out')
+}
+
+function getDomdEditorPathname(pathname) {
+  if (pathname === '/' || pathname === '/editor' || pathname === '/editor/') {
+    return '/editor.html'
+  }
+  if (pathname.endsWith('/')) {
+    return `${pathname}index.html`
+  }
+  return pathname
+}
+
+function createDomdNotFoundResponse() {
+  return new Response('Not found', { status: 404 })
+}
+
+function registerDomdProtocol() {
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: domd: file: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "object-src 'none'",
+    "base-uri 'self'"
+  ].join('; ')
+
+  session.defaultSession.webRequest.onHeadersReceived({ urls: ['domd://local/*'] }, (details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp]
+      }
+    })
+  })
+
+  protocol.handle('domd', async (request) => {
+    const url = new URL(request.url)
+    if (url.hostname !== 'local') {
+      return createDomdNotFoundResponse()
+    }
+
+    const domdOutDir = path.resolve(getDomdOutDir())
+    const pathname = getDomdEditorPathname(decodeURIComponent(url.pathname))
+    const filePath = path.resolve(domdOutDir, `.${pathname}`)
+
+    if (!filePath.startsWith(domdOutDir + path.sep) && filePath !== domdOutDir) {
+      return createDomdNotFoundResponse()
+    }
+
+    try {
+      await fs.promises.access(filePath)
+      return net.fetch(pathToFileURL(filePath).toString())
+    } catch {
+      return createDomdNotFoundResponse()
+    }
+  })
+}
+
+function getDomdDocumentForSender(sender) {
+  const docId = domdWindowDocIds.get(sender.id)
+  if (!docId) throw new Error('Unknown DOMD editor window')
+  const document = domdDocuments.get(docId)
+  if (!document) throw new Error('DOMD document is no longer available')
+  return { docId, document }
+}
+
+function getImageMimeType(filePath) {
+  switch (path.extname(filePath).toLowerCase()) {
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg'
+    case '.gif':
+      return 'image/gif'
+    case '.bmp':
+      return 'image/bmp'
+    case '.webp':
+      return 'image/webp'
+    case '.svg':
+      return 'image/svg+xml'
+    case '.avif':
+      return 'image/avif'
+    case '.png':
+    default:
+      return 'image/png'
+  }
+}
+
+async function readMarkdownFileForDomd(filePath) {
+  if (!filePath || typeof filePath !== 'string') {
+    throw new Error('Invalid file path')
+  }
+  if (!isMarkdownDocumentPath(filePath)) {
+    throw new Error('DOMD editor only supports Markdown files')
+  }
+
+  const stat = await fs.promises.stat(filePath)
+  if (!stat.isFile()) {
+    throw new Error('Markdown path is not a file')
+  }
+
+  return fs.promises.readFile(filePath, 'utf-8')
+}
+
+async function openDomdEditorWindow(filePath) {
+  const absolutePath = path.resolve(filePath)
+  const existingWindow = domdWindowsByPath.get(absolutePath)
+  if (existingWindow && !existingWindow.isDestroyed()) {
+    existingWindow.focus()
+    return
+  }
+
+  await fs.promises.access(path.join(getDomdOutDir(), 'editor.html')).catch(() => {
+    throw new Error('DOMD editor assets are missing. Run `npm run build:domd` first.')
+  })
+
+  const content = await readMarkdownFileForDomd(absolutePath)
+  const docId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  const fileName = path.basename(absolutePath)
+
+  domdDocuments.set(docId, {
+    filePath: absolutePath,
+    fileName,
+    content,
+    dirty: false
+  })
+
+  const editorWindow = new BrowserWindow({
+    width: 960,
+    height: 720,
+    minWidth: 640,
+    minHeight: 480,
+    title: markdownEditorWindowTitle,
+    icon: path.join(__dirname, '../logo/logo.png'),
+    backgroundColor: '#ffffff',
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      preload: path.join(__dirname, 'domd-preload.js'),
+      spellcheck: true
+    }
+  })
+
+  const webContentsId = editorWindow.webContents.id
+  domdWindowDocIds.set(webContentsId, docId)
+  domdWindowsByPath.set(absolutePath, editorWindow)
+
+  const keepMarkdownEditorWindowTitle = (event) => {
+    event.preventDefault()
+    editorWindow.setTitle(markdownEditorWindowTitle)
+  }
+
+  editorWindow.on('page-title-updated', keepMarkdownEditorWindowTitle)
+  editorWindow.webContents.on('page-title-updated', keepMarkdownEditorWindowTitle)
+
+  editorWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  editorWindow.webContents.on('will-navigate', (event, targetUrl) => {
+    if (!targetUrl.startsWith('domd://local/')) {
+      event.preventDefault()
+    }
+  })
+
+  editorWindow.once('ready-to-show', () => {
+    editorWindow.setTitle(markdownEditorWindowTitle)
+    editorWindow.show()
+  })
+
+  let closeConfirmed = false
+  let closePromptOpen = false
+  editorWindow.on('close', (event) => {
+    if (closeConfirmed) return
+
+    const document = domdDocuments.get(docId)
+    if (!document?.dirty) return
+
+    event.preventDefault()
+    if (closePromptOpen) return
+    closePromptOpen = true
+    dialog.showMessageBox(editorWindow, {
+      type: 'warning',
+      title: '关闭 Markdown 编辑器',
+      message: '文档有未保存的修改',
+      detail: `${fileName} 的修改尚未保存。关闭后这些修改会丢失。`,
+      buttons: ['继续编辑', '放弃修改并关闭'],
+      defaultId: 0,
+      cancelId: 0,
+      noLink: true
+    }).then(({ response }) => {
+      if (response !== 1 || editorWindow.isDestroyed()) return
+      closeConfirmed = true
+      editorWindow.destroy()
+    }).catch(() => {}).finally(() => {
+      closePromptOpen = false
+    })
+  })
+
+  editorWindow.on('closed', () => {
+    domdWindowDocIds.delete(webContentsId)
+    domdDocuments.delete(docId)
+    const currentWindow = domdWindowsByPath.get(absolutePath)
+    if (currentWindow === editorWindow) {
+      domdWindowsByPath.delete(absolutePath)
+    }
+  })
+
+  await editorWindow.loadURL('domd://local/editor')
+  editorWindow.setTitle(markdownEditorWindowTitle)
 }
 
 function createWindow() {
@@ -695,6 +929,88 @@ ipcMain.handle('get-fullscreen', async () => {
   }
 })
 
+ipcMain.handle('open-markdown-editor', async (event, filePath) => {
+  if (!mainWindow || event.sender.id !== mainWindow.webContents.id) {
+    throw new Error('Markdown editor can only be opened from the main window')
+  }
+
+  await openDomdEditorWindow(filePath)
+})
+
+ipcMain.handle('domd:get-initial-document', async (event) => {
+  const { docId, document } = getDomdDocumentForSender(event.sender)
+  const content = await readMarkdownFileForDomd(document.filePath)
+  document.content = content
+
+  return {
+    docId,
+    filePath: document.filePath,
+    fileName: document.fileName,
+    content
+  }
+})
+
+ipcMain.handle('domd:get-document-base-dir', async (event) => {
+  const { document } = getDomdDocumentForSender(event.sender)
+  return path.dirname(document.filePath)
+})
+
+ipcMain.handle('domd:read-image', async (event, imagePath) => {
+  getDomdDocumentForSender(event.sender)
+  if (!imagePath || typeof imagePath !== 'string') {
+    throw new Error('Invalid image path')
+  }
+
+  const ext = path.extname(imagePath).toLowerCase()
+  const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.avif'])
+  if (!imageExtensions.has(ext)) {
+    throw new Error(`Unsupported image format: ${ext}`)
+  }
+
+  const imageData = await fs.promises.readFile(imagePath)
+  return `data:${getImageMimeType(imagePath)};base64,${imageData.toString('base64')}`
+})
+
+ipcMain.on('domd:set-dirty', (event, dirty) => {
+  try {
+    const { document } = getDomdDocumentForSender(event.sender)
+    document.dirty = Boolean(dirty)
+  } catch {}
+})
+
+ipcMain.handle('domd:save-document', async (event, content) => {
+  const { document } = getDomdDocumentForSender(event.sender)
+  if (typeof content !== 'string') {
+    throw new Error('Invalid document content')
+  }
+  if (!isMarkdownDocumentPath(document.filePath)) {
+    throw new Error('DOMD editor only saves Markdown files')
+  }
+
+  await fs.promises.writeFile(document.filePath, content, 'utf-8')
+  document.content = content
+  document.dirty = false
+
+  const ext = path.extname(document.filePath)
+  const payload = {
+    content,
+    fileName: path.basename(document.filePath, ext),
+    originalName: path.basename(document.filePath),
+    filePath: document.filePath,
+    fileType: 'markdown'
+  }
+
+  try {
+    mainWindow?.webContents?.send('markdown-editor:saved', payload)
+  } catch {}
+
+  return {
+    ok: true,
+    filePath: document.filePath,
+    content
+  }
+})
+
 // 查询 macOS 默认文档打开方式
 ipcMain.handle('get-default-document-app-status', async () => {
   try {
@@ -949,6 +1265,7 @@ async function openFileInRenderer(filePath) {
 startupFile = getFileFromArgs(process.argv)
 
 app.whenReady().then(() => {
+  registerDomdProtocol()
   createWindow()
 
   // 如果启动时有文件参数，等待窗口加载完成后打开
@@ -1030,36 +1347,82 @@ function getPluginsDir() {
   return path.join(os.homedir(), '.hyperread', 'plugins')
 }
 
+function getBundledPluginsDir() {
+  return path.join(__dirname, 'bundled-plugins')
+}
+
 function getPluginDataDir() {
   return path.join(os.homedir(), '.hyperread', 'plugin-data')
+}
+
+async function readPluginManifest(pluginDir, bundled = false) {
+  const raw = await fs.promises.readFile(path.join(pluginDir, 'manifest.json'), 'utf-8')
+  return { ...JSON.parse(raw), bundled }
+}
+
+async function listPluginManifests(pluginDir, bundled = false) {
+  try {
+    if (bundled) {
+      await fs.promises.access(pluginDir)
+    } else {
+      await fs.promises.mkdir(pluginDir, { recursive: true })
+    }
+    const entries = await fs.promises.readdir(pluginDir, { withFileTypes: true })
+    const manifests = []
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      try {
+        manifests.push(await readPluginManifest(path.join(pluginDir, entry.name), bundled))
+      } catch {}
+    }
+    return manifests
+  } catch (e) {
+    console.error('Failed to list plugin manifests:', pluginDir, e)
+    return []
+  }
+}
+
+async function resolvePluginDir(pluginId) {
+  if (!pluginId || typeof pluginId !== 'string' || pluginId.includes('/') || pluginId.includes('\\') || pluginId.includes('..')) {
+    throw new Error('Invalid plugin id')
+  }
+
+  const bundledPluginDir = path.resolve(getBundledPluginsDir(), pluginId)
+  try {
+    await fs.promises.access(path.join(bundledPluginDir, 'manifest.json'))
+    return { pluginDir: bundledPluginDir, bundled: true }
+  } catch {}
+
+  const pluginsDir = getPluginsDir()
+  const pluginDir = path.resolve(pluginsDir, pluginId)
+  if (!pluginDir.startsWith(path.resolve(pluginsDir) + path.sep)) {
+    throw new Error('Invalid plugin id')
+  }
+  return { pluginDir, bundled: false }
 }
 
 // List installed plugins
 ipcMain.handle('plugin:list-installed', async () => {
   const pluginsDir = getPluginsDir()
-  try {
-    await fs.promises.mkdir(pluginsDir, { recursive: true })
-    const entries = await fs.promises.readdir(pluginsDir, { withFileTypes: true })
-    const manifests = []
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue
-      const manifestPath = path.join(pluginsDir, entry.name, 'manifest.json')
-      try {
-        const raw = await fs.promises.readFile(manifestPath, 'utf-8')
-        manifests.push(JSON.parse(raw))
-      } catch {}
-    }
-    return manifests
-  } catch (e) {
-    console.error('plugin:list-installed error:', e)
-    return []
+  const bundledManifests = await listPluginManifests(getBundledPluginsDir(), true)
+  const userManifests = await listPluginManifests(pluginsDir, false)
+  const manifestsById = new Map()
+
+  for (const manifest of bundledManifests) {
+    manifestsById.set(manifest.id, manifest)
   }
+  for (const manifest of userManifests) {
+    if (!manifestsById.has(manifest.id)) {
+      manifestsById.set(manifest.id, manifest)
+    }
+  }
+
+  return Array.from(manifestsById.values())
 })
 
 // Read a file within a plugin directory (path traversal protected)
 ipcMain.handle('plugin:read-file', async (_event, pluginId, fileName) => {
-  const pluginsDir = getPluginsDir()
-  const pluginDir = path.resolve(pluginsDir, pluginId)
+  const { pluginDir } = await resolvePluginDir(pluginId)
   const filePath = path.resolve(pluginDir, fileName)
   if (!filePath.startsWith(pluginDir + path.sep) && filePath !== pluginDir) {
     throw new Error('Path traversal detected')
@@ -1178,6 +1541,11 @@ ipcMain.handle('plugin:install-zip', async (_event, zipPath) => {
 
 // Uninstall a plugin (remove its directory)
 ipcMain.handle('plugin:uninstall', async (_event, pluginId) => {
+  const resolved = await resolvePluginDir(pluginId)
+  if (resolved.bundled) {
+    throw new Error('Bundled plugins cannot be uninstalled')
+  }
+
   const pluginsDir = getPluginsDir()
   const pluginDir = path.resolve(pluginsDir, pluginId)
   // Security check

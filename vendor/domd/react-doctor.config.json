@@ -1,0 +1,37 @@
+{
+  "surfaces": {
+    "score": {
+      "excludeRules": [
+        "deslop/unused-dependency",
+        "deslop/unused-dev-dependency",
+        "deslop/unused-export",
+        "react-doctor/async-await-in-loop",
+        "react-doctor/async-parallel",
+        "react-doctor/click-events-have-key-events",
+        "react-doctor/design-no-em-dash-in-jsx-text",
+        "react-doctor/exhaustive-deps",
+        "react-doctor/js-combine-iterations",
+        "react-doctor/jsx-pascal-case",
+        "react-doctor/nextjs-missing-metadata",
+        "react-doctor/nextjs-no-client-side-redirect",
+        "react-doctor/nextjs-no-native-script",
+        "react-doctor/nextjs-no-use-search-params-without-suspense",
+        "react-doctor/no-danger",
+        "react-doctor/no-dynamic-import-path",
+        "react-doctor/no-event-handler",
+        "react-doctor/no-fetch-in-effect",
+        "react-doctor/no-giant-component",
+        "react-doctor/no-noninteractive-element-interactions",
+        "react-doctor/no-noninteractive-tabindex",
+        "react-doctor/no-prevent-default",
+        "react-doctor/no-static-element-interactions",
+        "react-doctor/prefer-html-dialog",
+        "react-doctor/prefer-tag-over-role",
+        "react-doctor/react-compiler-destructure-method",
+        "react-doctor/rendering-hydration-mismatch-time",
+        "react-doctor/rerender-state-only-in-handlers",
+        "react-doctor/server-sequential-independent-await"
+      ]
+    }
+  }
+}

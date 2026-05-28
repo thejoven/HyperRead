@@ -1,0 +1,11 @@
+{
+  "id": "domd-editor",
+  "name": "DOMD Markdown Editor",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "Open Markdown documents in the bundled DOMD editor.",
+  "main": "main.js",
+  "styles": "styles.css",
+  "permissions": ["documents", "markdown-editor"]
+}

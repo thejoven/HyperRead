@@ -87,7 +87,7 @@ function GuideCardItem({ item }: { item: GuideCard }) {
     <div className="group rounded-lg border border-border/35 bg-muted/15 p-3.5 transition-colors hover:bg-muted/25">
       <div className="flex items-start gap-3">
         <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border ${item.accent}`}>
-          <Icon className="h-4 w-4" />
+          <Icon className="size-4" />
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="macos-text-title text-sm font-semibold leading-5 text-foreground">{item.title}</h4>
@@ -463,8 +463,8 @@ export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
       <Card className="flex h-[680px] w-[940px] max-w-[96vw] flex-col overflow-hidden border border-border/30 shadow-2xl glass-effect macos-scale-in">
         <div className="flex items-center justify-between border-b border-border/20 bg-muted/10 px-5 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-              <BookOpen className="h-4 w-4" />
+            <div className="flex size-8 flex-shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+              <BookOpen className="size-4" />
             </div>
             <div className="min-w-0">
               <h2 className="macos-text-title text-sm font-semibold leading-none text-foreground">{t('help.title')}</h2>
@@ -475,10 +475,10 @@ export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-7 w-7 rounded-md p-0 hover:bg-muted/50"
+            className="size-7 rounded-md p-0 hover:bg-muted/50"
             title={t('ui.buttons.close')}
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </Button>
         </div>
 
@@ -498,7 +498,7 @@ export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
                   const isActive = activeSection === section.id
 
                   return (
-                    <button
+                    <button type="button"
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
                       className={`
@@ -510,7 +510,7 @@ export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
                       `}
                     >
                       <span className="flex items-center gap-2.5">
-                        <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <Icon className={`size-4 flex-shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                         <span className="text-sm font-medium">{section.label}</span>
                       </span>
                       <span className={`mt-1 block text-xs leading-4 ${isActive ? 'text-primary/75' : 'text-muted-foreground'}`}>
@@ -528,12 +528,12 @@ export default function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
               <section className="relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-primary/10 via-background to-emerald-500/10 p-5 shadow-sm">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
-                    <ActiveIcon className="h-5 w-5" />
+                  <div className="flex size-12 flex-shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
+                    <ActiveIcon className="size-5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <Sparkles className="size-3.5" />
                       <span>{active.label}</span>
                     </div>
                     <h3 className="macos-text-title text-2xl font-bold leading-tight tracking-normal text-foreground">

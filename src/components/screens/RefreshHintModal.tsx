@@ -18,7 +18,7 @@ export default function RefreshHintModal({
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gray-950 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-background border border-border rounded-lg p-6 m-4 max-w-md w-full glass-effect">
         <h3 className="text-lg font-semibold mb-4 text-center">
           需要重新加载文件

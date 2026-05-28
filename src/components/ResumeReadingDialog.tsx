@@ -37,8 +37,8 @@ export default function ResumeReadingDialog({
       <Card className="w-[420px] max-w-[90vw] glass-effect border border-border/30 shadow-2xl macos-scale-in overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-border/20 bg-primary/5">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-primary" />
+          <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <BookOpen className="size-5 text-primary" />
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">
@@ -82,7 +82,7 @@ export default function ResumeReadingDialog({
             {/* 时间 */}
             <div className="text-center p-3 rounded-lg bg-muted/30 border border-border/20">
               <div className="flex items-center justify-center gap-1">
-                <Clock className="w-4 h-4 text-primary" />
+                <Clock className="size-4 text-primary" />
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 {lastReadTimeText}
@@ -112,7 +112,7 @@ export default function ResumeReadingDialog({
             onClick={onStartOver}
             className="flex-1 h-10 macos-button"
           >
-            <RotateCcw className="w-4 h-4 mr-2" />
+            <RotateCcw className="size-4 mr-2" />
             {t('epub.resumeReading.startOver')}
           </Button>
           <Button
@@ -121,7 +121,7 @@ export default function ResumeReadingDialog({
             onClick={onResume}
             className="flex-1 h-10 macos-button"
           >
-            <BookOpen className="w-4 h-4 mr-2" />
+            <BookOpen className="size-4 mr-2" />
             {t('epub.resumeReading.continue')}
           </Button>
         </div>

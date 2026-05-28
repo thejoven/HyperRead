@@ -1,8 +1,8 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
+import React, { createContext, use, useEffect, useRef, useState, useCallback } from 'react'
 import { PluginManager } from '@/lib/plugins/manager'
-import type { PluginRecord, RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredSidebarPanel, RegisteredSettingsPanel, RegisteredViewType, RegisteredCommand } from '@/lib/plugins/types'
+import type { PluginRecord, RegisteredStatusBarItem, RegisteredToolbarButton, RegisteredSidebarPanel, RegisteredSettingsPanel, RegisteredViewType, RegisteredCommand, RegisteredDocumentAction } from '@/lib/plugins/types'
 import type { FileData } from '@/types/file'
 
 interface PluginContextValue {
@@ -10,6 +10,7 @@ interface PluginContextValue {
   plugins: PluginRecord[]
   statusBarItems: RegisteredStatusBarItem[]
   toolbarButtons: RegisteredToolbarButton[]
+  documentActions: RegisteredDocumentAction[]
   sidebarPanels: RegisteredSidebarPanel[]
   settingsPanels: RegisteredSettingsPanel[]
   commands: RegisteredCommand[]
@@ -28,6 +29,7 @@ const PluginContext = createContext<PluginContextValue>({
   plugins: [],
   statusBarItems: [],
   toolbarButtons: [],
+  documentActions: [],
   sidebarPanels: [],
   settingsPanels: [],
   commands: [],
@@ -42,7 +44,7 @@ const PluginContext = createContext<PluginContextValue>({
 })
 
 export function usePlugins(): PluginContextValue {
-  return useContext(PluginContext)
+  return use(PluginContext)
 }
 
 interface PluginProviderProps {
@@ -64,9 +66,11 @@ export function PluginProvider({ children, getActiveDocument }: PluginProviderPr
     manager.initialize().catch(console.error)
     return () => {
       // Disable all active plugins on unmount
-      manager.getInstalledPlugins()
-        .filter(p => p.state === 'ACTIVE')
-        .forEach(p => manager.disablePlugin(p.manifest.id).catch(console.error))
+      for (const plugin of manager.getInstalledPlugins()) {
+        if (plugin.state === 'ACTIVE') {
+          manager.disablePlugin(plugin.manifest.id).catch(console.error)
+        }
+      }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -77,6 +81,7 @@ export function PluginProvider({ children, getActiveDocument }: PluginProviderPr
     plugins: manager?.getInstalledPlugins() ?? [],
     statusBarItems: manager?.getStatusBarItems() ?? [],
     toolbarButtons: manager?.getToolbarButtons() ?? [],
+    documentActions: manager?.getDocumentActions() ?? [],
     sidebarPanels: manager?.getSidebarPanels() ?? [],
     settingsPanels: manager?.getSettingsPanels() ?? [],
     commands: manager?.getCommands() ?? [],

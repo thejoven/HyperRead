@@ -137,8 +137,8 @@ function TocMinimap({ headings, scrollContainerRef, className }: TocMinimapProps
           aria-label="文档目录"
         >
           <div className="flex h-10 flex-shrink-0 items-center gap-2 border-b border-border/20 px-2.5">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <ListTree className="h-[15px] w-[15px]" strokeWidth={1.8} />
+            <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <ListTree className="size-[15px]" strokeWidth={1.8} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
@@ -151,15 +151,15 @@ function TocMinimap({ headings, scrollContainerRef, className }: TocMinimapProps
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex size-7 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title="关闭目录"
               aria-label="关闭目录"
             >
-              <X className="h-[15px] w-[15px]" strokeWidth={1.8} />
+              <X className="size-[15px]" strokeWidth={1.8} />
             </button>
           </div>
 
-          <nav ref={navRef} className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1.5">
+          <nav ref={navRef} className="min-h-0 flex-1 overflow-y-auto p-1.5">
             <ol className="space-y-px">
               {headings.map((heading, index) => {
                 const isActive = heading.id === activeId
@@ -219,7 +219,7 @@ function TocMinimap({ headings, scrollContainerRef, className }: TocMinimapProps
         title={isOpen ? '收起目录' : '展开目录'}
         aria-label={isOpen ? '收起目录' : '展开目录'}
       >
-        <ListTree className="h-[18px] w-[18px]" strokeWidth={1.8} />
+        <ListTree className="size-[18px]" strokeWidth={1.8} />
       </button>
     </div>
   )

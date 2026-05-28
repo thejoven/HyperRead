@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext } from 'react'
+import { createContext, use } from 'react'
 
 const LinkContext = createContext<boolean>(false)
 
 export const LinkProvider = LinkContext.Provider
-export const useLinkContext = () => useContext(LinkContext)
+export const useLinkContext = () => use(LinkContext)

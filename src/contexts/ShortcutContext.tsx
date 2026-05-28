@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
+import React, { createContext, use, useEffect, useState, ReactNode, useCallback } from 'react'
 
 // 快捷键类别
 export type ShortcutCategory = 'search' | 'view' | 'general' | 'navigation' | 'editor' | 'reading'
@@ -379,7 +379,7 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
 
 // 自定义 Hook
 export function useShortcuts() {
-  const context = useContext(ShortcutContext)
+  const context = use(ShortcutContext)
   if (context === undefined) {
     throw new Error('useShortcuts must be used within a ShortcutProvider')
   }

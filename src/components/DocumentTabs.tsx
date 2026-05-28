@@ -55,7 +55,7 @@ export default function DocumentTabs({
     updateFade()
     const onScroll = () => updateFade()
     const onResize = () => updateFade()
-    el.addEventListener('scroll', onScroll)
+    el.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', onResize)
     return () => {
       el.removeEventListener('scroll', onScroll)
@@ -129,7 +129,7 @@ export default function DocumentTabs({
             title={tab.filePath}
           >
             <span className="text-xs truncate mr-2 min-w-0 flex-1">{tab.fileName}</span>
-            <button
+            <button type="button"
               className={`inline-flex items-center justify-center h-5 w-5 rounded hover:bg-muted/80 transition-colors ${
                 activeTab === tab.filePath ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
               }`}
@@ -139,7 +139,7 @@ export default function DocumentTabs({
               }}
               aria-label="关闭标签"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             </button>
           </div>
         ))}
@@ -149,6 +149,7 @@ export default function DocumentTabs({
           className="no-drag fixed z-[100] w-36 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           role="menu"
+          tabIndex={-1}
           onClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => e.preventDefault()}
         >

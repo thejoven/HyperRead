@@ -132,40 +132,40 @@ export default function SettingsModal({
     {
       id: 'general',
       label: t('settings.categories.general'),
-      icon: <Settings2 className="w-4 h-4" />,
+      icon: <Settings2 className="size-4" />,
       children: [
         {
           id: 'reading',
           label: t('settings.categories.reading'),
-          icon: <BookOpen className="w-3.5 h-3.5" />
+          icon: <BookOpen className="size-3.5" />
         },
         {
           id: 'language',
           label: t('settings.categories.language'),
-          icon: <Languages className="w-3.5 h-3.5" />
+          icon: <Languages className="size-3.5" />
         },
         {
           id: 'shortcuts',
           label: t('settings.categories.shortcuts'),
-          icon: <Keyboard className="w-3.5 h-3.5" />
+          icon: <Keyboard className="size-3.5" />
         },
         {
           id: 'defaultApps',
           label: defaultAppCopy.category,
-          icon: <FileText className="w-3.5 h-3.5" />
+          icon: <FileText className="size-3.5" />
         }
       ]
     },
     {
       id: 'plugins',
       label: '插件',
-      icon: <Puzzle className="w-4 h-4" />
+      icon: <Puzzle className="size-4" />
     },
     // 底部增加"关于软件"入口
     {
       id: 'about',
       label: t('ui.buttons.about'),
-      icon: <Info className="w-4 h-4" />
+      icon: <Info className="size-4" />
     }
   ]
 
@@ -294,10 +294,10 @@ export default function SettingsModal({
               size="sm"
               onClick={handleFontSizeDecrease}
               disabled={fontSize <= 12}
-              className="h-7 w-7 p-0 macos-button"
+              className="size-7 p-0 macos-button"
               title={t('settings.reading.decrease')}
             >
-              <Minus className="h-3 w-3" />
+              <Minus className="size-3" />
             </Button>
             <span className="text-sm font-mono bg-muted/60 px-2 py-1 rounded-md min-w-[3rem] text-center">
               {fontSize}px
@@ -307,10 +307,10 @@ export default function SettingsModal({
               size="sm"
               onClick={handleFontSizeIncrease}
               disabled={fontSize >= 24}
-              className="h-7 w-7 p-0 macos-button"
+              className="size-7 p-0 macos-button"
               title={t('settings.reading.increase')}
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="size-3" />
             </Button>
           </div>
         </div>
@@ -335,7 +335,7 @@ export default function SettingsModal({
           </div>
           <div className="grid grid-cols-2 gap-2">
             {widthOptions.map((option) => (
-              <button
+              <button type="button"
                 key={option.value}
                 onClick={() => onContentWidthChange(option.value)}
                 className={`px-3 py-2 text-left rounded-lg border transition-all ${
@@ -360,6 +360,7 @@ export default function SettingsModal({
           <button
             type="button"
             role="switch"
+            aria-label={t('settings.reading.showDocumentTitle')}
             aria-checked={showDocumentTitle}
             onClick={() => onShowDocumentTitleChange(!showDocumentTitle)}
             className={`relative h-6 w-11 flex-shrink-0 rounded-full border transition-colors ${
@@ -370,7 +371,7 @@ export default function SettingsModal({
             title={t('settings.reading.showDocumentTitle')}
           >
             <span
-              className={`absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-background shadow-sm transition-transform ${
+              className={`absolute left-0 top-1/2 size-4 -translate-y-1/2 rounded-full bg-background shadow-sm transition-transform ${
                 showDocumentTitle ? 'translate-x-5' : 'translate-x-1'
               }`}
             />
@@ -385,7 +386,7 @@ export default function SettingsModal({
           </div>
           <div className="grid grid-cols-3 gap-2">
             {colorOptions.map((option) => (
-              <button
+              <button type="button"
                 key={option.value}
                 onClick={() => onPrimaryColorChange(option.value)}
                 className={`px-3 py-2 text-left rounded-lg border transition-all flex items-center gap-2 ${
@@ -395,7 +396,7 @@ export default function SettingsModal({
                 }`}
               >
                 <div
-                  className="w-4 h-4 rounded-full flex-shrink-0"
+                  className="size-4 rounded-full flex-shrink-0"
                   style={{ backgroundColor: option.color }}
                 />
                 <div className="text-sm font-medium">{option.label}</div>
@@ -431,7 +432,7 @@ export default function SettingsModal({
                   <span className="text-xs text-muted-foreground">({language.name})</span>
                 </span>
                 {currentLanguage === language.code && (
-                  <Check className="h-3 w-3" />
+                  <Check className="size-3" />
                 )}
               </Button>
             ))}
@@ -483,7 +484,7 @@ export default function SettingsModal({
 
     return (
       <div className="space-y-3">
-        <div className="py-3 px-3 bg-muted/20 rounded-lg">
+        <div className="p-3 bg-muted/20 rounded-lg">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <label className="text-sm font-medium text-foreground">{defaultAppCopy.title}</label>
@@ -500,9 +501,9 @@ export default function SettingsModal({
               title={defaultAppCopy.setButton}
             >
               {defaultAppStatus?.isDefault ? (
-                <Check className="h-3.5 w-3.5" />
+                <Check className="size-3.5" />
               ) : (
-                <FileText className="h-3.5 w-3.5" />
+                <FileText className="size-3.5" />
               )}
               <span>
                 {isDefaultAppBusy
@@ -546,7 +547,7 @@ export default function SettingsModal({
                 <span className="text-sm text-foreground">{item.label}</span>
               </div>
               <div className="flex min-w-0 items-center gap-1.5 text-right">
-                {item.isDefault && <Check className="h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />}
+                {item.isDefault && <Check className="size-3.5 flex-shrink-0 text-emerald-500" />}
                 <span
                   className={`truncate text-xs ${
                     item.isDefault ? 'text-emerald-600 dark:text-emerald-300' : 'text-muted-foreground'
@@ -661,11 +662,11 @@ export default function SettingsModal({
         <div className="relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-primary/15 via-background to-emerald-500/10 p-4 shadow-sm">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
           <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/40 bg-background/80 shadow-lg shadow-primary/10 ring-1 ring-primary/15">
+            <div className="flex size-16 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/40 bg-background/80 shadow-lg shadow-primary/10 ring-1 ring-primary/15">
               <img
                 src="./logo.png"
                 alt="HyperRead Logo"
-                className="h-12 w-12 object-contain"
+                className="size-12 object-contain"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.style.display = 'none'
@@ -676,7 +677,7 @@ export default function SettingsModal({
 
             <div className="min-w-0 flex-1">
               <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="size-3.5" />
                 <span>{t('about.title')}</span>
               </div>
               <h2 className="macos-text-title text-2xl font-bold leading-tight tracking-normal text-foreground">
@@ -712,13 +713,13 @@ export default function SettingsModal({
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                    <Icon className="size-3.5 flex-shrink-0 text-muted-foreground" />
                     <span className="truncate text-xs font-medium text-muted-foreground">{label}</span>
                   </span>
                   {copied ? (
-                    <Check className="h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />
+                    <Check className="size-3.5 flex-shrink-0 text-emerald-500" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                    <Copy className="size-3.5 flex-shrink-0 text-muted-foreground" />
                   )}
                 </span>
                 <span className="mt-0.5 block truncate text-sm font-semibold text-foreground">{value}</span>
@@ -742,7 +743,7 @@ export default function SettingsModal({
                 className="flex min-h-[54px] items-start gap-2.5 rounded-lg border border-border/35 bg-muted/15 p-2.5 transition-colors hover:bg-muted/25"
               >
                 <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border ${className}`}>
-                  <Icon className="h-4 w-4" />
+                  <Icon className="size-4" />
                 </div>
                 <span className="macos-text text-sm leading-5 text-foreground/85">{label}</span>
               </div>
@@ -785,7 +786,7 @@ export default function SettingsModal({
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-3 py-2 px-3 bg-muted/20 rounded-lg">
           <div>
-            <label className="text-sm font-medium text-foreground block mb-1">已安装插件</label>
+            <div className="text-sm font-medium text-foreground mb-1">已安装插件</div>
             <p className="text-xs text-muted-foreground">
               支持从 .zip 文件安装，包内须有 manifest.json 和 main.js。
             </p>
@@ -862,7 +863,7 @@ export default function SettingsModal({
                 {settingsCategories.map((category) => (
                   <div key={category.id}>
                     {/* 一级分类 */}
-                    <button
+                    <button type="button"
                       onClick={() => {
                         if (category.children && category.children.length > 0) {
                           toggleCategory(category.id)
@@ -882,8 +883,8 @@ export default function SettingsModal({
                       <span className="text-sm font-medium flex-1">{category.label}</span>
                       {category.children && category.children.length > 0 && (
                         expandedCategories.has(category.id)
-                          ? <ChevronDown className="w-3.5 h-3.5" />
-                          : <ChevronRight className="w-3.5 h-3.5" />
+                          ? <ChevronDown className="size-3.5" />
+                          : <ChevronRight className="size-3.5" />
                       )}
                     </button>
 
@@ -891,7 +892,7 @@ export default function SettingsModal({
                     {category.children && expandedCategories.has(category.id) && (
                       <div className="ml-2 mt-1 space-y-1">
                         {category.children.map((subCategory) => (
-                          <button
+                          <button type="button"
                             key={subCategory.id}
                             onClick={() => setActiveCategory(subCategory.id)}
                             className={`
@@ -920,7 +921,7 @@ export default function SettingsModal({
                 onClick={() => setIsHelpDialogOpen(true)}
                 className="w-full h-9 macos-button justify-start"
               >
-                <HelpCircle className="w-4 h-4 mr-2" />
+                <HelpCircle className="size-4 mr-2" />
                 <span className="text-sm">{t('help.buttonText')}</span>
               </Button>
             </div>

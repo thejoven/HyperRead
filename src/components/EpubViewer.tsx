@@ -129,6 +129,15 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
     let isMounted = true
     let currentRendition: Rendition | null = null
     let currentBook: Book | null = null
+    let renderWaitTimeout: ReturnType<typeof setTimeout> | null = null
+
+    const wait = (duration: number) =>
+      new Promise<void>((resolve) => {
+        renderWaitTimeout = setTimeout(() => {
+          renderWaitTimeout = null
+          resolve()
+        }, duration)
+      })
 
     const loadEpub = async () => {
       try {
@@ -179,7 +188,7 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
         // Wait for viewerRef to be available
         let renderAttempts = 0
         while (!viewerRef.current && renderAttempts < 20 && isMounted) {
-          await new Promise(resolve => setTimeout(resolve, 100))
+          await wait(100)
           renderAttempts++
         }
 
@@ -310,6 +319,9 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
 
     return () => {
       isMounted = false
+      if (renderWaitTimeout) {
+        clearTimeout(renderWaitTimeout)
+      }
       if (currentRendition) {
         try {
           currentRendition.destroy()
@@ -343,6 +355,16 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
       return
     }
 
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
+    const waitForResize = () =>
+      new Promise<void>((resolve) => {
+        timeoutId = setTimeout(() => {
+          timeoutId = null
+          resolve()
+        }, 150)
+      })
+
     const handleResize = async () => {
       try {
         setIsResizing(true)
@@ -355,23 +377,38 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
         rendition.resize()
 
         // Wait a bit for resize to take effect
-        await new Promise(resolve => setTimeout(resolve, 150))
+        await waitForResize()
+
+        if (cancelled) return
 
         // Regenerate locations for accurate pagination with new width/fontSize
         await book.locations.generate(1600)
+
+        if (cancelled) return
 
         // Restore reading position if we had one
         if (currentCfi) {
           await rendition.display(currentCfi)
         }
 
-        setIsResizing(false)
+        if (!cancelled) {
+          setIsResizing(false)
+        }
       } catch {
-        setIsResizing(false)
+        if (!cancelled) {
+          setIsResizing(false)
+        }
       }
     }
 
     handleResize()
+
+    return () => {
+      cancelled = true
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
   }, [contentWidth, fontSize, rendition, book])
 
   const goToPrev = async () => {
@@ -514,11 +551,11 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
           variant="ghost"
           size="sm"
           onClick={goToPrev}
-          className="h-7 w-7 p-0"
+          className="size-7 p-0"
           title="上一页 (← / PageUp / K / Shift+Space)"
           disabled={isLoading || !!error}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="size-4" />
         </Button>
 
         <div className="flex items-center gap-2">
@@ -536,11 +573,11 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
           variant="ghost"
           size="sm"
           onClick={goToNext}
-          className="h-7 w-7 p-0"
+          className="size-7 p-0"
           title="下一页 (→ / PageDown / J / Space)"
           disabled={isLoading || !!error}
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="size-4" />
         </Button>
       </div>
 
@@ -564,10 +601,10 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/95 z-50">
             <div className="text-center p-8 max-w-md">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-              <div className="text-muted-foreground text-sm mb-2">正在加载 EPUB...</div>
+              <div className="inline-block animate-spin rounded-full size-8 border-b-2 border-primary mb-4"></div>
+              <div className="text-muted-foreground text-sm mb-2">正在加载 EPUB…</div>
               <div className="text-xs text-muted-foreground mb-3">
-                <BookOpen className="inline h-4 w-4 mr-1" />
+                <BookOpen className="inline size-4 mr-1" />
                 {fileName}
               </div>
               <div className="text-xs text-muted-foreground/70 italic">
@@ -581,7 +618,7 @@ export default function EpubViewer({ data, fileName, filePath, className, fontSi
         {isResizing && !isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-40">
             <div className="text-center p-6">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary mb-3"></div>
+              <div className="inline-block animate-spin rounded-full size-6 border-b-2 border-primary mb-3"></div>
               <div className="text-muted-foreground text-sm">正在调整布局...</div>
             </div>
           </div>

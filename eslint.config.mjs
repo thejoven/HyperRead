@@ -1,25 +1,90 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import js from '@eslint/js'
+import reactHooks from 'eslint-plugin-react-hooks'
+import tseslint from 'typescript-eslint'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+export default tseslint.config(
   {
     ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'build/**',
+      'dist/**',
+      'release/**',
+      'demo-plugin/**',
+      'vendor/domd/**',
+      'next-env.d.ts',
     ],
   },
-];
-
-export default eslintConfig;
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        alert: 'readonly',
+        confirm: 'readonly',
+        console: 'readonly',
+        CustomEvent: 'readonly',
+        document: 'readonly',
+        btoa: 'readonly',
+        clearTimeout: 'readonly',
+        fetch: 'readonly',
+        FileSystemDirectoryHandle: 'readonly',
+        FileSystemFileHandle: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLStyleElement: 'readonly',
+        localStorage: 'readonly',
+        Map: 'readonly',
+        MouseEvent: 'readonly',
+        navigator: 'readonly',
+        Node: 'readonly',
+        NodeFilter: 'readonly',
+        Promise: 'readonly',
+        ResizeObserver: 'readonly',
+        React: 'readonly',
+        Set: 'readonly',
+        setTimeout: 'readonly',
+        URL: 'readonly',
+        window: 'readonly',
+      },
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-cond-assign': 'off',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+      'no-control-regex': 'off',
+      'no-useless-escape': 'off',
+      'prefer-const': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/rules-of-hooks': 'error',
+    },
+  },
+  {
+    files: ['electron/**/*.js', 'tailwind.config.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        __dirname: 'readonly',
+        Blob: 'readonly',
+        Buffer: 'readonly',
+        clearTimeout: 'readonly',
+        FileReader: 'readonly',
+        module: 'readonly',
+        process: 'readonly',
+        require: 'readonly',
+        Response: 'readonly',
+        setTimeout: 'readonly',
+      },
+    },
+  },
+)

@@ -303,7 +303,7 @@ export default function PdfViewer({ data, fileName, filePath, className }: PdfVi
       <div className={`flex flex-col h-full ${className}`}>
         {/* 渲染错误提示 */}
         {renderError && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-sm">
+          <div className="bg-yellow-100 border-l border-yellow-500 text-yellow-700 p-2 text-sm">
             <p>{renderError}</p>
             <Button
               size="sm"
@@ -326,9 +326,9 @@ export default function PdfViewer({ data, fileName, filePath, className }: PdfVi
             size="sm"
             onClick={goToPrevPage}
             disabled={pageNumber <= 1}
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="size-4" />
           </Button>
 
           <div className="flex items-center gap-1">
@@ -348,9 +348,9 @@ export default function PdfViewer({ data, fileName, filePath, className }: PdfVi
             size="sm"
             onClick={goToNextPage}
             disabled={pageNumber >= numPages}
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="size-4" />
           </Button>
         </div>
 
@@ -361,10 +361,10 @@ export default function PdfViewer({ data, fileName, filePath, className }: PdfVi
             size="sm"
             onClick={zoomOut}
             disabled={scale <= 0.5}
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
             title="缩小 (Ctrl+-)"
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut className="size-4" />
           </Button>
 
           <Button
@@ -382,10 +382,10 @@ export default function PdfViewer({ data, fileName, filePath, className }: PdfVi
             size="sm"
             onClick={zoomIn}
             disabled={scale >= 3.0}
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
             title="放大 (Ctrl++)"
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn className="size-4" />
           </Button>
         </div>
 
@@ -395,20 +395,20 @@ export default function PdfViewer({ data, fileName, filePath, className }: PdfVi
             variant="ghost"
             size="sm"
             onClick={rotate}
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
             title="旋转 (Ctrl+R)"
           >
-            <RotateCw className="h-4 w-4" />
+            <RotateCw className="size-4" />
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
             title="下载 PDF"
           >
-            <Download className="h-4 w-4" />
+            <Download className="size-4" />
           </Button>
         </div>
       </div>
@@ -422,7 +422,7 @@ export default function PdfViewer({ data, fileName, filePath, className }: PdfVi
           {isLoading && (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                <div className="inline-block animate-spin rounded-full size-8 border-b-2 border-primary mb-4"></div>
                 <p className="text-sm text-muted-foreground">加载 PDF 中...</p>
               </div>
             </div>

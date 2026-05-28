@@ -224,7 +224,7 @@ export default function ShortcutSettings() {
       <div className="space-y-2">
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder={t('shortcuts.searchPlaceholder')}
@@ -242,7 +242,7 @@ export default function ShortcutSettings() {
             onClick={handleResetAll}
             className="flex-1 h-8 macos-button"
           >
-            <RotateCcw className="w-3 h-3 mr-1" />
+            <RotateCcw className="size-3 mr-1" />
             {t('shortcuts.resetAll')}
           </Button>
           <Button
@@ -251,7 +251,7 @@ export default function ShortcutSettings() {
             onClick={handleExport}
             className="flex-1 h-8 macos-button"
           >
-            <Download className="w-3 h-3 mr-1" />
+            <Download className="size-3 mr-1" />
             {t('shortcuts.export')}
           </Button>
           <label className="flex-1">
@@ -262,12 +262,13 @@ export default function ShortcutSettings() {
               asChild
             >
               <span>
-                <Upload className="w-3 h-3 mr-1" />
+                <Upload className="size-3 mr-1" />
                 {t('shortcuts.import')}
               </span>
             </Button>
             <input
               type="file"
+              aria-label={t('shortcuts.import')}
               accept=".json"
               onChange={handleImport}
               className="hidden"
@@ -279,7 +280,7 @@ export default function ShortcutSettings() {
       {/* Category Tabs */}
       <div className="flex gap-1 p-1 bg-muted/20 rounded-lg overflow-x-auto">
         {categories.map(category => (
-          <button
+          <button type="button"
             key={category.id}
             onClick={() => setSelectedCategory(category.id)}
             className={`
@@ -460,13 +461,13 @@ function ShortcutItem({ shortcut, onEdit, onReset, onToggle, t }: ShortcutItemPr
           variant="ghost"
           size="sm"
           onClick={() => onToggle(shortcut.id, !shortcut.enabled)}
-          className="h-7 w-7 p-0 macos-button"
+          className="size-7 p-0 macos-button"
           title={shortcut.enabled ? t('shortcuts.disabled') : t('shortcuts.enabled')}
         >
           {shortcut.enabled ? (
-            <Power className="w-3.5 h-3.5 text-green-600" />
+            <Power className="size-3.5 text-green-600" />
           ) : (
-            <PowerOff className="w-3.5 h-3.5 text-muted-foreground" />
+            <PowerOff className="size-3.5 text-muted-foreground" />
           )}
         </Button>
         <Button
@@ -474,20 +475,20 @@ function ShortcutItem({ shortcut, onEdit, onReset, onToggle, t }: ShortcutItemPr
           size="sm"
           onClick={() => onEdit(shortcut)}
           disabled={!shortcut.enabled}
-          className="h-7 w-7 p-0 macos-button"
+          className="size-7 p-0 macos-button"
           title={t('shortcuts.edit')}
         >
-          <Edit2 className="w-3.5 h-3.5" />
+          <Edit2 className="size-3.5" />
         </Button>
         {isModified && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onReset(shortcut)}
-            className="h-7 w-7 p-0 macos-button"
+            className="size-7 p-0 macos-button"
             title={t('shortcuts.reset')}
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="size-3.5" />
           </Button>
         )}
       </div>

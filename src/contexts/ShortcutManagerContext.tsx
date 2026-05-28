@@ -106,7 +106,7 @@ export function ShortcutManagerProvider({
  * ```
  */
 export function useShortcutManager() {
-  const context = React.useContext(ShortcutManagerContext);
+  const context = React.use(ShortcutManagerContext);
 
   if (!context.manager) {
     throw new Error(

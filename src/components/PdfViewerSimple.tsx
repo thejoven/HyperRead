@@ -29,7 +29,7 @@ export default function PdfViewerSimple({ data, fileName, filePath, className }:
     return (
       <div className={`flex items-center justify-center h-full ${className}`}>
         <div className="text-center p-8">
-          <div className="text-muted-foreground text-sm">加载 PDF...</div>
+          <div className="text-muted-foreground text-sm">加载 PDF…</div>
         </div>
       </div>
     )
@@ -37,7 +37,7 @@ export default function PdfViewerSimple({ data, fileName, filePath, className }:
 
   return (
     <div className={`h-full w-full ${className}`}>
-      <iframe
+      <iframe sandbox="allow-scripts"
         src={pdfUrl}
         className="w-full h-full border-0"
         title={fileName}

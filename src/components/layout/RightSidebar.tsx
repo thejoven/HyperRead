@@ -45,7 +45,7 @@ export default function RightSidebar({
           className="h-7 w-5 p-0 opacity-50 hover:opacity-100"
           title="展开右侧栏"
         >
-          <ChevronLeft className="h-3 w-3" />
+          <ChevronLeft className="size-3" />
         </Button>
       </div>
     )
@@ -66,7 +66,7 @@ export default function RightSidebar({
       {/* Tab bar — one button per registered plugin panel + collapse button */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border/20 flex-shrink-0 overflow-x-auto">
         {panels.map(panel => (
-          <button
+          <button type="button"
             key={panel.id}
             onClick={() => onActiveChange(activePanel === panel.id ? null : panel.id)}
             className={`
@@ -89,10 +89,10 @@ export default function RightSidebar({
           variant="ghost"
           size="sm"
           onClick={onToggleCollapse}
-          className="h-7 w-7 p-0 flex-shrink-0 opacity-50 hover:opacity-100"
+          className="size-7 p-0 flex-shrink-0 opacity-50 hover:opacity-100"
           title="收起右侧栏"
         >
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="size-3.5" />
         </Button>
       </div>
 

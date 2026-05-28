@@ -7,6 +7,7 @@ export interface PluginManifest {
   id: string
   name: string
   version: string
+  bundled?: boolean
   minAppVersion?: string
   apiVersion: number
   author?: string
@@ -46,6 +47,22 @@ export interface ToolbarButton {
 }
 
 export interface ToolbarHandle {
+  remove(): void
+}
+
+export interface DocumentActionContext {
+  fileData: FileData
+}
+
+export interface DocumentActionDef {
+  id: string
+  title: string
+  icon: string
+  fileTypes: string[]
+  onClick: (context: DocumentActionContext) => void | Promise<void>
+}
+
+export interface DocumentActionHandle {
   remove(): void
 }
 
@@ -103,6 +120,7 @@ export interface PluginAPI {
   removeCommand(id: string): void
   addStatusBarItem(item: StatusBarItem): StatusBarHandle
   addToolbarButton(btn: ToolbarButton): ToolbarHandle
+  registerDocumentAction(action: DocumentActionDef): DocumentActionHandle
   registerSidebarPanel(panel: SidebarPanelDef): SidebarHandle
   registerSettingsPanel(panel: SettingsPanelDef): SettingsHandle
   registerViewType(view: ViewTypeDef): ViewTypeHandle
@@ -112,6 +130,7 @@ export interface PluginAPI {
   saveData(data: Record<string, unknown>): Promise<void>
   getActiveDocument(): FileData | null
   readFile(path: string): Promise<FileData>
+  openMarkdownEditor(options: { filePath: string }): Promise<void>
   log(...args: unknown[]): void
 }
 
@@ -135,6 +154,10 @@ export interface RegisteredStatusBarItem extends StatusBarItem {
 }
 
 export interface RegisteredToolbarButton extends ToolbarButton {
+  pluginId: string
+}
+
+export interface RegisteredDocumentAction extends DocumentActionDef {
   pluginId: string
 }
 

@@ -203,19 +203,19 @@ const TreeNodeComponent = memo(({
           onClick={() => onFileSelect(node.file!)}
         >
           {isPdf ? (
-            <FileType className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+            <FileType className={`size-3.5 mr-2 flex-shrink-0 ${
               isActive ? 'text-white' : 'text-red-500'
             }`} />
           ) : isEpub ? (
-            <BookOpen className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+            <BookOpen className={`size-3.5 mr-2 flex-shrink-0 ${
               isActive ? 'text-white' : 'text-blue-500'
             }`} />
           ) : isHtml ? (
-            <FileCode className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+            <FileCode className={`size-3.5 mr-2 flex-shrink-0 ${
               isActive ? 'text-white' : 'text-amber-500'
             }`} />
           ) : (
-            <FileText className={`h-3.5 w-3.5 mr-2 flex-shrink-0 ${
+            <FileText className={`size-3.5 mr-2 flex-shrink-0 ${
               isActive ? 'text-white' : 'text-muted-foreground'
             }`} />
           )}
@@ -237,14 +237,14 @@ const TreeNodeComponent = memo(({
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? (
-              <ChevronDown className="h-3.5 w-3.5 mr-1 flex-shrink-0 transition-transform duration-150" />
+              <ChevronDown className="size-3.5 mr-1 flex-shrink-0 transition-transform duration-150" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5 mr-1 flex-shrink-0 transition-transform duration-150" />
+              <ChevronRight className="size-3.5 mr-1 flex-shrink-0 transition-transform duration-150" />
             )}
             {isExpanded ? (
-              <FolderOpen className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-primary" />
+              <FolderOpen className="size-3.5 mr-2 flex-shrink-0 text-primary" />
             ) : (
-              <Folder className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-primary" />
+              <Folder className="size-3.5 mr-2 flex-shrink-0 text-primary" />
             )}
             <span className="truncate text-xs font-medium macos-text">{node.name}</span>
             <span className="text-xs text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-150 font-mono">
@@ -319,10 +319,10 @@ export default function FileList({
       <div className="relative h-full macos-sidebar border-r border-border flex">
         <div ref={elementRef} className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
           {/* 搜索栏区域 - 融入目录栏设计 */}
-          <div className="px-3 py-3 border-b border-border/50 bg-background/40 backdrop-blur-sm">
+          <div className="p-3 border-b border-border/50 bg-background/40 backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 size-3.5 text-muted-foreground/60" />
                 <Input
                   placeholder={t('ui.placeholders.searchFiles')}
                   value={searchTerm}
@@ -336,10 +336,10 @@ export default function FileList({
                   size="sm"
                   onClick={onRefresh}
                   disabled={isRefreshing}
-                  className="h-7 w-7 p-0 macos-button flex-shrink-0 rounded-md"
+                  className="size-7 p-0 macos-button flex-shrink-0 rounded-md"
                   title={t('ui.buttons.refreshFiles')}
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </Button>
               )}
             </div>
@@ -365,10 +365,10 @@ export default function FileList({
     <div className="relative h-full macos-sidebar border-r border-border flex">
       <div ref={elementRef} className="flex-1 flex flex-col" style={{ width: `${width}px` }}>
         {/* 搜索栏区域 - 融入目录栏设计 */}
-        <div className="px-3 py-3 border-b border-border/50 flex-shrink-0 bg-background/40 backdrop-blur-sm">
+        <div className="p-3 border-b border-border/50 flex-shrink-0 bg-background/40 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 size-3.5 text-muted-foreground/60" />
               <Input
                 placeholder={t('ui.placeholders.searchFiles')}
                 value={searchTerm}
@@ -382,10 +382,10 @@ export default function FileList({
                 size="sm"
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                className="h-7 w-7 p-0 macos-button flex-shrink-0 rounded-md"
+                className="size-7 p-0 macos-button flex-shrink-0 rounded-md"
                 title={t('ui.buttons.refreshFiles')}
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
             )}
           </div>

@@ -54,6 +54,7 @@ export interface ElectronAPI {
   openDirectoryDialog: () => Promise<DirectoryData | null>
   scanDirectory: (dirPath: string) => Promise<DirectoryData>
   openExternal: (url: string) => Promise<void>
+  openMarkdownEditor: (filePath: string) => Promise<void>
   readImage: (imagePath: string, markdownFilePath?: string) => Promise<ReadImageResult>
   getDefaultDocumentAppStatus: () => Promise<DefaultDocumentAppStatus>
   setDefaultDocumentApp: () => Promise<DefaultDocumentAppStatus>

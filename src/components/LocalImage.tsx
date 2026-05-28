@@ -41,11 +41,16 @@ export default function LocalImage({
 
   // Load image data
   useEffect(() => {
-    if (!src || !window.electronAPI?.readImage) {
+    const electronAPI = window.electronAPI
+
+    if (!src || !electronAPI?.readImage) {
       setLoading(false)
       setError('Image source not available or not in Electron environment')
       return
     }
+
+    let cancelled = false
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null
 
     const loadImage = async (attempt = 0) => {
       try {
@@ -57,10 +62,10 @@ export default function LocalImage({
           src
         })
 
-        const result = await window.electronAPI.readImage(src, markdownFilePath)
+        const result = await electronAPI.readImage(src, markdownFilePath)
 
         // Check if component is still mounted
-        if (!isMountedRef.current) return
+        if (!isMountedRef.current || cancelled) return
 
         if (result.success && result.dataUrl) {
           console.log('LocalImage: Image loaded successfully:', {
@@ -76,7 +81,10 @@ export default function LocalImage({
           // Try retry logic for certain errors
           if (attempt < maxRetries && result.error?.includes('not exist')) {
             console.log(`LocalImage: Retrying image load (${attempt + 1}/${maxRetries})`)
-            setTimeout(() => loadImage(attempt + 1), 500 * (attempt + 1))
+            retryTimeout = setTimeout(() => {
+              retryTimeout = null
+              loadImage(attempt + 1)
+            }, 500 * (attempt + 1))
             return
           }
 
@@ -86,7 +94,7 @@ export default function LocalImage({
       } catch (err) {
         console.error('LocalImage: Exception during image loading:', err)
 
-        if (!isMountedRef.current) return
+        if (!isMountedRef.current || cancelled) return
 
         const errorMessage = err instanceof Error ? err.message : 'Failed to load image'
 
@@ -107,6 +115,13 @@ export default function LocalImage({
     }
 
     loadImage()
+
+    return () => {
+      cancelled = true
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
+      }
+    }
   }, [src, markdownFilePath, retryCount])
 
   // Manual retry function
@@ -156,9 +171,9 @@ export default function LocalImage({
       <Card className="inline-block border border-border bg-muted/20">
         <CardContent className="p-6 text-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full size-8 border-b-2 border-primary"></div>
             <div className="text-sm text-muted-foreground">
-              Loading image...
+              Loading image…
             </div>
             <div className="text-xs text-muted-foreground/70 font-mono truncate max-w-xs">
               {src}
@@ -175,7 +190,7 @@ export default function LocalImage({
       <Card className="inline-block border border-destructive/30 bg-destructive/5">
         <CardContent className="p-6 text-center">
           <div className="flex flex-col items-center gap-3">
-            <AlertCircle className="h-8 w-8 text-destructive/70" />
+            <AlertCircle className="size-8 text-destructive/70" />
             <div className="text-sm font-medium text-destructive">
               Failed to load image
             </div>
@@ -187,7 +202,7 @@ export default function LocalImage({
                 {error}
               </div>
             )}
-            <button
+            <button type="button"
               onClick={handleRetry}
               className="text-xs text-primary hover:text-primary/80 underline mt-2"
             >

@@ -20,6 +20,7 @@ export default function PluginSettingsRenderer({ plugin, onUninstalled }: Plugin
 
   const enabled = isEnabled(plugin.manifest.id)
   const busy = toggling || plugin.state === 'LOADING' || plugin.state === 'UNLOADING'
+  const isBundled = plugin.manifest.bundled === true
 
   // Find settings panels for this plugin
   const pluginSettingsPanels = settingsPanels.filter(p => p.pluginId === plugin.manifest.id)
@@ -130,22 +131,24 @@ export default function PluginSettingsRenderer({ plugin, onUninstalled }: Plugin
             >
               {toggling ? '处理中...' : enabled ? '禁用' : '启用'}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleUninstall}
-              disabled={busy || uninstalling}
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-red-500"
-            >
-              {uninstalling ? '...' : '卸载'}
-            </Button>
+            {!isBundled && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleUninstall}
+                disabled={busy || uninstalling}
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-red-500"
+              >
+                {uninstalling ? '...' : '卸载'}
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Settings panel container */}
       {showSettings && hasSettings && (
-        <div className="border-t border-border/20 px-3 py-3">
+        <div className="border-t border-border/20 p-3">
           <div ref={settingsContainerRef} />
         </div>
       )}

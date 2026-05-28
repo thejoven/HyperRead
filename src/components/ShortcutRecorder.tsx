@@ -221,11 +221,11 @@ export default function ShortcutRecorder({
               </p>
             )}
           </div>
-          <button
+          <button type="button"
             onClick={handleCancel}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         </div>
 
@@ -276,7 +276,7 @@ export default function ShortcutRecorder({
           {/* Conflict Warning */}
           {conflictingShortcut && (
             <div className="flex items-start gap-2 text-xs text-orange-600 dark:text-orange-400 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900/30">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="size-4 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">{t('shortcuts.conflictDetected')}</p>
                 <p className="mt-1 text-muted-foreground">

@@ -40,9 +40,10 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
   useEffect(() => {
     if (isOpen && inputRef.current) {
       // Small delay to ensure animation completes
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
+      return () => clearTimeout(timeout)
     }
   }, [isOpen])
 
@@ -188,7 +189,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
             {/* Search Input Section */}
             <div className="flex items-center gap-2 mb-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   ref={inputRef}
                   type="text"
@@ -207,22 +208,22 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   size="sm"
                   onClick={goToPreviousMatch}
                   disabled={matches.length === 0}
-                  className="h-9 w-9 p-0 hover:bg-muted"
+                  className="size-9 p-0 hover:bg-muted"
                   title={t('search.shortcuts.previousHint')}
                   aria-label="Previous match"
                 >
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="size-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={goToNextMatch}
                   disabled={matches.length === 0}
-                  className="h-9 w-9 p-0 hover:bg-muted"
+                  className="size-9 p-0 hover:bg-muted"
                   title={t('search.shortcuts.nextHint')}
                   aria-label="Next match"
                 >
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="size-4" />
                 </Button>
               </div>
 
@@ -231,11 +232,11 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="h-9 w-9 p-0 hover:bg-muted"
+                className="size-9 p-0 hover:bg-muted"
                 title={`${t('search.actions.close')} (Esc)`}
                 aria-label="Close search panel"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </Button>
             </div>
 
@@ -251,7 +252,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   aria-label="Toggle case sensitive search"
                   aria-pressed={searchOptions.caseSensitive}
                 >
-                  <Type className="h-3 w-3 mr-1" />
+                  <Type className="size-3 mr-1" />
                   Aa
                 </Button>
                 <Button
@@ -263,7 +264,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   aria-label="Toggle whole word search"
                   aria-pressed={searchOptions.wholeWord}
                 >
-                  <FileSearch className="h-3 w-3 mr-1" />
+                  <FileSearch className="size-3 mr-1" />
                   词
                 </Button>
                 <Button
@@ -275,7 +276,7 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
                   aria-label="Toggle regex search"
                   aria-pressed={searchOptions.useRegex}
                 >
-                  <Regex className="h-3 w-3 mr-1" />
+                  <Regex className="size-3 mr-1" />
                   .*
                 </Button>
               </div>
@@ -310,13 +311,13 @@ export default function SearchPanel({ isOpen, onClose, content, onNavigateToLine
             >
               {matches.length === 0 && query && !isSearching ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <Search className="size-10 mx-auto mb-3 opacity-40" />
                   <p className="text-sm font-medium">{t('search.messages.noMatchesFound')}</p>
                   <p className="text-xs mt-1 opacity-70">{t('search.messages.tryDifferentTerms')}</p>
                 </div>
               ) : matches.length === 0 && !query ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <Search className="size-10 mx-auto mb-3 opacity-40" />
                   <p className="text-sm font-medium">{t('search.messages.startSearching')}</p>
                   <p className="text-xs mt-2 opacity-70 space-x-1">
                     <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Enter</kbd>

@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 打开外部链接 - 使用 IPC 调用主进程
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
 
+  // 打开内置 DOMD Markdown 编辑器
+  openMarkdownEditor: (filePath) => ipcRenderer.invoke('open-markdown-editor', filePath),
+
   // 默认文档打开方式
   getDefaultDocumentAppStatus: () => ipcRenderer.invoke('get-default-document-app-status'),
   setDefaultDocumentApp: () => ipcRenderer.invoke('set-default-document-app'),
@@ -143,6 +146,13 @@ ipcRenderer.on('directory-scanned', (_event, directoryData) => {
 ipcRenderer.on('fullscreen-changed', (_event, isFull) => {
   try {
     const ev = new CustomEvent('fullscreen-changed', { detail: { isFull } })
+    window.dispatchEvent(ev)
+  } catch {}
+})
+
+ipcRenderer.on('markdown-editor:saved', (_event, fileData) => {
+  try {
+    const ev = new CustomEvent('markdown-editor-saved', { detail: fileData })
     window.dispatchEvent(ev)
   } catch {}
 })

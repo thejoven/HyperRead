@@ -205,32 +205,32 @@ export default function ImageViewer({
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 bg-background/80 hover:bg-background border border-border shadow-sm z-10"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity size-8 p-0 bg-background/80 hover:bg-background border border-border shadow-sm z-10"
           title="全屏查看图片"
           onClick={(e) => {
             e.stopPropagation()
             toggleFullscreen()
           }}
         >
-          <Maximize2 className="h-4 w-4" />
+          <Maximize2 className="size-4" />
         </Button>
         {children}
       </div>
 
       {/* Fullscreen modal */}
       {isFullscreen && (
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm">
-          <div className="relative bg-black w-full h-full flex flex-col">
+        <div className="fixed inset-0 z-[100] bg-gray-950/90 backdrop-blur-sm">
+          <div className="relative bg-gray-950 w-full h-full flex flex-col">
             {/* Header with close button */}
-            <div className="flex items-center justify-end p-4 border-b border-white/20 bg-black/50 z-10 flex-shrink-0">
+            <div className="flex items-center justify-end p-4 border-b border-white/20 bg-gray-950/50 z-10 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                className="size-8 p-0 text-white hover:bg-white/20"
                 onClick={toggleFullscreen}
                 title="关闭全屏"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </Button>
             </div>
 
@@ -271,27 +271,27 @@ export default function ImageViewer({
             </div>
 
             {/* Zoom and Pan controls - fixed position */}
-            <div className="fixed bottom-4 left-4 flex flex-col gap-2 bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-2 shadow-lg z-20">
+            <div className="fixed bottom-4 left-4 flex flex-col gap-2 bg-gray-950/80 backdrop-blur-sm border border-white/20 rounded-lg p-2 shadow-lg z-20">
               {/* Drag toggle button */}
               <Button
                 variant={isDragEnabled ? "default" : "ghost"}
                 size="sm"
-                className={`h-8 w-8 p-0 ${isDragEnabled ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+                className={`size-8 p-0 ${isDragEnabled ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
                 onClick={toggleDragMode}
                 title={isDragEnabled ? "关闭拖拽模式" : "开启拖拽模式"}
               >
-                <Hand className="h-4 w-4" />
+                <Hand className="size-4" />
               </Button>
 
               {/* Reset position button */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                className="size-8 p-0 text-white hover:bg-white/20"
                 onClick={resetPosition}
                 title="回到原点"
               >
-                <Home className="h-4 w-4" />
+                <Home className="size-4" />
               </Button>
 
               {/* Separator */}
@@ -301,29 +301,29 @@ export default function ImageViewer({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                className="size-8 p-0 text-white hover:bg-white/20"
                 onClick={zoomIn}
                 title="放大"
               >
-                <ZoomIn className="h-4 w-4" />
+                <ZoomIn className="size-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                className="size-8 p-0 text-white hover:bg-white/20"
                 onClick={zoomOut}
                 title="缩小"
               >
-                <ZoomOut className="h-4 w-4" />
+                <ZoomOut className="size-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                className="size-8 p-0 text-white hover:bg-white/20"
                 onClick={resetZoom}
                 title="重置缩放和位置"
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="size-4" />
               </Button>
 
               {/* Status display */}
