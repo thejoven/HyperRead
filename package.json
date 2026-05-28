@@ -102,6 +102,22 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "electron/bundled-plugins",
+        "to": "bundled-plugins",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "vendor/domd/out",
+        "to": "domd",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "logo/logo.png",

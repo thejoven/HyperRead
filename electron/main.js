@@ -368,8 +368,30 @@ function isMarkdownDocumentPath(filePath) {
   return ['.md', '.markdown'].includes(path.extname(filePath).toLowerCase())
 }
 
+function getDomdOutDirCandidates() {
+  const candidates = [
+    path.join(__dirname, '../vendor/domd/out')
+  ]
+
+  if (process.resourcesPath) {
+    candidates.unshift(path.join(process.resourcesPath, 'domd'))
+    candidates.push(path.join(process.resourcesPath, 'app.asar', 'vendor/domd/out'))
+    candidates.push(path.join(process.resourcesPath, 'app.asar.unpacked', 'vendor/domd/out'))
+  }
+
+  return [...new Set(candidates)]
+}
+
 function getDomdOutDir() {
-  return path.join(__dirname, '../vendor/domd/out')
+  for (const candidate of getDomdOutDirCandidates()) {
+    try {
+      if (fs.existsSync(path.join(candidate, 'editor.html'))) {
+        return candidate
+      }
+    } catch {}
+  }
+
+  return getDomdOutDirCandidates()[0]
 }
 
 function getDomdEditorPathname(pathname) {
@@ -1347,8 +1369,18 @@ function getPluginsDir() {
   return path.join(os.homedir(), '.hyperread', 'plugins')
 }
 
-function getBundledPluginsDir() {
-  return path.join(__dirname, 'bundled-plugins')
+function getBundledPluginsDirCandidates() {
+  const candidates = [
+    path.join(__dirname, 'bundled-plugins')
+  ]
+
+  if (process.resourcesPath) {
+    candidates.unshift(path.join(process.resourcesPath, 'bundled-plugins'))
+    candidates.push(path.join(process.resourcesPath, 'app.asar', 'electron/bundled-plugins'))
+    candidates.push(path.join(process.resourcesPath, 'app.asar.unpacked', 'electron/bundled-plugins'))
+  }
+
+  return [...new Set(candidates)]
 }
 
 function getPluginDataDir() {
@@ -1377,9 +1409,25 @@ async function listPluginManifests(pluginDir, bundled = false) {
     }
     return manifests
   } catch (e) {
+    if (bundled && e?.code === 'ENOENT') {
+      return []
+    }
     console.error('Failed to list plugin manifests:', pluginDir, e)
     return []
   }
+}
+
+async function listBundledPluginManifests() {
+  const manifestsById = new Map()
+  for (const pluginDir of getBundledPluginsDirCandidates()) {
+    const manifests = await listPluginManifests(pluginDir, true)
+    for (const manifest of manifests) {
+      if (!manifestsById.has(manifest.id)) {
+        manifestsById.set(manifest.id, manifest)
+      }
+    }
+  }
+  return Array.from(manifestsById.values())
 }
 
 async function resolvePluginDir(pluginId) {
@@ -1387,11 +1435,13 @@ async function resolvePluginDir(pluginId) {
     throw new Error('Invalid plugin id')
   }
 
-  const bundledPluginDir = path.resolve(getBundledPluginsDir(), pluginId)
-  try {
-    await fs.promises.access(path.join(bundledPluginDir, 'manifest.json'))
-    return { pluginDir: bundledPluginDir, bundled: true }
-  } catch {}
+  for (const bundledPluginsDir of getBundledPluginsDirCandidates()) {
+    const bundledPluginDir = path.resolve(bundledPluginsDir, pluginId)
+    try {
+      await fs.promises.access(path.join(bundledPluginDir, 'manifest.json'))
+      return { pluginDir: bundledPluginDir, bundled: true }
+    } catch {}
+  }
 
   const pluginsDir = getPluginsDir()
   const pluginDir = path.resolve(pluginsDir, pluginId)
@@ -1404,7 +1454,7 @@ async function resolvePluginDir(pluginId) {
 // List installed plugins
 ipcMain.handle('plugin:list-installed', async () => {
   const pluginsDir = getPluginsDir()
-  const bundledManifests = await listPluginManifests(getBundledPluginsDir(), true)
+  const bundledManifests = await listBundledPluginManifests()
   const userManifests = await listPluginManifests(pluginsDir, false)
   const manifestsById = new Map()
 

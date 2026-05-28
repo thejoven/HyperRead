@@ -8,6 +8,7 @@ export interface PluginManifest {
   name: string
   version: string
   bundled?: boolean
+  defaultEnabled?: boolean
   minAppVersion?: string
   apiVersion: number
   author?: string

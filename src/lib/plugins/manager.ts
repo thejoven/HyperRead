@@ -12,6 +12,7 @@ import { pluginEventBus } from './event-bus'
 export class PluginManager {
   private plugins = new Map<string, PluginRecord>()
   private enabledPlugins = new Set<string>()
+  private disabledDefaultPlugins = new Set<string>()
   private uiRegistry: PluginUIRegistry
   private getActiveDocument: () => FileData | null
   private onUpdate: () => void
@@ -40,8 +41,21 @@ export class PluginManager {
       this.plugins.set(manifest.id, { manifest, state: 'DISCOVERED' })
     }
 
-    const enabledIds = await this.loadEnabledPlugins()
-    for (const id of enabledIds) {
+    const pluginPrefs = await this.loadPluginPreferences()
+    this.enabledPlugins = new Set(pluginPrefs.enabledPlugins)
+    this.disabledDefaultPlugins = new Set(pluginPrefs.disabledDefaultPlugins)
+
+    for (const manifest of manifests) {
+      if (
+        manifest.bundled &&
+        manifest.defaultEnabled &&
+        !this.disabledDefaultPlugins.has(manifest.id)
+      ) {
+        this.enabledPlugins.add(manifest.id)
+      }
+    }
+
+    for (const id of [...this.enabledPlugins]) {
       if (this.plugins.has(id)) {
         await this.enablePlugin(id)
       }
@@ -69,6 +83,7 @@ export class PluginManager {
 
       this.plugins.set(pluginId, { ...record, state: 'ACTIVE', instance, styleElement })
       this.enabledPlugins.add(pluginId)
+      this.disabledDefaultPlugins.delete(pluginId)
       await this.saveEnabledPlugins()
       this.onUpdate()
     } catch (e) {
@@ -97,6 +112,9 @@ export class PluginManager {
 
     this.plugins.set(pluginId, { ...record, state: 'DISABLED', instance: undefined, styleElement: undefined })
     this.enabledPlugins.delete(pluginId)
+    if (record.manifest.bundled && record.manifest.defaultEnabled) {
+      this.disabledDefaultPlugins.add(pluginId)
+    }
     await this.saveEnabledPlugins()
     this.onUpdate()
   }
@@ -173,19 +191,30 @@ export class PluginManager {
     }
   }
 
-  private async loadEnabledPlugins(): Promise<string[]> {
+  private async loadPluginPreferences(): Promise<{
+    enabledPlugins: string[]
+    disabledDefaultPlugins: string[]
+  }> {
     try {
       const data = await window.electronAPI?.pluginAPI?.loadData('__hyperread_core__')
-      return (data?.enabledPlugins as string[]) ?? []
+      return {
+        enabledPlugins: Array.isArray(data?.enabledPlugins)
+          ? (data.enabledPlugins as string[])
+          : [],
+        disabledDefaultPlugins: Array.isArray(data?.disabledDefaultPlugins)
+          ? (data.disabledDefaultPlugins as string[])
+          : []
+      }
     } catch {
-      return []
+      return { enabledPlugins: [], disabledDefaultPlugins: [] }
     }
   }
 
   private async saveEnabledPlugins(): Promise<void> {
     try {
       await window.electronAPI?.pluginAPI?.saveData('__hyperread_core__', {
-        enabledPlugins: Array.from(this.enabledPlugins)
+        enabledPlugins: Array.from(this.enabledPlugins),
+        disabledDefaultPlugins: Array.from(this.disabledDefaultPlugins)
       })
     } catch (e) {
       console.error('[PluginManager] Failed to save enabled plugins:', e)
