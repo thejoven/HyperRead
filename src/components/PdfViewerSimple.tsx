@@ -9,20 +9,38 @@ interface PdfViewerSimpleProps {
   className?: string
 }
 
-export default function PdfViewerSimple({ data, fileName, filePath, className }: PdfViewerSimpleProps) {
+function encodeFilePath(filePath: string) {
+  return filePath
+    .replace(/\\/g, '/')
+    .split('/')
+    .map((segment, index) => {
+      if (index === 0 && segment === '') return ''
+      if (index === 0 && /^[A-Za-z]:$/.test(segment)) return segment
+      return encodeURIComponent(segment)
+    })
+    .join('/')
+}
+
+function createPdfUrl(data: string) {
+  if (data.startsWith('blob:') || data.startsWith('file:')) {
+    return data
+  }
+
+  if (data.startsWith('/') || data.match(/^[A-Z]:\\/i)) {
+    const encodedPath = encodeFilePath(data)
+    return encodedPath.match(/^[A-Z]:\//i)
+      ? `file:///${encodedPath}`
+      : `file://${encodedPath}`
+  }
+
+  return ''
+}
+
+export default function PdfViewerSimple({ data, fileName, filePath: _filePath, className }: PdfViewerSimpleProps) {
   const [pdfUrl, setPdfUrl] = useState<string>('')
 
   useEffect(() => {
-    // Check if it's a blob URL (from drag-drop) or file path
-    if (data.startsWith('blob:')) {
-      console.log('PDF blob URL:', data)
-      setPdfUrl(data)
-    } else if (data.startsWith('/') || data.match(/^[A-Z]:\\/)) {
-      // 创建 file:// URL
-      const fileUrl = `file://${data.replace(/\\/g, '/')}`
-      console.log('PDF file URL:', fileUrl)
-      setPdfUrl(fileUrl)
-    }
+    setPdfUrl(createPdfUrl(data))
   }, [data])
 
   if (!pdfUrl) {
@@ -37,7 +55,7 @@ export default function PdfViewerSimple({ data, fileName, filePath, className }:
 
   return (
     <div className={`h-full w-full ${className}`}>
-      <iframe sandbox="allow-scripts"
+      <iframe
         src={pdfUrl}
         className="w-full h-full border-0"
         title={fileName}
