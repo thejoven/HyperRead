@@ -983,14 +983,22 @@ ipcMain.handle('domd:read-image', async (event, imagePath) => {
     throw new Error('Invalid image path')
   }
 
-  const ext = path.extname(imagePath).toLowerCase()
+  // 解码 URL 编码的路径（Markdown 解析器会将中文等非 ASCII 字符编码为 percent-encoding）
+  let decodedPath = imagePath
+  try {
+    decodedPath = decodeURIComponent(imagePath)
+  } catch {
+    // 如果解码失败（非编码路径），使用原始路径
+  }
+
+  const ext = path.extname(decodedPath).toLowerCase()
   const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.avif'])
   if (!imageExtensions.has(ext)) {
     throw new Error(`Unsupported image format: ${ext}`)
   }
 
-  const imageData = await fs.promises.readFile(imagePath)
-  return `data:${getImageMimeType(imagePath)};base64,${imageData.toString('base64')}`
+  const imageData = await fs.promises.readFile(decodedPath)
+  return `data:${getImageMimeType(decodedPath)};base64,${imageData.toString('base64')}`
 })
 
 ipcMain.on('domd:set-dirty', (event, dirty) => {
@@ -1142,16 +1150,24 @@ ipcMain.handle('read-image', async (event, imagePath, markdownFilePath) => {
   try {
     console.log('Main: read-image called with:', { imagePath, markdownFilePath })
 
-    let resolvedPath = imagePath
+    // 解码 URL 编码的路径（Markdown 解析器会将中文等非 ASCII 字符编码为 percent-encoding）
+    let decodedPath = imagePath
+    try {
+      decodedPath = decodeURIComponent(imagePath)
+    } catch {
+      // 如果解码失败（非编码路径），使用原始路径
+    }
+
+    let resolvedPath = decodedPath
 
     // 如果是相对路径，需要基于当前Markdown文件的路径来解析
-    if (!path.isAbsolute(imagePath)) {
+    if (!path.isAbsolute(decodedPath)) {
       if (markdownFilePath) {
         const markdownDir = path.dirname(markdownFilePath)
-        resolvedPath = path.resolve(markdownDir, imagePath)
+        resolvedPath = path.resolve(markdownDir, decodedPath)
       } else {
         // 如果没有提供markdown文件路径，尝试使用当前工作目录
-        resolvedPath = path.resolve(process.cwd(), imagePath)
+        resolvedPath = path.resolve(process.cwd(), decodedPath)
       }
     }
 
