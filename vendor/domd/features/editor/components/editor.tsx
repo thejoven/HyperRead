@@ -1,5 +1,6 @@
 "use client";
 import {
+    type ReactElement,
     useCallback,
     useEffect,
     useRef,
@@ -403,7 +404,7 @@ export function Editor({
         id: string;
         buttons: Array<{
             id: string;
-            icon: JSX.Element;
+            icon: ReactElement;
             title: string;
             action: () => void;
         }>;
