@@ -34,11 +34,13 @@ function MarkdownContentWrapper({
   const headings = useMemo(() => extractHeadings(content), [content])
   const hasTocButton = headings.length > 0
   const visibleActions = useMemo(() => {
+    // 拖拽进来的文档不显示编辑按钮
+    if (fileData.isDragged) return []
     const fileType = fileData.fileType.toLowerCase()
     return documentActions.filter(action =>
       action.fileTypes.map(type => type.toLowerCase()).includes(fileType)
     )
-  }, [documentActions, fileData.fileType])
+  }, [documentActions, fileData.fileType, fileData.isDragged])
 
   return (
     <div className="h-full relative flex min-w-0">
@@ -87,6 +89,7 @@ function MarkdownContentWrapper({
 export default memo(MarkdownContentWrapper, (prevProps, nextProps) => {
   return (
     prevProps.fileData.fileType === nextProps.fileData.fileType &&
+    prevProps.fileData.isDragged === nextProps.fileData.isDragged &&
     prevProps.content === nextProps.content &&
     prevProps.filePath === nextProps.filePath &&
     prevProps.fontSize === nextProps.fontSize &&

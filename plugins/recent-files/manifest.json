@@ -1,0 +1,14 @@
+{
+  "id": "recent-files",
+  "name": "最近文件",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "在侧边栏显示最近打开的文件列表，点击快速重新打开",
+  "main": "main.js",
+  "styles": "styles.css",
+  "permissions": ["ui:sidebar", "events:document", "storage"],
+  "settings": [
+    { "id": "maxItems", "type": "number", "title": "最大记录数", "description": "最多保存多少个最近文件", "default": 50 }
+  ]
+}

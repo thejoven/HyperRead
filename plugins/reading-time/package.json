@@ -1,0 +1,9 @@
+{
+  "name": "reading-time",
+  "version": "1.0.0",
+  "description": "阅读时间估算插件",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --format=esm --outfile=main.js"
+  },
+  "devDependencies": { "esbuild": "^0.19.0" }
+}

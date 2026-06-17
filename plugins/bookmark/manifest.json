@@ -1,0 +1,11 @@
+{
+  "id": "bookmark",
+  "name": "书签管理",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "收藏/书签文档，侧边栏快速访问，支持添加备注",
+  "main": "main.js",
+  "styles": "styles.css",
+  "permissions": ["ui:sidebar", "ui:documentAction", "events:document", "storage"]
+}

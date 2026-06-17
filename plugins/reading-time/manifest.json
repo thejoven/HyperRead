@@ -1,0 +1,14 @@
+{
+  "id": "reading-time",
+  "name": "阅读时间",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "在状态栏显示当前文档的预计阅读时间，支持中英文自动识别",
+  "main": "main.js",
+  "permissions": ["ui:statusBar", "events:document"],
+  "settings": [
+    { "id": "chineseCharsPerMin", "type": "number", "title": "中文阅读速度（字/分钟）", "description": "默认 400 字/分钟", "default": 400 },
+    { "id": "englishWordsPerMin", "type": "number", "title": "英文阅读速度（词/分钟）", "description": "默认 200 词/分钟", "default": 200 }
+  ]
+}

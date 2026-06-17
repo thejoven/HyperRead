@@ -6,6 +6,19 @@ import {
     useState,
 } from "react";
 import {
+    Undo2,
+    Redo2,
+    Heading1,
+    Heading2,
+    Bold,
+    Italic,
+    List,
+    Quote,
+    Code,
+    Table,
+    Link,
+} from "lucide-react";
+import {
     DOMD,
     toMarkdown,
     useEditor,
@@ -381,105 +394,49 @@ export function Editor({
 
     const showSaveBar = meta.kind === "web" || meta.kind === "electron";
     const toolbarButtonClass =
-        "h-7 min-w-7 rounded-md px-2 text-[11px] font-medium text-base-content/70 transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35";
+        "flex items-center justify-center size-7 rounded-md transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 text-base-content/70";
+
+    const iconSize = 15;
+    const iconProps = { size: iconSize, strokeWidth: 2 };
+
     const toolbarGroups: Array<{
         id: string;
         buttons: Array<{
             id: string;
-            label: string;
+            icon: JSX.Element;
             title: string;
             action: () => void;
-            className?: string;
         }>;
     }> = [
         {
             id: "history",
             buttons: [
-                {
-                    id: "undo",
-                    label: "撤销",
-                    title: "撤销",
-                    action: runUndo,
-                },
-                {
-                    id: "redo",
-                    label: "重做",
-                    title: "重做",
-                    action: runRedo,
-                },
+                { id: "undo", icon: <Undo2 {...iconProps} />, title: "撤销", action: runUndo },
+                { id: "redo", icon: <Redo2 {...iconProps} />, title: "重做", action: runRedo },
             ],
         },
         {
             id: "heading",
             buttons: [
-                {
-                    id: "h1",
-                    label: "H1",
-                    title: "一级标题",
-                    action: () => setHeading(1),
-                    className: "font-semibold",
-                },
-                {
-                    id: "h2",
-                    label: "H2",
-                    title: "二级标题",
-                    action: () => setHeading(2),
-                    className: "font-semibold",
-                },
+                { id: "h1", icon: <Heading1 {...iconProps} />, title: "一级标题", action: () => setHeading(1) },
+                { id: "h2", icon: <Heading2 {...iconProps} />, title: "二级标题", action: () => setHeading(2) },
             ],
         },
         {
             id: "format",
             buttons: [
-                {
-                    id: "bold",
-                    label: "B",
-                    title: "加粗",
-                    action: () => insertMarkdown("**加粗文字**"),
-                    className: "font-bold",
-                },
-                {
-                    id: "italic",
-                    label: "I",
-                    title: "斜体",
-                    action: () => insertMarkdown("*斜体文字*"),
-                    className: "italic",
-                },
-                {
-                    id: "list",
-                    label: "列表",
-                    title: "无序列表",
-                    action: () => insertMarkdown("\n- 列表项"),
-                },
-                {
-                    id: "quote",
-                    label: "引用",
-                    title: "引用块",
-                    action: () => insertMarkdown("\n> 引用内容"),
-                },
+                { id: "bold", icon: <Bold {...iconProps} />, title: "加粗", action: () => insertMarkdown("**加粗文字**") },
+                { id: "italic", icon: <Italic {...iconProps} />, title: "斜体", action: () => insertMarkdown("*斜体文字*") },
+                { id: "list", icon: <List {...iconProps} />, title: "无序列表", action: () => insertMarkdown("\n- 列表项") },
+                { id: "quote", icon: <Quote {...iconProps} />, title: "引用块", action: () => insertMarkdown("\n> 引用内容") },
             ],
         },
         {
             id: "insert",
             buttons: [
-                {
-                    id: "code",
-                    label: "代码",
-                    title: "代码块",
-                    action: insertCodeBlock,
-                },
-                {
-                    id: "table",
-                    label: "表格",
-                    title: "表格",
-                    action: insertTable,
-                },
-                {
-                    id: "link",
-                    label: "链接",
-                    title: "链接",
-                    action: () => insertMarkdown("[链接文字](https://example.com)"),
-                },
+                { id: "code", icon: <Code {...iconProps} />, title: "代码块", action: insertCodeBlock },
+                { id: "table", icon: <Table {...iconProps} />, title: "表格", action: insertTable },
+                { id: "link", icon: <Link {...iconProps} />, title: "链接", action: () => insertMarkdown("[链接文字](https://example.com)") },
             ],
         },
     ];
@@ -515,9 +472,9 @@ export function Editor({
                                                 title={button.title}
                                                 onMouseDown={(event) => event.preventDefault()}
                                                 onClick={button.action}
-                                                className={`${toolbarButtonClass} ${button.className ?? ""}`}
+                                                className={toolbarButtonClass}
                                             >
-                                                {button.label}
+                                                {button.icon}
                                             </button>
                                         ))}
                                     </div>

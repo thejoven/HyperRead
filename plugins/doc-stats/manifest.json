@@ -1,0 +1,10 @@
+{
+  "id": "doc-stats",
+  "name": "文档统计",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "在状态栏显示文档详细统计：段落数、句子数、中英文字数，点击查看详情",
+  "main": "main.js",
+  "permissions": ["ui:statusBar", "events:document"]
+}

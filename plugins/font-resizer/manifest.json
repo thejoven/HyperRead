@@ -1,0 +1,16 @@
+{
+  "id": "font-resizer",
+  "name": "字号调节",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "工具栏按钮快速调整文档阅读器字号，支持快捷键 Ctrl/Cmd +/-/0",
+  "main": "main.js",
+  "permissions": ["ui:toolbar", "ui:commands", "ui:statusBar", "events:document"],
+  "settings": [
+    { "id": "defaultSize", "type": "number", "title": "默认字号 (px)", "description": "文档默认字号", "default": 16 },
+    { "id": "step", "type": "number", "title": "调节步长 (px)", "description": "每次调整的字号变化量", "default": 2 },
+    { "id": "minSize", "type": "number", "title": "最小字号 (px)", "default": 10 },
+    { "id": "maxSize", "type": "number", "title": "最大字号 (px)", "default": 32 }
+  ]
+}

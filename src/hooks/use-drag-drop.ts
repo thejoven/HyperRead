@@ -213,7 +213,8 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
           content: content,
           fileName: fileData.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
           filePath: actualPath,
-          fileType: fileType
+          fileType: fileType,
+          isDragged: true
         })
         console.log(`React: Loaded single ${fileType} file:`, fileData.name)
       } else {
@@ -363,7 +364,8 @@ export function useDragDrop({ onSingleFileDrop, onDirectoryDrop }: UseDragDropOp
               content: content,
               fileName: firstFile.name.replace(/\.(md|markdown|pdf|epub|html|htm)$/i, ''),
               filePath: cacheKey, // Use the system path (or virtual if system missing)
-              fileType: fileType
+              fileType: fileType,
+              isDragged: true
             }
           }
         }

@@ -1,0 +1,14 @@
+.bm-list { list-style: none; padding: 4px; margin: 0; }
+.bm-item { padding: 8px 10px; cursor: pointer; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: background 0.15s; position: relative; }
+.bm-item:hover { background: rgba(128,128,128,0.15); }
+.bm-item-icon { font-size: 16px; flex-shrink: 0; }
+.bm-item-info { flex: 1; min-width: 0; }
+.bm-item-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bm-item-path { font-size: 11px; opacity: 0.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bm-item-remove { opacity: 0; cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 12px; flex-shrink: 0; transition: opacity 0.15s; }
+.bm-item:hover .bm-item-remove { opacity: 0.6; }
+.bm-item-remove:hover { opacity: 1; background: rgba(255,0,0,0.15); }
+.bm-empty { padding: 24px 16px; text-align: center; opacity: 0.5; font-size: 13px; }
+.bm-header { padding: 8px 12px; font-weight: 600; font-size: 14px; border-bottom: 1px solid rgba(128,128,128,0.2); }
+.bm-toast { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); background: #4caf50; color: white; padding: 8px 16px; border-radius: 6px; font-size: 13px; z-index: 9999; animation: bm-fade 2s forwards; }
+@keyframes bm-fade { 0%,70% { opacity:1 } 100% { opacity:0 } }

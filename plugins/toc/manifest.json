@@ -1,0 +1,11 @@
+{
+  "id": "toc",
+  "name": "目录导航",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "HyperRead",
+  "description": "在侧边栏展示 Markdown 文档的目录树，点击标题快速跳转",
+  "main": "main.js",
+  "styles": "styles.css",
+  "permissions": ["ui:sidebar", "events:document"]
+}

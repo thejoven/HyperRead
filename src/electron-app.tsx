@@ -139,17 +139,18 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
   const setFileDataFromTab = useCallback(async (filePath: string) => {
     const tab = tabs.openTabs.find(t => t.filePath === filePath)
     const cached = tabs.cache.get(filePath)
+    const isDragged = directory.isEnhancedDragMode
     if (cached && tab) {
       startTransition(() => {
-        setFileData({ content: cached, fileName: tab.fileName, filePath, fileType: tab.fileType })
+        setFileData({ content: cached, fileName: tab.fileName, filePath, fileType: tab.fileType, isDragged })
       })
     } else if (window.electronAPI?.readFile) {
       const data = await window.electronAPI.readFile(filePath)
       startTransition(() => {
-        setFileData(data)
+        setFileData({ ...data, isDragged })
       })
     }
-  }, [tabs, setFileData])
+  }, [tabs, setFileData, directory.isEnhancedDragMode])
 
   const handleActivateTab = useCallback(async (filePath: string) => {
     await tabs.activateTab(filePath)
@@ -213,10 +214,11 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
     } catch (error) {
       console.error('Failed to load file:', error)
       toast.error('文件加载失败: ' + (error as Error).message)
+      throw error
     } finally {
       setLoading(false)
     }
-  }, [tabs, addRecentItem])
+  }, [tabs, addRecentItem, setFileData])
 
   const handleOpenFile = useCallback(async () => {
     if (!window.electronAPI) return
@@ -325,7 +327,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
       try {
         await loadFile(item.filePath)
       } catch {
-        toast.error(t('ui.messages.openFailed'))
+        // loadFile already shows a specific error toast
         recentItemsService.remove(item.filePath)
         refreshRecentItems()
       }
@@ -358,7 +360,7 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
         setLoading(false)
       }
     }
-  }, [loadFile, tabs, directory, addRecentItem, refreshRecentItems, t])
+  }, [loadFile, tabs, directory, addRecentItem, refreshRecentItems, setFileData, t])
 
   // === Configurable Keyboard Shortcuts ===
   useEffect(() => {
@@ -717,8 +719,8 @@ export default function ElectronApp({ activeDocRef }: ElectronAppProps) {
           <DragOverlay visible={isDragOver} />
         </div>
 
-        {/* Right Sidebar — inline layout, shown when plugin panels are registered */}
-        {sidebarPanels.length > 0 && (
+        {/* Right Sidebar — inline layout, shown when plugin panels are registered and file is markdown */}
+        {sidebarPanels.length > 0 && fileData?.fileType === 'markdown' && (
           <RightSidebar
             panels={sidebarPanels}
             activePanel={activePluginPanel}

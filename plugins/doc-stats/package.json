@@ -1,0 +1,9 @@
+{
+  "name": "doc-stats",
+  "version": "1.0.0",
+  "description": "文档统计详情插件",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --format=esm --outfile=main.js"
+  },
+  "devDependencies": { "esbuild": "^0.19.0" }
+}
