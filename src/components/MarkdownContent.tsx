@@ -440,10 +440,18 @@ function MarkdownContent({ content, fontSize = 16, className = '', filePath, onF
               e.preventDefault()
               e.stopPropagation()
 
-              const [targetPath, anchor] = href.split('#')
+              const [rawTargetPath, anchor] = href.split('#')
+              // 解码 URL 编码的路径（react-markdown 会将中文等非 ASCII 字符编码为 percent-encoding）
+              let targetPath: string
+              try {
+                targetPath = decodeURIComponent(rawTargetPath)
+              } catch {
+                targetPath = rawTargetPath
+              }
 
               console.log('Local file link clicked:', {
                 href,
+                rawTargetPath,
                 targetPath,
                 anchor,
                 currentPath: filePath,
